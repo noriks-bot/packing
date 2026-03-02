@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pakiranje | NORIKS</title>
+    <title>Pakiranje DEV | NORIKS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
@@ -158,11 +158,6 @@
         }
         .product-label:first-child { border-top: none; margin-top: 0; }
         
-        .item-warning { background: #fef2f2 !important; border-left: 3px solid #ef4444; }
-        .item-warning-badge { font-size: 14px; margin-left: 4px; cursor: help; }
-        .order-card.has-warnings { border: 2px solid #ef4444; background: #fef2f2; }
-        .order-warning-banner { background: #ef4444; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; margin-bottom: 6px; margin-left: 24px; }
-        .warning-count-header { background: #ef4444; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; }
         .item-checkbox { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; }
         .item-color { width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 2px solid #ddd; }
         .item-name { flex: 1; font-weight: 500; }
@@ -233,13 +228,12 @@
 </head>
 <body>
     <div class="header">
-        <h1>📦 <span>Pakiranje</span> | NORIKS</h1>
+        <h1>📦 <span>Pakiranje DEV</span> | NORIKS</h1>
         <div class="header-actions">
             <div class="stats">
                 <div>Naročil: <span id="order-count">-</span></div>
                 <div>Artiklov: <span id="item-count">-</span></div>
                 <div id="packed-stats" style="display:none;">Spakiranih: <span id="packed-count">0</span></div>
-                <div id="warning-stats" style="display:none;" class="warning-count-header">⚠️ <span id="warning-count">0</span> z opozorili</div>
             </div>
             <button class="btn btn-secondary" onclick="refreshOrders()">🔄 Osveži</button>
             <button class="btn btn-secondary" id="toggle-packed-btn" onclick="toggleShowPacked()" style="display:none;">👁 Pokaži spakirane</button>
@@ -271,14 +265,7 @@
                 <button class="country-btn" data-country="Greece" onclick="selectCountry(this)">🇬🇷</button>
                 <button class="country-btn" data-country="Italy" onclick="selectCountry(this)">🇮🇹</button>
             </div>
-            <div class="sort-buttons" style="display:flex; gap:4px; margin-left:10px; flex-wrap:wrap;">
-                <button class="country-btn active" data-sort="newest" onclick="setSort('newest', this)">🕐 Najnovejši</button>
-                <button class="country-btn" data-sort="oldest" onclick="setSort('oldest', this)">🕐 Najstarejši</button>
-                <button class="country-btn" data-sort="name-asc" onclick="setSort('name-asc', this)">🔤 A→Ž</button>
-                <button class="country-btn" data-sort="name-desc" onclick="setSort('name-desc', this)">🔤 Ž→A</button>
-                <button class="country-btn" data-sort="id-asc" onclick="setSort('id-asc', this)">#↑</button>
-                <button class="country-btn" data-sort="id-desc" onclick="setSort('id-desc', this)">#↓</button>
-            </div>
+            <button class="country-btn active" id="sort-btn" onclick="toggleSort()" style="margin-left:10px;">🕐 Najnovejši ↑</button>
             <label>
                 <input type="checkbox" id="filter-today" checked onchange="toggleDateFilter()">
                 Samo danes
@@ -370,22 +357,6 @@
                 cb.checked = true;
             });
             updateActionBar();
-            filterByCountry();
-        }
-        
-        function toggleSelectAll() {
-            // If all visible are selected → deselect all, otherwise select all
-            const visibleIds = [];
-            document.querySelectorAll('.order-card:not(.packed) .order-select').forEach(cb => {
-                visibleIds.push(cb.dataset.orderId);
-            });
-            const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedOrderIds.has(id));
-            if (allSelected) {
-                clearSelection();
-                filterByCountry();
-            } else {
-                selectAllVisible();
-            }
         }
         
         function clearSelection() {
@@ -432,18 +403,13 @@
         };
         
         let selectedCountry = '';
-        let currentSort = 'newest'; // newest, oldest, name-asc, name-desc, id-asc, id-desc
+        let sortNewestFirst = true;
         
-        function setSort(mode, btn) {
-            currentSort = mode;
-            document.querySelectorAll('.sort-buttons .country-btn').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
+        function toggleSort() {
+            sortNewestFirst = !sortNewestFirst;
+            document.getElementById('sort-btn').textContent = sortNewestFirst ? '🕐 Najnovejši ↑' : '🕐 Najstarejši ↑';
             filterByCountry();
         }
-        
-        // Keep old function names for compat
-        function cycleSort() { }
-        function toggleSort() { }
         
         let knownOrderIds = JSON.parse(localStorage.getItem('packing-known-ids') || '[]');
         let newOrderIds = new Set();
@@ -522,8 +488,7 @@
             'Rdeča': '#ef4444', 'Zelena': '#22c55e', 'Rjava': '#92400e', 'Bež': '#d4c5a9',
             'Roza': '#ec4899', 'Oranžna': '#f97316', 'Vijolična': '#8b5cf6', 'Rumena': '#eab308',
             'Turkizna': '#06b6d4', 'Temno modra': '#1e3a8a', 'Svetlo modra': '#93c5fd',
-            'Tamnoplava': '#1e3a8a', 'Smeđa': '#92400e', 'Rjava': '#92400e', 'Bež': '#d4c5a9',
-            'Črna & Bela': '#1a1a1a'
+            'Tamnoplava': '#1e3a8a', 'Smeđa': '#92400e'
         };
         
         function translateColor(color) {
@@ -596,34 +561,9 @@
             
             // Sort
             const sortFn = (a, b) => {
-                switch (currentSort) {
-                    case 'newest': {
-                        const da = (a.date || '') + ' ' + (a.time || '');
-                        const db = (b.date || '') + ' ' + (b.time || '');
-                        return db.localeCompare(da);
-                    }
-                    case 'oldest': {
-                        const da = (a.date || '') + ' ' + (a.time || '');
-                        const db = (b.date || '') + ' ' + (b.time || '');
-                        return da.localeCompare(db);
-                    }
-                    case 'name-asc':
-                        return (a.customer || '').localeCompare(b.customer || '', 'sl');
-                    case 'name-desc':
-                        return (b.customer || '').localeCompare(a.customer || '', 'sl');
-                    case 'id-asc': {
-                        const na = parseInt((a.id || '').split('/')[0]) || 0;
-                        const nb = parseInt((b.id || '').split('/')[0]) || 0;
-                        return na - nb;
-                    }
-                    case 'id-desc': {
-                        const na = parseInt((a.id || '').split('/')[0]) || 0;
-                        const nb = parseInt((b.id || '').split('/')[0]) || 0;
-                        return nb - na;
-                    }
-                    default:
-                        return 0;
-                }
+                const da = (a.date || '') + ' ' + (a.time || '');
+                const db = (b.date || '') + ' ' + (b.time || '');
+                return sortNewestFirst ? db.localeCompare(da) : da.localeCompare(db);
             };
             unpacked.sort(sortFn);
             packed.sort(sortFn);
@@ -634,18 +574,6 @@
             let totalItems = 0;
             unpacked.forEach(o => { o.items.forEach(i => totalItems += i.length); });
             document.getElementById('item-count').textContent = totalItems;
-            
-            // Count orders with warnings
-            let warningOrderCount = 0;
-            unpacked.forEach(o => {
-                const hasW = (o.products || o.items).some(p => {
-                    const items = p.items || (Array.isArray(p) ? p : [p]);
-                    return items.some(i => i.warnings && i.warnings.length > 0);
-                });
-                if (hasW) warningOrderCount++;
-            });
-            document.getElementById('warning-count').textContent = warningOrderCount;
-            document.getElementById('warning-stats').style.display = warningOrderCount > 0 ? '' : 'none';
             
             // Show/hide packed stats & button
             const packedCount = packed.length;
@@ -669,7 +597,7 @@
             // Select all button
             if (unpacked.length > 0) {
                 html += `<div style="grid-column: 1/-1; display:flex; gap:10px; align-items:center;" class="no-print">
-                    <button class="btn btn-secondary" onclick="toggleSelectAll()" id="select-all-btn" style="font-size:12px;">${selectedOrderIds.size > 0 && selectedOrderIds.size >= unpacked.filter(o => !isOrderPacked(o.id)).length ? '☑ Odznači vse' : '☐ Izberi vse ('+unpacked.length+')'}</button>
+                    <button class="btn btn-secondary" onclick="selectAllVisible()" style="font-size:12px;">☑ Izberi vse (${unpacked.length})</button>
                     ${selectedOrderIds.size > 0 ? `<button class="btn btn-secondary" onclick="clearSelection()" style="font-size:12px;">✕ Počisti izbor</button>` : ''}
                 </div>`;
             }
@@ -692,19 +620,8 @@
             const isSelected = selectedOrderIds.has(order.id);
             const packedInfo = packedOrders[order.id];
             
-            // Check for warnings in any item
-            const allWarnings = [];
-            (order.products || order.items).forEach(product => {
-                const items = product.items || (Array.isArray(product) ? product : [product]);
-                items.forEach(item => {
-                    if (item.warnings) allWarnings.push(...item.warnings);
-                });
-            });
-            const hasWarnings = allWarnings.length > 0;
-            
             return `
-                <div class="order-card ${newOrderIds.has(order.id) ? 'new-order' : ''} ${isPacked ? 'packed' : ''} ${isSelected ? 'selected' : ''} ${hasWarnings ? 'has-warnings' : ''}" data-country="${order.country}" data-order-id="${order.id}">
-                    ${hasWarnings ? `<div class="order-warning-banner">⚠️ OPOZORILO: ${allWarnings.length} težav — preverite ročno!</div>` : ''}
+                <div class="order-card ${newOrderIds.has(order.id) ? 'new-order' : ''} ${isPacked ? 'packed' : ''} ${isSelected ? 'selected' : ''}" data-country="${order.country}" data-order-id="${order.id}">
                     ${!isPacked ? `<input type="checkbox" class="order-select no-print" data-order-id="${order.id}" ${isSelected ? 'checked' : ''} onclick="toggleOrderSelect('${order.id}')">` : ''}
                     <div class="order-header">
                         <div>
@@ -739,70 +656,19 @@
                             });
                             const label = product.label || '';
                             return (label ? `<li class="product-label">${label}</li>` : '') +
-                                grouped.map(item => {
-                                    const hasWarning = item.warnings && item.warnings.length > 0;
-                                    return `
-                                <li class="item ${hasWarning ? 'item-warning' : ''}">
+                                grouped.map(item => `
+                                <li class="item">
                                     <input type="checkbox" class="item-checkbox">
                                     ${item.color ? `<div class="item-color" style="background: ${colorHex[item.color] || item.colorHex || '#ccc'}; ${item.color === 'Bela' ? 'border-color: #ccc;' : ''}"></div>` : ''}
                                     <span class="item-name">${item.count > 1 ? item.count + 'x ' : ''}${item.color ? item.color + ' ' : ''}${item.type}</span>
                                     <span class="item-size">${item.size}</span>
-                                    ${hasWarning ? `<span class="item-warning-badge" title="${item.warnings.join('; ')}">⚠️</span>` : ''}
                                 </li>
-                            `}).join('');
+                            `).join('');
                         }).join('')}
                     </ul>
                 </div>
             `;
         }
-        
-        // ========== CROSS-STATUS WARNING CHECK ==========
-        async function checkAllStatusWarnings() {
-            const statuses = ['Pripravljen za odpremo', 'Odpremljen', 'Novo'];
-            let totalWarnings = 0;
-            let warningDetails = [];
-            
-            for (const status of statuses) {
-                try {
-                    const res = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&date=`);
-                    const data = await res.json();
-                    for (const order of (data.orders || [])) {
-                        let orderHasWarning = false;
-                        for (const p of (order.products || [])) {
-                            for (const item of (p.items || [])) {
-                                if (item.warnings && item.warnings.length > 0) {
-                                    orderHasWarning = true;
-                                    totalWarnings++;
-                                }
-                            }
-                        }
-                        if (orderHasWarning) {
-                            warningDetails.push(`${order.customer} #${order.id} (${status})`);
-                        }
-                    }
-                } catch(e) { console.error('Warning check failed for', status, e); }
-            }
-            
-            // Show/update global alert banner
-            let banner = document.getElementById('global-warning-banner');
-            if (totalWarnings > 0) {
-                if (!banner) {
-                    banner = document.createElement('div');
-                    banner.id = 'global-warning-banner';
-                    banner.style.cssText = 'background:#ef4444; color:#fff; padding:12px 20px; font-size:14px; font-weight:700; text-align:center; cursor:pointer;';
-                    banner.onclick = () => { banner.querySelector('.details').style.display = banner.querySelector('.details').style.display === 'none' ? 'block' : 'none'; };
-                    document.querySelector('.header').after(banner);
-                }
-                banner.innerHTML = `🚨 ${warningDetails.length} naročil z opozorili (vsi statusi) — klikni za podrobnosti <div class="details" style="display:none; font-weight:400; font-size:12px; margin-top:8px; text-align:left;">${warningDetails.map(d => '• ' + d).join('<br>')}</div>`;
-                banner.style.display = '';
-            } else if (banner) {
-                banner.style.display = 'none';
-            }
-        }
-        
-        // Check all statuses on load and every 15 min
-        checkAllStatusWarnings();
-        setInterval(checkAllStatusWarnings, 15 * 60 * 1000);
         
         // ========== INIT ==========
         document.getElementById('filter-today').checked = false;
@@ -844,8 +710,10 @@
             if (!card || card.classList.contains('packed')) return;
             // Don't toggle if clicking button or item-checkbox
             if (e.target.classList.contains('item-checkbox') || e.target.closest('button')) return;
-            // Let checkbox handle itself via its own onclick — don't double-toggle
-            if (e.target.classList.contains('order-select')) return;
+            // Prevent double-toggle from checkbox
+            if (e.target.classList.contains('order-select')) {
+                e.preventDefault();
+            }
             const orderId = card.dataset.orderId;
             if (orderId) toggleOrderSelect(orderId);
         });
