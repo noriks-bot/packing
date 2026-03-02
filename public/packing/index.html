@@ -561,7 +561,7 @@
             const date = document.getElementById('filter-date').value;
             
             try {
-                const response = await fetch(`/launches/api/packing/orders?status=${encodeURIComponent(status)}&date=${date || ''}`);
+                const response = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&date=${date || ''}`);
                 const data = await response.json();
                 
                 if (data.error) {
@@ -764,7 +764,7 @@
             
             for (const status of statuses) {
                 try {
-                    const res = await fetch(`/launches/api/packing/orders?status=${encodeURIComponent(status)}&date=`);
+                    const res = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&date=`);
                     const data = await res.json();
                     for (const order of (data.orders || [])) {
                         let orderHasWarning = false;
