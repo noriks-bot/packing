@@ -3408,6 +3408,9 @@ app.get('/api/packing/orders', async (req, res) => {
                     
                     // Parse doc_desc to get individual items
                     const parsedItems = parseDocDesc(docDesc, code, name);
+                    if (parsedItems.length === 0 || parsedItems.some(i => !i.color || !i.size)) {
+                        console.log(`[Packing DEBUG] Parse issue: code="${code}" name="${name}" docDesc="${docDesc}" amount=${amount} items=${JSON.stringify(parsedItems)}`);
+                    }
                     
                     // Build product label with item count
                     const totalItems = parsedItems.length * amount;
@@ -3426,9 +3429,10 @@ app.get('/api/packing/orders', async (req, res) => {
                             allItems = parsedItems;
                         }
                         // Validate items — flag warnings
-                        const knownSlovenianColors = ['Črna', 'Modra', 'Bela', 'Siva', 'Zelena', 'Rdeča', 'Rjava', 'Bež', 'Roza', 'Oranžna', 'Vijolična', 'Rumena', 'Turkizna', 'Temno modra', 'Svetlo modra', 'Tamnoplava', 'Smeđa', 'Črna & Bela', ''];
+                        const knownSlovenianColors = ['Črna', 'Modra', 'Bela', 'Siva', 'Zelena', 'Rdeča', 'Rjava', 'Bež', 'Roza', 'Oranžna', 'Vijolična', 'Rumena', 'Turkizna', 'Temno modra', 'Svetlo modra', 'Tamnoplava', 'Smeđa', 'Črna & Bela', 'Ni podatka', ''];
                         const knownTypes = ['Majica', 'Boksarice', 'Starter paket', 'Nogavice', ''];
                         for (const item of allItems) {
+                            if (item.noWarning) { delete item.noWarning; continue; }
                             const warnings = [];
                             if (item.color && !knownSlovenianColors.includes(item.color)) {
                                 warnings.push(`Neprevedena barva: "${item.color}"`);
@@ -3903,6 +3907,35 @@ function parseDocDesc(docDesc, productCode, productName) {
         return bundleFn(bundleSize);
     }
     
+    // Name-based bundle matching (when code doesn't match known bundles)
+    // Maps translated product names from Metakocka → bundle SKU
+    const nameToBundleMap = {
+        'svakodnevni 6-paket': 'NORIKS-CITY-COMBO-6-PACK',
+        'everyday 6-pack': 'NORIKS-CITY-COMBO-6-PACK',
+        'pacchetto giornaliero 6': 'NORIKS-CITY-COMBO-6-PACK',
+        'mindennapi 6-os csomag': 'NORIKS-CITY-COMBO-6-PACK',
+        'každodenní balení 6': 'NORIKS-CITY-COMBO-6-PACK',
+        'codzienny 6-pak': 'NORIKS-CITY-COMBO-6-PACK',
+        'καθημερινό πακέτο 6': 'NORIKS-CITY-COMBO-6-PACK',
+        'ponoćni mix 3-paket': 'NORIKS-MIDNIGHT-3-PACK',
+        'midnight 3-pack': 'NORIKS-MIDNIGHT-3-PACK',
+        'urbano-zemljani 3-paket': 'NORIKS-URBAN-3-PACK',
+        'urban 3-pack': 'NORIKS-URBAN-3-PACK',
+        'monokromni 3-paket': 'NORIKS-MONOCHROME-3-PACK',
+        'monochrome 3-pack': 'NORIKS-MONOCHROME-3-PACK',
+        'obalni 3-paket': 'NORIKS-COASTAL-3-PACK',
+        'coastal 3-pack': 'NORIKS-COASTAL-3-PACK',
+    };
+    const nameKey = (productName || '').toLowerCase().replace(/\s*-\s*[smlx0-9]+$/i, '').trim();
+    for (const [pattern, bundleSku] of Object.entries(nameToBundleMap)) {
+        if (nameKey.includes(pattern)) {
+            const fn = bundleContents[bundleSku];
+            if (fn && bundleSize) {
+                return fn(bundleSize);
+            }
+        }
+    }
+    
     // Handle single product codes (e.g., NORIKS-ONE-DARKBLUE-4XL)
     const singleProductColors = {
         'ONE-DARKBLUE': 'Temno modra', 'ONE-BLACK': 'Črna', 'ONE-WHITE': 'Bela',
@@ -4050,6 +4083,11 @@ function parseDocDesc(docDesc, productCode, productName) {
         if (bundleSize) {
             return [{ type: productType || productName, color: '', size: bundleSize }];
         }
+    }
+    
+    // ORTO products without doc_desc — no data available, skip validation
+    if (code.includes('ORTO') && !docDesc) {
+        return [{ type: productType || 'Majica', color: 'Ni podatka', size: bundleSize || 'Ni podatka', noWarning: true }];
     }
     
     return [];
