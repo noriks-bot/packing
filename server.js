@@ -3375,7 +3375,8 @@ app.get('/api/packing/orders', async (req, res) => {
             const country = partner.country || '';
             
             // Parse products
-            const items = (order.product_list || [])
+            const rawProducts = order.product_list || [];
+            const items = rawProducts
                 .filter(p => {
                     // Filter out shipping/delivery products
                     const code = (p.code || '').toLowerCase();
@@ -3390,20 +3391,29 @@ app.get('/api/packing/orders', async (req, res) => {
                         'doručenie', 'dorucenie', 'dostava', 'pošta', 'posta', 
                         'gls', 'dpd', 'shipping', 'dobierka', 'dobírka', 'dobirka',
                         'poplatek', 'poplatok', 'standard', 'štandard', 'standart',
-                        'express', 'balík', 'balik', 'paket24', 'dní', 'dni', 'dana',
+                        'express', 'balík', 'balik', 'paket24',
                         'kurýr', 'kuryr', 'kurier'
                     ];
+                    // Additional exact-word shipping patterns (avoid substring false positives like "midnight" containing "dni")
+                    const shippingWordPatterns = [/\bdní\b/, /\bdni\b/, /\bdana\b/];
                     
                     for (const kw of shippingKeywords) {
-                        if (code.includes(kw) || name.includes(kw)) return false;
+                        if (code.includes(kw) || name.includes(kw)) {
+                            return false;
+                        }
                     }
-                    
+                    for (const pattern of shippingWordPatterns) {
+                        if (pattern.test(code) || pattern.test(name)) {
+                            return false;
+                        }
+                    }
                     return true;
                 })
                 .map(product => {
                     const docDesc = product.doc_desc || '';
                     const code = product.code || '';
-                    const name = product.name || '';
+                    const nameOriginal = product.name || '';
+                    const name = getSlovenianName(code, nameOriginal);
                     const amount = parseInt(product.amount) || 1;
                     
                     // Parse doc_desc to get individual items
@@ -3512,6 +3522,89 @@ app.get('/api/packing/orders', async (req, res) => {
 });
 
 // Bundle definitions - what's inside each known bundle type
+// SKU to Slovenian product name mapping - for packing display
+function getSlovenianName(code, originalName) {
+    const baseCode = (code || '').replace(/-((?:\d*X*)?[SMLX]{1,3}L?)$/, '');
+    const nameMap = {
+        'NORIKS-MIDNIGHT-3-PACK': 'Ponoćni mix – 3-paket',
+        'NORIKS-URBAN-3-PACK': 'Urbano-zemljani – 3-paket',
+        'NORIKS-MONOCHROME-3-PACK': 'Monokromni – 3-paket',
+        'NORIKS-COASTAL-3-PACK': 'Obalni – 3-paket',
+        'NORIKS-ALL-BLACK-3-PACK': 'Črne majice – 3-paket',
+        'NORIKS-ALL-BLACK-6-PACK': 'Črne majice – 6-paket',
+        'NORIKS-ALL-BLACK-9-PACK': 'Črne majice – 9-paket',
+        'NORIKS-ALL-BLACK-9-PACK-2': 'Monokromni mix – 9-paket',
+        'NORIKS-ALL-BLACK-12-PACK': 'Črne majice – 12-paket',
+        'NORIKS-ALL-BLACK-15-PACK': 'Črne majice – 15-paket',
+        'NORIKS-ALL-WHITE-3-PACK': 'Bele majice – 3-paket',
+        'NORIKS-ALL-WHITE-6-PACK': 'Bele majice – 6-paket',
+        'NORIKS-ALL-WHITE-9-PACK': 'Bele majice – 9-paket',
+        'NORIKS-ALL-WHITE-12-PACK': 'Bele majice – 12-paket',
+        'NORIKS-ALL-WHITE-15-PACK': 'Bele majice – 15-paket',
+        'NORIKS-CITY-COMBO-6-PACK': 'Mestni combo – 6-paket',
+        'NORIKS-EARTH-TONES-6-PACK': 'Zemljani toni – 6-paket',
+        'NORIKS-EVERYDAY-6-PACK': 'Vsakdanji mix – 6-paket',
+        'NORIKS-MONOCHROME-6-PACK': 'Monokromni mix – 6-paket',
+        'NORIKS-MONOCHROME-9-PACK': 'Monokromni majice – 9-paket',
+        'NORIKS-FULL-SPECTRUM-9-PACK': 'Poln spekter – 9-paket',
+        'NORIKS-NEUTRAL-MIX-9-PACK': 'Nevtralni mix – 9-paket',
+        'NORIKS-STREET-PACK-9-PACK': 'Ulični paket – 9-paket',
+        'NORIKS-FULL-BASICS-12-PACK': 'Osnovni – 12-paket',
+        'NORIKS-MONOCHROME-DOZEN': 'Monokromni mix – 12-paket',
+        'NORIKS-EARTH-DOZEN': 'Zemljani toni – 12-paket',
+        'NORIKS-EVERYDAY-MIX-12-PACK': 'Vsakdanji mix – 12-paket',
+        'NORIKS-FULL-BASICS-15-PACK': 'Osnovni – 15-paket',
+        'NORIKS-BOX-BLACK-3-PACK': 'Črne boksarice – 3-paket',
+        'NORIKS-BOX-BLACK-5-PACK': 'Črne boksarice – 5-paket',
+        'NORIKS-BOX-BLACK-7-PACK': 'Črne boksarice – 7-paket',
+        'NORIKS-BOX-BLACK-10-PACK': 'Črne boksarice – 10-paket',
+        'NORIKS-BOX-BLACK-15-PACK': 'Črne boksarice – 15-paket',
+        'NORIKS-BOX-BUNDLE-3-FIRST': 'Monokromni boksarice – 3-paket',
+        'NORIKS-BOX-BUNDLE-3-SECOND': 'Urbano-zemljani boksarice – 3-paket',
+        'NORIKS-BOX-BUNDLE-3-THIRD': 'Ponoćni mix boksarice – 3-paket',
+        'NORIKS-BOX-BUNDLE-7-FIRST': 'Urbano-zemljani boksarice – 7-paket',
+        'NORIKS-BOX-BUNDLE-7-SECOND': 'Ponoćni mix boksarice – 7-paket',
+        'NORIKS-BOX-BUNDLE-10-FIRST': 'Mix barv boksarice – 10-paket',
+        'NORIKS-BOX-BUNDLE-10-SECOND': 'Temni mix boksarice – 10-paket',
+        'NORIKS-BOX-BUNDLE-15-FIRST': 'Mix barv boksarice – 15-paket',
+        'NORIKS-BOX-BUNDLE-15-SECOND': 'Temni mix boksarice – 15-paket',
+        'NORIKS-BOXERS-BLACK': 'Črne boksarice',
+        'NORIKS-BOXERS-GRAY': 'Sive boksarice',
+        'NORIKS-BOXERS-RED': 'Rdeče boksarice',
+        'NORIKS-BOXERS-BLUE': 'Modre boksarice',
+        'NORIKS-BOXERS-GREEN': 'Zelene boksarice',
+        'NORIKS-ONE-BLACK': 'Črna majica',
+        'NORIKS-ONE-WHITE': 'Bela majica',
+        'NORIKS-ONE-GRAY': 'Siva majica',
+        'NORIKS-ONE-DARKBLUE': 'Temno modra majica',
+        'NORIKS-ONE-GREEN': 'Zelena majica',
+        'NORIKS-ONE-BEIGE': 'Bež majica',
+        'NORIKS-ONE-BROWN': 'Rjava majica',
+        'NORIKS-BOXERS-ORTO': 'AirFlow Modal boksarice',
+        'NORIKS-SHIRTS-ORTO': 'Majica',
+        'NORIKS-STARTER-ORTO': 'Starter set',
+        'NORIKS-SOCKS-BLACK-5PC': 'Črne nogavice (5 parov)',
+        'NORIKS-SOCKS-BLACK-10PC': 'Črne nogavice (10 parov)',
+        'NORIKS-SOCKS-BLACK-15PC': 'Črne nogavice (15 parov)',
+        'NORIKS-SOCKS-WHITE-5PC': 'Bele nogavice (5 parov)',
+        'NORIKS-SOCKS-WHITE-10PC': 'Bele nogavice (10 parov)',
+        'NORIKS-SOCKS-WHITE-15PC': 'Bele nogavice (15 parov)',
+        'NORIKS-SOCKS-BW-10PC': 'Nogavice črno-bele (10 parov)',
+    };
+    // Try exact code, then base code (without size suffix), then bundle patterns
+    if (nameMap[code]) return nameMap[code];
+    if (nameMap[baseCode]) return nameMap[baseCode];
+    // Try matching bundle codes with variant suffix (e.g. NORIKS-BUNDLE-SHIRTS-BOX-P-1)
+    if (code.includes('BUNDLE-SHIRTS-BOX') || code.includes('BUNDLE-SH-BOX')) {
+        const is4_10 = code.includes('4-10');
+        const is5_5 = code.includes('5-5');
+        if (is4_10) return 'Starter paket – 4 majice + 10 boksaric';
+        if (is5_5) return 'Starter paket – 5 majic + 5 boksaric';
+        return 'Starter paket – 2 majici + 5 boksaric';
+    }
+    return originalName;
+}
+
 const bundleContents = {
     // Black boxer packs
     'NORIKS-BOX-BLACK-3-PACK': (size) => [
@@ -3910,6 +4003,7 @@ function parseDocDesc(docDesc, productCode, productName) {
     // Name-based bundle matching (when code doesn't match known bundles)
     // Maps translated product names from Metakocka → bundle SKU
     const nameToBundleMap = {
+        // CITY COMBO 6-PACK (all languages)
         'svakodnevni 6-paket': 'NORIKS-CITY-COMBO-6-PACK',
         'everyday 6-pack': 'NORIKS-CITY-COMBO-6-PACK',
         'pacchetto giornaliero 6': 'NORIKS-CITY-COMBO-6-PACK',
@@ -3917,14 +4011,48 @@ function parseDocDesc(docDesc, productCode, productName) {
         'každodenní balení 6': 'NORIKS-CITY-COMBO-6-PACK',
         'codzienny 6-pak': 'NORIKS-CITY-COMBO-6-PACK',
         'καθημερινό πακέτο 6': 'NORIKS-CITY-COMBO-6-PACK',
+        'αστικό μιξ': 'NORIKS-CITY-COMBO-6-PACK',
+        'gradski miks': 'NORIKS-CITY-COMBO-6-PACK',
+        'městský mix': 'NORIKS-CITY-COMBO-6-PACK',
+        'miejski mix': 'NORIKS-CITY-COMBO-6-PACK',
+        'városi mix': 'NORIKS-CITY-COMBO-6-PACK',
+        'mix urbano': 'NORIKS-CITY-COMBO-6-PACK',
+        // MIDNIGHT 3-PACK (all languages)
         'ponoćni mix 3-paket': 'NORIKS-MIDNIGHT-3-PACK',
         'midnight 3-pack': 'NORIKS-MIDNIGHT-3-PACK',
+        'μεσονύκτιο μιξ': 'NORIKS-MIDNIGHT-3-PACK',
+        'ponoćni miks': 'NORIKS-MIDNIGHT-3-PACK',
+        'mix mezzanotte': 'NORIKS-MIDNIGHT-3-PACK',
+        'éjféli mix': 'NORIKS-MIDNIGHT-3-PACK',
+        'půlnoční mix': 'NORIKS-MIDNIGHT-3-PACK',
+        'północny mix': 'NORIKS-MIDNIGHT-3-PACK',
+        // URBAN 3-PACK (all languages)
         'urbano-zemljani 3-paket': 'NORIKS-URBAN-3-PACK',
         'urban 3-pack': 'NORIKS-URBAN-3-PACK',
+        'αστικό-γήινο': 'NORIKS-URBAN-3-PACK',
+        'urbano-zemaljski': 'NORIKS-URBAN-3-PACK',
+        'urbano-terroso': 'NORIKS-URBAN-3-PACK',
+        'városi-földes': 'NORIKS-URBAN-3-PACK',
+        'městsko-zemitý': 'NORIKS-URBAN-3-PACK',
+        'miejsko-ziemisty': 'NORIKS-URBAN-3-PACK',
+        // MONOCHROME 3-PACK (all languages)
         'monokromni 3-paket': 'NORIKS-MONOCHROME-3-PACK',
         'monochrome 3-pack': 'NORIKS-MONOCHROME-3-PACK',
+        'μονόχρωμο': 'NORIKS-MONOCHROME-3-PACK',
+        'monokromatski': 'NORIKS-MONOCHROME-3-PACK',
+        'monocromatico': 'NORIKS-MONOCHROME-3-PACK',
+        'monokróm': 'NORIKS-MONOCHROME-3-PACK',
+        'monochromatický': 'NORIKS-MONOCHROME-3-PACK',
+        'monochromatyczny': 'NORIKS-MONOCHROME-3-PACK',
+        // COASTAL 3-PACK (all languages)
         'obalni 3-paket': 'NORIKS-COASTAL-3-PACK',
         'coastal 3-pack': 'NORIKS-COASTAL-3-PACK',
+        'παραλιακό': 'NORIKS-COASTAL-3-PACK',
+        'obalni miks': 'NORIKS-COASTAL-3-PACK',
+        'costiero': 'NORIKS-COASTAL-3-PACK',
+        'tengerparti': 'NORIKS-COASTAL-3-PACK',
+        'pobřežní': 'NORIKS-COASTAL-3-PACK',
+        'przybrzeżny': 'NORIKS-COASTAL-3-PACK',
     };
     const nameKey = (productName || '').toLowerCase().replace(/\s*-\s*[smlx0-9]+$/i, '').trim();
     for (const [pattern, bundleSku] of Object.entries(nameToBundleMap)) {
