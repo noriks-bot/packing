@@ -3984,7 +3984,7 @@ function parseDocDesc(docDesc, productCode, productName) {
     // Extract size from doc_desc or product code
     let bundleSize = '';
     if (docDesc) {
-        const sizeMatch = docDesc.match(/(?:velicina|rozmiar|size|méret|velikost|megethos|velicina-majice|velicina-bokseric|megethos-mployzakia|megethos-mpoxer|meret|rozmer)\s*:\s*(\S+)/i);
+        const sizeMatch = docDesc.match(/(?:velicina|velkost|rozmiar|size|méret|velikost|megethos|velicina-majice|velicina-bokseric|velkost-tricka|velkost-boxerek|megethos-mployzakia|megethos-mpoxer|meret|rozmer)\s*:\s*(\S+)/i);
         if (sizeMatch) bundleSize = sizeMatch[1].toUpperCase();
     }
     if (!bundleSize) {
@@ -4103,8 +4103,8 @@ function parseDocDesc(docDesc, productCode, productName) {
         const items = [];
         if (docDesc) {
             // Match various language patterns for shirt/boxer sizes
-            const shirtSize = docDesc.match(/(?:velicina-majice|megethos-mployzakia|rozmiar-koszulki|meret-polo)\s*:\s*(\S+)/i);
-            const boxerSize = docDesc.match(/(?:velicina-bokseric|megethos-mpoxer|rozmiar-bokserki|meret-boxer)\s*:\s*(\S+)/i);
+            const shirtSize = docDesc.match(/(?:velicina-majice|velkost-tricka|megethos-mployzakia|rozmiar-koszulki|meret-polo|rozmer-tricka)\s*:\s*(\S+)/i);
+            const boxerSize = docDesc.match(/(?:velicina-bokseric|velkost-boxerek|megethos-mpoxer|rozmiar-bokserki|meret-boxer|rozmer-boxerek)\s*:\s*(\S+)/i);
             const sSize = shirtSize ? shirtSize[1].toUpperCase() : bundleSize;
             const bSize = boxerSize ? boxerSize[1].toUpperCase() : bundleSize;
             
@@ -4209,6 +4209,22 @@ function parseDocDesc(docDesc, productCode, productName) {
         
         // Simpler format: just size
         if (bundleSize) {
+            // Check if product name/code indicates a multi-pack (e.g., "10-paket", "5-pack", "3-paket")
+            const packMatch = (productName + ' ' + productCode).match(/(\d+)\s*[-–]?\s*(?:paket|pack|csomag|balen[ií]|pak|πακέτο|pacchetto|sada)/i);
+            if (packMatch) {
+                const packCount = parseInt(packMatch[1]);
+                if (packCount > 1 && packCount <= 30) {
+                    // Try to extract color from product name (e.g., "Crne bokserice 10-paket" → "crne" → "Črna")
+                    const firstWord = (productName || '').split(/\s+/)[0] || '';
+                    const colorFromName = translateColorServer(firstWord.toLowerCase());
+                    const color = (colorFromName && colorFromName !== firstWord) ? colorFromName : '';
+                    const items = [];
+                    for (let i = 0; i < packCount; i++) {
+                        items.push({ type: productType || productName, color, size: bundleSize });
+                    }
+                    return items;
+                }
+            }
             return [{ type: productType || productName, color: '', size: bundleSize }];
         }
     }
