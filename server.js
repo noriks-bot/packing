@@ -3310,6 +3310,162 @@ app.post('/api/finance/fixed-costs', (req, res) => {
 // ============ PACKING API ============
 // Uses existing METAKOCKA_COMPANY_ID and METAKOCKA_SECRET from line ~2774
 
+// WooCommerce enrichment for ORTO orders missing doc_desc
+// Fetches meta_data from WC to get actual color/size info
+async function enrichOrtoOrdersFromWC(orders) {
+    // Find orders that have ORTO products with "Ni podatka"
+    const ordersToEnrich = orders.filter(o => {
+        if (!o._wcRef || !o._eshop) return false;
+        // Check if any product has ORTO code without doc_desc
+        const hasOrtoMissing = (o._rawProducts || []).some(p => {
+            const code = (p.code || '').toUpperCase();
+            return code.includes('ORTO') && !p.doc_desc;
+        });
+        return hasOrtoMissing;
+    });
+    
+    if (ordersToEnrich.length === 0) return;
+    console.log(`[Packing] Enriching ${ordersToEnrich.length} ORTO orders from WooCommerce`);
+    
+    // Map eshop_name to store key (e.g. "noriks.com/hr" → "hr")
+    function getStoreKey(eshopName) {
+        const match = (eshopName || '').match(/noriks\.com\/(\w+)/);
+        return match ? match[1] : null;
+    }
+    
+    // Parse WC order ID from title (e.g. "NORIKS-HR-5779" → 5779)
+    function getWcOrderId(wcRef) {
+        const match = (wcRef || '').match(/(\d+)$/);
+        return match ? match[1] : null;
+    }
+    
+    // Color translation for WC meta values (Croatian and other languages)
+    const wcColorMap = {
+        'crna': 'Črna', 'crno': 'Črna', 'černá': 'Črna', 'czarna': 'Črna', 'fekete': 'Črna', 'nero': 'Črna', 'μαύρο': 'Črna', 'black': 'Črna',
+        'bijela': 'Bela', 'bela': 'Bela', 'biela': 'Bela', 'biała': 'Bela', 'fehér': 'Bela', 'bianco': 'Bela', 'λευκό': 'Bela', 'white': 'Bela',
+        'siva': 'Siva', 'šedá': 'Siva', 'szürke': 'Siva', 'szara': 'Siva', 'grigio': 'Siva', 'γκρι': 'Siva', 'grey': 'Siva', 'gray': 'Siva',
+        'zelena': 'Zelena', 'zelená': 'Zelena', 'zielona': 'Zelena', 'zöld': 'Zelena', 'verde': 'Zelena', 'πράσινο': 'Zelena', 'green': 'Zelena',
+        'modra': 'Modra', 'modrá': 'Modra', 'niebieska': 'Modra', 'kék': 'Modra', 'blu': 'Modra', 'μπλε': 'Modra', 'blue': 'Modra',
+        'rdeča': 'Rdeča', 'crvena': 'Rdeča', 'červená': 'Rdeča', 'czerwona': 'Rdeča', 'piros': 'Rdeča', 'rosso': 'Rdeča', 'κόκκινο': 'Rdeča', 'red': 'Rdeča',
+        'rjava': 'Rjava', 'smeđa': 'Rjava', 'hnědá': 'Rjava', 'brązowa': 'Rjava', 'barna': 'Rjava', 'marrone': 'Rjava', 'καφέ': 'Rjava', 'brown': 'Rjava',
+        'bež': 'Bež', 'bežová': 'Bež', 'beżowa': 'Bež', 'bézs': 'Bež', 'beige': 'Bež', 'μπεζ': 'Bež',
+        'tamno modra': 'Temno modra', 'tamnoplava': 'Temno modra', 'tamno plava': 'Temno modra', 'dark blue': 'Temno modra', 'σκούρο μπλε': 'Temno modra',
+        'roza': 'Roza', 'pink': 'Roza', 'ροζ': 'Roza',
+    };
+    
+    // Type translation for WC meta values
+    const wcTypeMap = {
+        'majica': 'Majica', 'tričko': 'Majica', 'koszulka': 'Majica', 'póló': 'Majica', 'maglietta': 'Majica', 'μπλούζα': 'Majica', 'shirt': 'Majica', 't-shirt': 'Majica',
+        'bokserica': 'Boksarice', 'boksarice': 'Boksarice', 'boxerky': 'Boksarice', 'bokserki': 'Boksarice', 'boxer': 'Boksarice', 'μπόξερ': 'Boksarice',
+        'nogavice': 'Nogavice', 'ponožky': 'Nogavice', 'skarpetki': 'Nogavice', 'zokni': 'Nogavice', 'calzini': 'Nogavice', 'κάλτσες': 'Nogavice',
+    };
+    
+    function translateWcColor(raw) {
+        const lower = (raw || '').trim().toLowerCase();
+        return wcColorMap[lower] || raw.trim();
+    }
+    
+    function translateWcType(raw) {
+        const lower = (raw || '').trim().toLowerCase().replace(/\s*\d+$/, ''); // remove trailing number like "Μπλούζα 1"
+        return wcTypeMap[lower] || raw.trim();
+    }
+    
+    // Parse WC meta value like "Majica: Zelena - 2XL" or "Bokserica: Crna - 2XL"
+    function parseWcMetaValue(value) {
+        // Pattern: "Type: Color - Size" 
+        const match = (value || '').match(/^([^:]+):\s*([^-]+)\s*-\s*(\S+)$/);
+        if (match) {
+            return {
+                type: translateWcType(match[1]),
+                color: translateWcColor(match[2]),
+                size: match[3].trim().toUpperCase()
+            };
+        }
+        return null;
+    }
+    
+    // Fetch and enrich in parallel
+    const enrichPromises = ordersToEnrich.map(async (order) => {
+        const storeKey = getStoreKey(order._eshop);
+        const wcOrderId = getWcOrderId(order._wcRef);
+        if (!storeKey || !wcOrderId || !wcStores[storeKey]) {
+            console.log(`[Packing WC] Cannot enrich order ${order.id}: store=${storeKey} wcId=${wcOrderId}`);
+            return;
+        }
+        
+        const store = wcStores[storeKey];
+        try {
+            const wcRes = await fetch(`${store.url}/wp-json/wc/v3/orders/${wcOrderId}?consumer_key=${store.ck}&consumer_secret=${store.cs}`);
+            if (!wcRes.ok) {
+                console.log(`[Packing WC] Failed to fetch WC order ${wcOrderId} from ${storeKey}: ${wcRes.status}`);
+                return;
+            }
+            const wcOrder = await wcRes.json();
+            
+            // Update total from WC if missing
+            if (!order.total || order.total === '0' || order.total === '0.00') {
+                order.total = wcOrder.total || order.total;
+            }
+            
+            // Parse WC line items for product details
+            const wcItems = [];
+            for (const lineItem of (wcOrder.line_items || [])) {
+                const sku = (lineItem.sku || '').toUpperCase();
+                const metaData = lineItem.meta_data || [];
+                
+                // Strategy 1: ORTO products — parse numeric meta keys ("1": "Majica: Zelena - 2XL")
+                if (sku.includes('ORTO')) {
+                    for (const meta of metaData) {
+                        if (!/^\d+$/.test(meta.key)) continue;
+                        const parsed = parseWcMetaValue(meta.value);
+                        if (parsed) wcItems.push(parsed);
+                    }
+                    continue;
+                }
+                
+                // Strategy 2: Bundle products — reconstruct doc_desc from meta and run through parseDocDesc
+                // Build a doc_desc string from WC meta (e.g. "velicina-majice: L velicina-bokseric: XL")
+                const descParts = metaData
+                    .filter(m => !m.key.startsWith('_'))
+                    .map(m => `${m.key} : ${m.value}`);
+                const syntheticDocDesc = descParts.join(' ');
+                if (syntheticDocDesc) {
+                    const parsedBundle = parseDocDesc(syntheticDocDesc, sku, lineItem.name || '');
+                    if (parsedBundle.length > 0 && !parsedBundle.every(i => i.color === 'Ni podatka')) {
+                        wcItems.push(...parsedBundle);
+                    }
+                }
+            }
+            
+            if (wcItems.length === 0) {
+                console.log(`[Packing WC] No items parsed from WC order ${wcOrderId}`);
+                return;
+            }
+            
+            console.log(`[Packing WC] Enriched order ${order.id} with ${wcItems.length} items from WC ${storeKey}/${wcOrderId}`);
+            
+            // Replace "Ni podatka" items in order products
+            for (const product of order.products) {
+                if (!product.items) continue;
+                const hasNiPodatka = product.items.some(i => i.color === 'Ni podatka' || i.size === 'Ni podatka');
+                if (!hasNiPodatka) continue;
+                
+                // Replace with WC data
+                product.items = wcItems.map(item => ({ ...item, noWarning: true }));
+                // Update label
+                product.label = product.label.replace(/\(\d+ kos\)/, `(${wcItems.length} kos)`);
+            }
+            // Update flat items too
+            order.items = order.products.map(p => p.items || p);
+            
+        } catch (e) {
+            console.error(`[Packing WC] Error enriching order ${order.id}:`, e.message);
+        }
+    });
+    
+    await Promise.all(enrichPromises);
+}
+
 // Get packing orders from Metakocka
 app.get('/api/packing/orders', async (req, res) => {
     const { status = 'Odpremljen', date, limit = 100 } = req.query;
@@ -3509,9 +3665,18 @@ app.get('/api/packing/orders', async (req, res) => {
                 currency: order.currency_code || 'EUR',
                 total: order.sum_all || '0',
                 products: items, // [{label, items: [...]}]
-                items: items.map(p => p.items || p) // flat for backward compat
+                items: items.map(p => p.items || p), // flat for backward compat
+                _wcRef: order.title || '', // e.g. "NORIKS-HR-5779" for WC lookup
+                _eshop: order.eshop_name || '', // e.g. "noriks.com/hr"
+                _rawProducts: rawProducts // keep raw for enrichment check
             };
         });
+        
+        // === WooCommerce enrichment for ORTO orders missing doc_desc ===
+        await enrichOrtoOrdersFromWC(orders);
+        
+        // Clean up internal fields before sending
+        for (const o of orders) { delete o._wcRef; delete o._eshop; delete o._rawProducts; }
         
         res.json({ orders, count: orders.length });
         
@@ -4229,9 +4394,9 @@ function parseDocDesc(docDesc, productCode, productName) {
         }
     }
     
-    // ORTO products without doc_desc — no data available, skip validation
+    // ORTO products without doc_desc — flag as missing data (shows red)
     if (code.includes('ORTO') && !docDesc) {
-        return [{ type: productType || 'Majica', color: 'Ni podatka', size: bundleSize || 'Ni podatka', noWarning: true }];
+        return [{ type: productType || 'Majica', color: 'Ni podatka', size: bundleSize || 'Ni podatka' }];
     }
     
     return [];
