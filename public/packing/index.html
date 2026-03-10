@@ -250,10 +250,6 @@
     <div class="container">
         <div class="filters no-print">
             <label>
-                Datum:
-                <input type="date" id="filter-date" onchange="refreshOrders()">
-            </label>
-            <label>
                 Status:
                 <select id="filter-status" onchange="refreshOrders()">
                     <option value="Odpremljen" selected>Odpremljen</option>
@@ -279,10 +275,6 @@
                 <button class="country-btn" data-sort="id-asc" onclick="setSort('id-asc', this)">#↑</button>
                 <button class="country-btn" data-sort="id-desc" onclick="setSort('id-desc', this)">#↓</button>
             </div>
-            <label>
-                <input type="checkbox" id="filter-today" checked onchange="toggleDateFilter()">
-                Samo danes
-            </label>
         </div>
         
         <div id="orders-container" style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -562,16 +554,6 @@
         }
         
         // ========== DATA FETCHING ==========
-        function toggleDateFilter() {
-            const checkbox = document.getElementById('filter-today');
-            const dateInput = document.getElementById('filter-date');
-            if (checkbox.checked) {
-                dateInput.value = new Date().toISOString().split('T')[0];
-                dateInput.disabled = true;
-            } else {
-                dateInput.disabled = false;
-            }
-            refreshOrders();
         }
         
         async function refreshOrders() {
@@ -579,10 +561,9 @@
             container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Nalagam naročila...</p></div>';
             
             const status = document.getElementById('filter-status').value;
-            const date = document.getElementById('filter-date').value;
             
             try {
-                const response = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&date=${date || ''}`);
+                const response = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}`);
                 const data = await response.json();
                 
                 if (data.error) {
@@ -785,7 +766,7 @@
             
             for (const status of statuses) {
                 try {
-                    const res = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&date=`);
+                    const res = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}`);
                     const data = await res.json();
                     for (const order of (data.orders || [])) {
                         let orderHasWarning = false;
@@ -826,9 +807,6 @@
         setInterval(checkAllStatusWarnings, 15 * 60 * 1000);
         
         // ========== INIT ==========
-        document.getElementById('filter-today').checked = false;
-        document.getElementById('filter-date').value = '';
-        document.getElementById('filter-date').disabled = false;
         refreshOrders();
         
         setInterval(refreshOrders, 15 * 60 * 1000);

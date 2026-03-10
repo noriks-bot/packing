@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -27,6 +28,7 @@ const upload = multer({
 });
 
 const app = express();
+app.use(compression());
 const PORT = 3006;
 const DATA_FILE = path.join(__dirname, 'data.json');
 const QUEUE_FILE = path.join(__dirname, 'queue.json');
