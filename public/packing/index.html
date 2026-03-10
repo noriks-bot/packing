@@ -302,41 +302,62 @@
     </div>
 
     <script>
-        // ========== PACKED ORDERS (localStorage) ==========
-        // Format: { orderId: { packedAt: ISO string, customer: string } }
-        let packedOrders = JSON.parse(localStorage.getItem('packing-packed') || '{}');
+        // ========== PACKED ORDERS (server API) ==========
+        let packedOrders = {};
         let showPacked = false;
         let selectedOrderIds = new Set();
         
-        function savePackedOrders() {
-            localStorage.setItem('packing-packed', JSON.stringify(packedOrders));
+        // Load packed orders from server on init
+        async function loadPackedOrders() {
+            try {
+                const res = await fetch('/api/packing/packed-orders');
+                if (res.status === 401) { window.location.href = '/packing/login.html'; return; }
+                packedOrders = await res.json();
+            } catch(e) { console.error('Failed to load packed orders:', e); }
         }
         
         function isOrderPacked(orderId) {
             return !!packedOrders[orderId];
         }
         
-        function markAsPacked() {
+        async function markAsPacked() {
             if (selectedOrderIds.size === 0) return;
             const orders = window.allOrders || [];
+            const batch = {};
             selectedOrderIds.forEach(id => {
                 const order = orders.find(o => o.id === id);
-                packedOrders[id] = {
+                batch[id] = {
                     packedAt: new Date().toISOString(),
                     customer: order ? order.customer : ''
                 };
             });
-            savePackedOrders();
+            Object.assign(packedOrders, batch);
             selectedOrderIds.clear();
             updateActionBar();
             filterByCountry();
+            try {
+                const res = await fetch('/api/packing/mark-packed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orders: batch })
+                });
+                if (res.status === 401) window.location.href = '/packing/login.html';
+            } catch(e) { console.error('Failed to save packed:', e); }
         }
         
-        function unpackOrder(orderId) {
+        async function unpackOrder(orderId) {
             delete packedOrders[orderId];
-            savePackedOrders();
             filterByCountry();
+            try {
+                const res = await fetch('/api/packing/unpack', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId })
+                });
+                if (res.status === 401) window.location.href = '/packing/login.html';
+            } catch(e) { console.error('Failed to unpack:', e); }
         }
+        loadPackedOrders();
         
         function toggleShowPacked() {
             showPacked = !showPacked;

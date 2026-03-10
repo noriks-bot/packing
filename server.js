@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const multer = require('multer');
 
 // Configure multer for video uploads
@@ -44,8 +45,116 @@ function saveQueue(queue) {
     fs.writeFileSync(QUEUE_FILE, JSON.stringify(queue, null, 2));
 }
 
+
+// ========== AUTH ==========
+const PACKED_FILE = path.join(__dirname, 'data', 'packed-orders.json');
+const SESSIONS = {};
+const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function loadPackedOrders() {
+    try {
+        const dir = path.dirname(PACKED_FILE);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        if (fs.existsSync(PACKED_FILE)) return JSON.parse(fs.readFileSync(PACKED_FILE, 'utf8'));
+    } catch(e) { console.error('Packed load error:', e); }
+    return {};
+}
+
+function savePackedOrders(data) {
+    const dir = path.dirname(PACKED_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(PACKED_FILE, JSON.stringify(data, null, 2));
+}
+
+let packedOrdersData = loadPackedOrders();
+
+function parseCookies(cookieHeader) {
+    const cookies = {};
+    if (cookieHeader) {
+        cookieHeader.split(';').forEach(c => {
+            const [name, value] = c.split('=').map(s => s.trim());
+            if (name && value) cookies[name] = value;
+        });
+    }
+    return cookies;
+}
+
+function getSession(req) {
+    const cookies = parseCookies(req.headers.cookie);
+    const token = cookies['packing_session'];
+    if (!token || !SESSIONS[token]) return null;
+    if (Date.now() - SESSIONS[token].created > SESSION_MAX_AGE) {
+        delete SESSIONS[token];
+        return null;
+    }
+    return SESSIONS[token];
+}
+
+function requireAuth(req, res, next) {
+    if (req.path === '/api/login' || req.path === '/login.html' || req.path === '/packing/login.html') return next();
+    if (!getSession(req)) {
+        if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
+        return res.redirect('/packing/login.html');
+    }
+    next();
+}
+
 app.use(express.json());
+// Login page served before auth
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+app.get('/packing/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'packing', 'login.html'));
+});
+
+// Login API
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === 'noriks' && password === 'noriks') {
+        const token = crypto.randomBytes(32).toString('hex');
+        SESSIONS[token] = { username, created: Date.now() };
+        res.cookie('packing_session', token, { httpOnly: true, sameSite: 'strict', maxAge: 7*24*60*60*1000 });
+        return res.json({ ok: true });
+    }
+    res.status(401).json({ error: 'Invalid credentials' });
+});
+
+// Logout
+app.post('/api/logout', (req, res) => {
+    const cookies = parseCookies(req.headers.cookie);
+    const token = cookies['packing_session'];
+    if (token) delete SESSIONS[token];
+    res.clearCookie('packing_session');
+    res.json({ ok: true });
+});
+
+// Auth middleware - everything below requires login
+app.use(requireAuth);
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Packed orders API
+app.get('/api/packing/packed-orders', (req, res) => {
+    res.json(packedOrdersData);
+});
+
+app.post('/api/packing/mark-packed', (req, res) => {
+    const { orders } = req.body; // { orderId: { packedAt, customer } }
+    if (!orders || typeof orders !== 'object') return res.status(400).json({ error: 'Missing orders' });
+    Object.assign(packedOrdersData, orders);
+    savePackedOrders(packedOrdersData);
+    res.json({ ok: true });
+});
+
+app.post('/api/packing/unpack', (req, res) => {
+    const { orderId } = req.body;
+    if (!orderId) return res.status(400).json({ error: 'Missing orderId' });
+    delete packedOrdersData[orderId];
+    savePackedOrders(packedOrdersData);
+    res.json({ ok: true });
+});
+
 
 // Image proxy for CORS - fetch external images and serve with proper headers
 app.get('/api/image-proxy', async (req, res) => {
@@ -4423,7 +4532,7 @@ function getProductTypeFromCode(code, name) {
 }
 // WooCommerce store credentials
 const wcStores = {
-    hr: { url: 'https://noriks.com/hr', ck: 'ck_d73881b20fd65125fb071414b8d54af7681549e3', cs: 'cs_e024298df41e4352d90e006d2ec42a5b341c1ce5' },
+    hr: { url: 'https://noriks.com/hr', ck: 'ck_ff08e90a8ff90be9f7fdfe7badfd4fdaa456d86b', cs: 'cs_0c36e01e44e488ae9d8a931b591a4d52584d975f' },
     cz: { url: 'https://noriks.com/cz', ck: 'ck_396d624acec5f7a46dfcfa7d2a74b95c82b38962', cs: 'cs_2a69c7ad4a4d118a2b8abdf44abdd058c9be9115' },
     pl: { url: 'https://noriks.com/pl', ck: 'ck_8fd83582ada887d0e586a04bf870d43634ca8f2c', cs: 'cs_f1bf98e46a3ae0623c5f2f9fcf7c2478240c5115' },
     sk: { url: 'https://noriks.com/sk', ck: 'ck_1abaeb006bb9039da0ad40f00ab674067ff1d978', cs: 'cs_32b33bc2716b07a738ff18eb377a767ef60edfe7' },
