@@ -3607,7 +3607,7 @@ app.get('/api/packing/orders', async (req, res) => {
         
         // Paginate Metakocka API (max 100 per request, fetch up to 500)
         let results = [];
-        const MAX_RESULTS = 500;
+        const MAX_RESULTS = 2000;
         let offset = 0;
         while (offset < MAX_RESULTS) {
             const pageBody = { ...requestBody, limit: 100, offset };
@@ -3627,6 +3627,8 @@ app.get('/api/packing/orders', async (req, res) => {
             const page = data.result || [];
             results = results.concat(page);
             if (page.length < 100) break;
+            // Early exit: if no matching status in this page, stop paginating
+            if (status && !page.some(o => o.status_code === status)) break;
             offset += 100;
         }
         console.log(`[Packing] Fetched ${results.length} orders from Metakocka (${Math.ceil((offset)/100)+1} pages)`);
