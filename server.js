@@ -3586,6 +3586,11 @@ app.get('/api/packing/orders', async (req, res) => {
         
         const queryAdvance = [];
         
+        // Filter by status in Metakocka query (server-side filtering)
+        if (status) {
+            queryAdvance.push({ type: 'status_code', value: status });
+        }
+        
         // Filter by date if provided
         if (date) {
             queryAdvance.push({ type: 'doc_date_from', value: `${date}+02:00` });
