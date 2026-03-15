@@ -3579,7 +3579,7 @@ async function enrichOrtoOrdersFromWC(orders) {
 
 // Get packing orders from Metakocka
 app.get('/api/packing/orders', async (req, res) => {
-    const { status = 'Odpremljen', date, limit = 100 } = req.query;
+    const { status = 'Odpremljen', date, limit = 500 } = req.query;
     
     try {
         console.log(`[Packing] Fetching orders with status: ${status}, date: ${date || 'all'}`);
