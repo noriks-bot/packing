@@ -3605,21 +3605,31 @@ app.get('/api/packing/orders', async (req, res) => {
             requestBody.query_advance = queryAdvance;
         }
         
-        const response = await fetch('https://main.metakocka.si/rest/eshop/v1/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
-        
-        const data = await response.json();
-        
-        if (data.opr_code !== '0') {
-            console.error('[Packing] Metakocka error:', data);
-            return res.status(500).json({ error: 'Metakocka API error', details: data });
+        // Paginate Metakocka API (max 100 per request, fetch up to 500)
+        let results = [];
+        const MAX_RESULTS = 500;
+        let offset = 0;
+        while (offset < MAX_RESULTS) {
+            const pageBody = { ...requestBody, limit: 100, offset };
+            const response = await fetch('https://main.metakocka.si/rest/eshop/v1/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pageBody)
+            });
+            
+            const data = await response.json();
+            
+            if (data.opr_code !== '0') {
+                console.error('[Packing] Metakocka error:', data);
+                return res.status(500).json({ error: 'Metakocka API error', details: data });
+            }
+            
+            const page = data.result || [];
+            results = results.concat(page);
+            if (page.length < 100) break;
+            offset += 100;
         }
-        
-        let results = data.result || [];
-        console.log(`[Packing] Fetched ${results.length} orders from Metakocka`);
+        console.log(`[Packing] Fetched ${results.length} orders from Metakocka (${Math.ceil((offset)/100)+1} pages)`);
         
         // Filter by status locally
         if (status) {
