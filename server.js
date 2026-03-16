@@ -3590,14 +3590,10 @@ app.get('/api/packing/orders', async (req, res) => {
         if (date) {
             queryAdvance.push({ type: 'doc_date_from', value: `${date}+02:00` });
             queryAdvance.push({ type: 'doc_date_to', value: `${date}+02:00` });
-        } else if (status === 'Novo' || !status) {
-            // Default: last 3 days (Novo orders are always recent)
+        } else {
+            // Default: last 3 days
             const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
             queryAdvance.push({ type: 'doc_date_from', value: `${threeDaysAgo}+02:00` });
-        } else {
-            // Odpremljen and other statuses: last 30 days
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            queryAdvance.push({ type: 'doc_date_from', value: `${thirtyDaysAgo}+02:00` });
         }
         
         const requestBody = {
@@ -3615,7 +3611,7 @@ app.get('/api/packing/orders', async (req, res) => {
         
         // Paginate Metakocka API (max 100 per request, fetch up to 500)
         let results = [];
-        const MAX_RESULTS = status === "Novo" ? 500 : 2000;
+        const MAX_RESULTS = 500;
         let offset = 0;
         while (offset < MAX_RESULTS) {
             const pageBody = { ...requestBody, limit: 100, offset };
