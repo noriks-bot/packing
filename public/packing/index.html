@@ -834,7 +834,7 @@
         setInterval(checkAllStatusWarnings, 15 * 60 * 1000);
         
         // ========== INIT ==========
-        loadNotes().then(() => refreshOrders());
+        loadNotes().catch(() => {}).then(() => refreshOrders());
         
         setInterval(refreshOrders, 15 * 60 * 1000);
         
