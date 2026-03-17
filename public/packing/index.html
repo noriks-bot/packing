@@ -276,6 +276,7 @@
                 <button class="country-btn" data-sort="id-asc" onclick="setSort('id-asc', this)">#↑</button>
                 <button class="country-btn" data-sort="id-desc" onclick="setSort('id-desc', this)">#↓</button>
             </div>
+            <input type="text" id="search-name" placeholder="Iskanje po imenu..." oninput="filterByCountry()" style="padding:6px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:180px; margin-left:10px;">
         </div>
         
         <div id="orders-container" style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -591,6 +592,7 @@
             if (selectedCountry) {
                 orders = orders.filter(o => o.country === selectedCountry);
             }
+            const searchTerm = (document.getElementById("search-name").value || "").toLowerCase().trim();            if (searchTerm) {                orders = orders.filter(o => (o.customer || "").toLowerCase().includes(searchTerm));            }
             
             // Split into unpacked and packed
             const unpacked = orders.filter(o => !isOrderPacked(o.id));
