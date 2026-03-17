@@ -210,6 +210,7 @@
         .action-bar .count { font-size: 16px; font-weight: 700; }
         
         /* Print styles */
+        /* Mobile: 1 column */        @media (max-width: 600px) {            #orders-container { grid-template-columns: 1fr !important; }        }
         @media print {
             .header, .filters, .btn, .item-checkbox, .no-print, .action-bar, .order-select { display: none !important; }
             body { background: #fff; font-size: 10px; }
