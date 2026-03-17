@@ -575,7 +575,7 @@
         }
 
         async function refreshOrders() {
-            try { const nr = await fetch(/api/packing/notes); window._packingNotes = await nr.json(); } catch(e) { window._packingNotes = {}; }
+            fetch("/api/packing/notes").then(function(r){return r.json();}).then(function(d){window._packingNotes=d;}).catch(function(){window._packingNotes={};});
             const container = document.getElementById('orders-container');
             container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Nalagam naročila...</p></div>';
             
