@@ -156,6 +156,7 @@ app.post('/api/packing/unpack', (req, res) => {
     savePackedOrders(packedOrdersData);
     res.json({ ok: true });
 });
+// === ORDER NOTES ===const PACKING_NOTES_FILE = path.join(__dirname, "packing-notes.json");let packingNotes = {};try { packingNotes = JSON.parse(fs.readFileSync(PACKING_NOTES_FILE, "utf8")); } catch(e) {}app.get("/api/packing/notes", (req, res) => {    res.json(packingNotes);});app.post("/api/packing/notes", (req, res) => {    const { orderId, note } = req.body;    if (!orderId) return res.status(400).json({ error: "Missing orderId" });    if (note) {        packingNotes[orderId] = { note, updatedAt: new Date().toISOString() };    } else {        delete packingNotes[orderId];    }    try { fs.writeFileSync(PACKING_NOTES_FILE, JSON.stringify(packingNotes, null, 2)); } catch(e) {}    res.json({ ok: true });});
 
 
 // Image proxy for CORS - fetch external images and serve with proper headers

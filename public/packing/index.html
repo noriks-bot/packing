@@ -557,6 +557,7 @@
         
         // ========== DATA FETCHING ==========
         
+        // === ORDER NOTES ===        window.packingNotes = {};        async function loadNotes() {            try {                const res = await fetch("/api/packing/notes");                window.packingNotes = await res.json();            } catch(e) {}        }        async function saveNote(orderId) {            const input = document.querySelector(".order-note-input[data-order-id='" + orderId + "']");            if (!input) return;            const note = input.value.trim();            try {                await fetch("/api/packing/notes", {                    method: "POST",                    headers: { "Content-Type": "application/json" },                    body: JSON.stringify({ orderId, note })                });                window.packingNotes[orderId] = note ? { note } : undefined;                if (!note) delete window.packingNotes[orderId];                input.style.borderColor = "#10b981";                setTimeout(() => input.style.borderColor = "#ddd", 1000);            } catch(e) { alert("Napaka pri shranjevanju"); }        }        loadNotes();
         async function refreshOrders() {
             const container = document.getElementById('orders-container');
             container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Nalagam naročila...</p></div>';
@@ -756,6 +757,7 @@
                             `}).join('');
                         }).join('')}
                     </ul>
+                <div class="no-print" style="margin-top:6px; display:flex; gap:4px;">\n                    <input type="text" class="order-note-input" data-order-id="${order.id}" placeholder="Opomba..." value="${(window.packingNotes && window.packingNotes[order.id] && window.packingNotes[order.id].note) || ''}" style="flex:1; padding:4px 8px; border:1px solid #ddd; border-radius:4px; font-size:12px;">\n                    <button onclick="saveNote('${order.id}')" style="padding:4px 10px; background:#10b981; color:#fff; border:none; border-radius:4px; font-size:11px; cursor:pointer;">💾</button>\n                </div>
                 </div>
             `;
         }
