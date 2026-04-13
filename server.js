@@ -3643,6 +3643,10 @@ app.get('/api/packing/orders', async (req, res) => {
             results = results.filter(o => o.status_code === status);
             console.log(`[Packing] After status filter (${status}): ${results.length} orders`);
         }
+
+        // Filter: only Noriks orders (exclude non-noriks shops like shopdbestshop)
+        results = results.filter(o => (o.eshop_name || '').toLowerCase().includes('noriks'));
+        console.log(`[Packing] After noriks-only filter: ${results.length} orders`);
         
         // Limit to requested amount
         results = results.slice(0, parseInt(limit));
