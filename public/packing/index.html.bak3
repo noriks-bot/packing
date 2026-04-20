@@ -267,8 +267,6 @@
                 <button class="country-btn" data-country="Hungary" onclick="selectCountry(this)">🇭🇺</button>
                 <button class="country-btn" data-country="Greece" onclick="selectCountry(this)">🇬🇷</button>
                 <button class="country-btn" data-country="Italy" onclick="selectCountry(this)">🇮🇹</button>
-                <button class="country-btn" data-country="Slovenia" onclick="selectCountry(this)">🇸🇮</button>
-                <button class="country-btn" data-country="Romania" onclick="selectCountry(this)">🇷🇴</button>
             </div>
             <div class="sort-buttons" style="display:flex; gap:4px; margin-left:10px; flex-wrap:wrap;">
                 <button class="country-btn active" data-sort="newest" onclick="setSort('newest', this)">🕐 Najnovejši</button>
@@ -441,11 +439,11 @@
         }
         
         // ========== EXCHANGE RATES & CONSTANTS ==========
-        const toEurRates = { 'EUR': 1, 'CZK': 0.04, 'PLN': 0.23, 'HUF': 0.0025, 'RON': 0.20 };
-        const currencySymbols = { 'EUR': '€', 'CZK': 'Kč', 'PLN': 'zł', 'HUF': 'Ft', 'RON': 'lei' };
+        const toEurRates = { 'EUR': 1, 'CZK': 0.04, 'PLN': 0.23, 'HUF': 0.0025 };
+        const currencySymbols = { 'EUR': '€', 'CZK': 'Kč', 'PLN': 'zł', 'HUF': 'Ft' };
         const countryFlags = {
             'Croatia': '🇭🇷', 'Czech Republic': '🇨🇿', 'Poland': '🇵🇱',
-            'Slovakia': '🇸🇰', 'Hungary': '🇭🇺', 'Greece': '🇬🇷', 'Italy': '🇮🇹', 'Slovenia': '🇸🇮', 'Romania': '🇷🇴'
+            'Slovakia': '🇸🇰', 'Hungary': '🇭🇺', 'Greece': '🇬🇷', 'Italy': '🇮🇹'
         };
         
         let selectedCountry = '';

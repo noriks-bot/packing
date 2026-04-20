@@ -1,1 +1,2430 @@
-{}
+{
+  "8050/2026": {
+    "packedAt": "2026-04-13T06:05:23.103Z",
+    "customer": "Judit Kissné dr Szabó"
+  },
+  "7992/2026": {
+    "packedAt": "2026-04-13T06:08:02.016Z",
+    "customer": "Zsófia Rétvári"
+  },
+  "8083/2026": {
+    "packedAt": "2026-04-13T06:09:15.520Z",
+    "customer": "Glosz Zoltan"
+  },
+  "7980/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Peter Kiss"
+  },
+  "7981/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Tamás Csaszari"
+  },
+  "8085/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Szilvia Lipták"
+  },
+  "8084/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "András Lányi"
+  },
+  "8082/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Zoltán Szadai"
+  },
+  "8002/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Zsolt Farkas"
+  },
+  "8006/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Ákos Dányi"
+  },
+  "8007/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Istvánné Csonka"
+  },
+  "8018/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "zoltán kulcsar"
+  },
+  "8051/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Krisztián Kiss"
+  },
+  "8078/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Beáta Pamuki"
+  },
+  "8079/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Zsolt Farkas"
+  },
+  "8089/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Robert Milos"
+  },
+  "8090/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Erika Tóth"
+  },
+  "8081/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Ricsi Czigány"
+  },
+  "7904/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Istvàn Heim"
+  },
+  "7696/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Zsolt Simon"
+  },
+  "7829/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Darko Marušić"
+  },
+  "7654/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "János Pap"
+  },
+  "7624/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Zoltán Kulbert"
+  },
+  "7655/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Anikó Hulita"
+  },
+  "7660/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Fejes Mártonné"
+  },
+  "7771/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Dániel Berényi"
+  },
+  "7770/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Csuhaj Ernő"
+  },
+  "7761/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Csaba Molnár"
+  },
+  "7870/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Attila Taschner"
+  },
+  "7751/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "István Surányi"
+  },
+  "7869/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Zsolt Szabó"
+  },
+  "7743/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Gábor Stiasznyi"
+  },
+  "7856/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Zsuzsanna Vörösné Kiss"
+  },
+  "7730/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Imre Harmati"
+  },
+  "7841/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Roland Imolya"
+  },
+  "7703/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Krisztián Berke"
+  },
+  "7834/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Kalman Szekely"
+  },
+  "7833/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Viktoria Joo"
+  },
+  "7832/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Zsolt Pap"
+  },
+  "7826/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Renáta Simherczné Jakus"
+  },
+  "7695/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Éva Illés"
+  },
+  "7825/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Árpád Balázs"
+  },
+  "7691/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Gábor Csikós"
+  },
+  "7686/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Ádám Kègler"
+  },
+  "7687/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Tóth Sándor"
+  },
+  "7685/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Tibor Pálinkás"
+  },
+  "7672/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Gyuláné Gyergyói"
+  },
+  "7968/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Andrea Takács"
+  },
+  "7816/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Elemér Simon"
+  },
+  "7671/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Lászlóné Papp"
+  },
+  "7798/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Mark Koralewsky"
+  },
+  "7794/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "József Tápai"
+  },
+  "7790/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Attila Nagy"
+  },
+  "7789/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Emese Juhászné Molnár"
+  },
+  "7911/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Attila Csatári"
+  },
+  "7909/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "János Nőth"
+  },
+  "7780/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Ágnes Idrisz"
+  },
+  "7898/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Sándor Sárosi"
+  },
+  "7776/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "János Papp"
+  },
+  "7666/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Márton Balassa"
+  },
+  "7665/2026": {
+    "packedAt": "2026-04-13T06:26:28.866Z",
+    "customer": "Attila Rácz"
+  },
+  "7975/2026": {
+    "packedAt": "2026-04-13T07:05:55.966Z",
+    "customer": "Vesna Šepatovic"
+  },
+  "7993/2026": {
+    "packedAt": "2026-04-13T07:06:27.303Z",
+    "customer": "Marko Lorencin"
+  },
+  "8123/2026": {
+    "packedAt": "2026-04-13T07:07:08.659Z",
+    "customer": "Dinjar Marijan"
+  },
+  "7995/2026": {
+    "packedAt": "2026-04-13T07:07:45.280Z",
+    "customer": "Franjo Garafolić"
+  },
+  "7972/2026": {
+    "packedAt": "2026-04-13T07:08:49.332Z",
+    "customer": "Mihael Sablić"
+  },
+  "8137/2026": {
+    "packedAt": "2026-04-13T07:09:38.332Z",
+    "customer": "Dalibor Filipovic"
+  },
+  "7982/2026": {
+    "packedAt": "2026-04-13T07:10:10.206Z",
+    "customer": "Slavica Rogar"
+  },
+  "7715/2026": {
+    "packedAt": "2026-04-13T07:10:10.207Z",
+    "customer": "Antonija Mikulic"
+  },
+  "7767/2026": {
+    "packedAt": "2026-04-13T07:10:10.207Z",
+    "customer": "Branko Kovačević"
+  },
+  "7704/2026": {
+    "packedAt": "2026-04-13T07:10:10.207Z",
+    "customer": "Dimitrije Matić"
+  },
+  "7828/2026": {
+    "packedAt": "2026-04-13T07:10:10.207Z",
+    "customer": "Domaći Bokuni"
+  },
+  "7762/2026": {
+    "packedAt": "2026-04-13T07:10:10.208Z",
+    "customer": "Ivan Domijan"
+  },
+  "7902/2026": {
+    "packedAt": "2026-04-13T07:10:10.208Z",
+    "customer": "Ivan Krstas"
+  },
+  "7799/2026": {
+    "packedAt": "2026-04-13T07:10:10.208Z",
+    "customer": "Josip Tomić"
+  },
+  "7705/2026": {
+    "packedAt": "2026-04-13T07:10:10.208Z",
+    "customer": "Katica Marić"
+  },
+  "7652/2026": {
+    "packedAt": "2026-04-13T07:10:10.208Z",
+    "customer": "Marijan Krpan"
+  },
+  "7713/2026": {
+    "packedAt": "2026-04-13T07:10:10.209Z",
+    "customer": "Marina Puhanić"
+  },
+  "7721/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Mario Jurilj"
+  },
+  "7801/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Marko Keskic"
+  },
+  "7871/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Matija Šaban"
+  },
+  "7714/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Mirko Marijanović"
+  },
+  "7800/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Miroslav Bračić"
+  },
+  "7738/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Oliver Sakač"
+  },
+  "7994/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Robert Sedlar"
+  },
+  "7706/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Rodin Neven"
+  },
+  "7817/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Suzana Hantih"
+  },
+  "7697/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Zdenka Vrančić"
+  },
+  "7688/2026": {
+    "packedAt": "2026-04-13T07:10:10.210Z",
+    "customer": "Žarko Plašćar"
+  },
+  "7712/2026": {
+    "packedAt": "2026-04-13T07:15:02.405Z",
+    "customer": "Anikó Császárné Pócsi"
+  },
+  "8140/2026": {
+    "packedAt": "2026-04-13T07:15:55.214Z",
+    "customer": "Renáta Kutiné Balogh"
+  },
+  "8147/2026": {
+    "packedAt": "2026-04-13T07:15:55.214Z",
+    "customer": "lászló Sike"
+  },
+  "8126/2026": {
+    "packedAt": "2026-04-13T07:17:12.219Z",
+    "customer": "Anita Mizsei"
+  },
+  "7997/2026": {
+    "packedAt": "2026-04-13T07:36:56.032Z",
+    "customer": "Αχιλλέας Καραπετσιάνης"
+  },
+  "7725/2026": {
+    "packedAt": "2026-04-13T07:38:13.198Z",
+    "customer": "Γιάννης Γκρεμο"
+  },
+  "7983/2026": {
+    "packedAt": "2026-04-13T07:39:07.610Z",
+    "customer": "Ξενοφων Πολυχρονιδης"
+  },
+  "8045/2026": {
+    "packedAt": "2026-04-13T07:40:12.740Z",
+    "customer": "ΣΤΑΥΡΟΣ ΠΑΠΑΔΑΚΗΣ"
+  },
+  "7805/2026": {
+    "packedAt": "2026-04-13T07:41:24.717Z",
+    "customer": "kiriakos miliadis"
+  },
+  "7984/2026": {
+    "packedAt": "2026-04-13T07:43:08.421Z",
+    "customer": "Antonis Deliantoniou"
+  },
+  "8012/2026": {
+    "packedAt": "2026-04-13T07:43:57.360Z",
+    "customer": "ΣΩΤΗΡΗΣ ΔΗΜΑΚΗΣ"
+  },
+  "8013/2026": {
+    "packedAt": "2026-04-13T07:44:37.636Z",
+    "customer": "SportStream Βασίλης"
+  },
+  "8034/2026": {
+    "packedAt": "2026-04-13T07:45:22.989Z",
+    "customer": "Nick Petropoulos"
+  },
+  "8044/2026": {
+    "packedAt": "2026-04-13T07:45:57.386Z",
+    "customer": "Χρήστος Καραστέργιος"
+  },
+  "8046/2026": {
+    "packedAt": "2026-04-13T07:46:50.792Z",
+    "customer": "κωστας ψαρρας"
+  },
+  "8047/2026": {
+    "packedAt": "2026-04-13T07:48:43.883Z",
+    "customer": "Γιάννης Σιδερατος"
+  },
+  "8080/2026": {
+    "packedAt": "2026-04-13T07:49:49.683Z",
+    "customer": "Ζαχαρίας Μπραγουδακης"
+  },
+  "8094/2026": {
+    "packedAt": "2026-04-13T07:50:37.789Z",
+    "customer": "Αθανάσιος Ρίζος"
+  },
+  "8095/2026": {
+    "packedAt": "2026-04-13T07:51:47.693Z",
+    "customer": "ΑΝΤΩΝΗΣ ΑΥΓΕΡΙΝΟΣ"
+  },
+  "8096/2026": {
+    "packedAt": "2026-04-13T07:52:42.607Z",
+    "customer": "ΑΝΑΣΤΑΣΙΟΣ ΞΥΔΑΚΗΣ"
+  },
+  "8102/2026": {
+    "packedAt": "2026-04-13T07:53:25.306Z",
+    "customer": "Vasileios Τympanidis"
+  },
+  "8103/2026": {
+    "packedAt": "2026-04-13T07:54:10.288Z",
+    "customer": "Λευτακης Διονύσιος"
+  },
+  "8124/2026": {
+    "packedAt": "2026-04-13T07:54:48.469Z",
+    "customer": "Vasilis Papanikolas"
+  },
+  "8142/2026": {
+    "packedAt": "2026-04-13T07:55:59.017Z",
+    "customer": "Δημητρης Μπακολας"
+  },
+  "7996/2026": {
+    "packedAt": "2026-04-13T07:56:42.283Z",
+    "customer": "Ευαγγελια Τσακιρη"
+  },
+  "7656/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "Αλεξανδρος Μεριανος"
+  },
+  "7673/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "Ευάγγελος Κουκουράκης"
+  },
+  "7674/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "Thanos Mylonakis"
+  },
+  "7675/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "Gerasimos Margianos"
+  },
+  "7676/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "ΑΝΔΡΕΑΣ ΖΕΡΜΠΙΩΝΗΣ"
+  },
+  "7677/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "Ιπποκράτης Μιχελιδης"
+  },
+  "7678/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "Christos Argyreas"
+  },
+  "7681/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "Nikos Kechagiadakis"
+  },
+  "7682/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "Μάνος Ζιουλης"
+  },
+  "7690/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "ΙΩΣΗΦ Ρότσας"
+  },
+  "7698/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "aimilios Tsitos"
+  },
+  "7699/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "ΦΙΛΑΡΕΤΟΣ ΠΑΠΑΙΩΑΝΝΟΥ"
+  },
+  "7700/2026": {
+    "packedAt": "2026-04-13T07:57:02.760Z",
+    "customer": "Σταυρος Σουσουρας"
+  },
+  "7701/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Στέργιος Παπαδημητρίου"
+  },
+  "7716/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Βασιλης Χαρκοτσικας"
+  },
+  "7723/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Μακης Κανακαρης"
+  },
+  "7724/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Ακης Παγώνας"
+  },
+  "7731/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "ΑΝΑΣΤΆΣΙΟΣ ΠΑΡΘΕΝΙΔΗΣ"
+  },
+  "7732/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Αριστος Αλεξανδροπουλος"
+  },
+  "7734/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Αντώνης Παντελιου"
+  },
+  "7735/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Δημήτρης ΔΟΥΒΑΡΑΣ"
+  },
+  "7739/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Γιωργος Κουρασης"
+  },
+  "7740/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Αλέξανδρος Λουνής"
+  },
+  "7741/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Γιώργος Δογας"
+  },
+  "7746/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Georgios Papoudis"
+  },
+  "7747/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Georgios Charakopoulos"
+  },
+  "7748/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "ΙΩΑΝΝΗΣ ΛΥΚΟΣΚΟΥΦΗΣ"
+  },
+  "7754/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Βασιλης Μπουργαζας"
+  },
+  "7763/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Γιωργος Συρεπισιος"
+  },
+  "7764/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Πασχαλης Τζιαστουδης"
+  },
+  "7765/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Αριστοτελης Δικτοπουλος"
+  },
+  "7768/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Χρηστος Καρακωνσταντινου"
+  },
+  "7772/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "ΙΩΣΗΦ ZERVOS"
+  },
+  "7773/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Κωστας Δημας"
+  },
+  "7781/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "ANNA TATARAKI"
+  },
+  "7792/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "ΧΡΥΣΟΒΑΛΑΝΤΗΣ ΓΙΑΝΝΙΩΔΗΣ"
+  },
+  "7795/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Ευθύμιος Καραγιώργος"
+  },
+  "7804/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Παναγιώτης Τσάκος"
+  },
+  "7806/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Ioannis Sakellaris"
+  },
+  "7819/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Petros ANGELIKAKIS"
+  },
+  "7820/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "TZANIDAKIS ANDREAS"
+  },
+  "7830/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "ΓΙΩΡΓΟΣ ΓΙΟΡΤΣΙΟΣ"
+  },
+  "7843/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Dimitrios Kakavoulas"
+  },
+  "7844/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Αρης Σκρεκης"
+  },
+  "7845/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "ΗΛΙΑΣ ΚΑΝΑΤΑΚΗΣ"
+  },
+  "7846/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "ΚΑΤΕΡΙΝΑ ΤΑΣΣΙΟΥ"
+  },
+  "7847/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Νικητας Κακκαβας"
+  },
+  "7855/2026": {
+    "packedAt": "2026-04-13T07:57:02.761Z",
+    "customer": "Γιάννης Κατσαντώνης"
+  },
+  "7864/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Γιαννης Γκιωνης"
+  },
+  "7865/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Tasioulas Giorgos"
+  },
+  "7872/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Διονύσιος Φωτόπουλος"
+  },
+  "7877/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Αποστολης Κολύβας"
+  },
+  "7880/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Andreas Anastasopoulos"
+  },
+  "7881/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Κωνσταντίνος Peponakis"
+  },
+  "7891/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Lamprou Alexandros"
+  },
+  "7906/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Emmanuil Kouridakis"
+  },
+  "7918/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Διονύσης Παγκαλης"
+  },
+  "7969/2026": {
+    "packedAt": "2026-04-13T07:57:02.762Z",
+    "customer": "Κωστας Πατελκος"
+  },
+  "8093/2026": {
+    "packedAt": "2026-04-13T08:05:23.452Z",
+    "customer": "Miloš Krásný"
+  },
+  "7970/2026": {
+    "packedAt": "2026-04-13T08:06:41.873Z",
+    "customer": "Iveta Jankolova"
+  },
+  "7745/2026": {
+    "packedAt": "2026-04-13T08:07:43.743Z",
+    "customer": "Michal Krajčovic"
+  },
+  "7744/2026": {
+    "packedAt": "2026-04-13T08:10:32.125Z",
+    "customer": "Maria Šcepková"
+  },
+  "8070/2026": {
+    "packedAt": "2026-04-13T08:11:15.062Z",
+    "customer": "Ivan Danko"
+  },
+  "8020/2026": {
+    "packedAt": "2026-04-13T08:12:01.453Z",
+    "customer": "Miloš Kolársky"
+  },
+  "7680/2026": {
+    "packedAt": "2026-04-13T08:12:05.698Z",
+    "customer": "Arpad Sebok"
+  },
+  "8135/2026": {
+    "packedAt": "2026-04-13T08:13:52.234Z",
+    "customer": "Dana Matoušková"
+  },
+  "8149/2026": {
+    "packedAt": "2026-04-13T08:13:52.234Z",
+    "customer": "Ευθύμιος Καραγιώργος"
+  },
+  "8009/2026": {
+    "packedAt": "2026-04-13T08:36:08.702Z",
+    "customer": "Martin Brych"
+  },
+  "8003/2026": {
+    "packedAt": "2026-04-13T08:38:26.235Z",
+    "customer": "Aleš Kolář"
+  },
+  "8101/2026": {
+    "packedAt": "2026-04-13T08:39:19.904Z",
+    "customer": "Roman Vostrejs"
+  },
+  "8138/2026": {
+    "packedAt": "2026-04-13T08:39:58.331Z",
+    "customer": "Dalibor Vlach"
+  },
+  "8118/2026": {
+    "packedAt": "2026-04-13T08:44:24.642Z",
+    "customer": "jirka kokeš"
+  },
+  "8033/2026": {
+    "packedAt": "2026-04-13T08:45:06.023Z",
+    "customer": "František Beránek"
+  },
+  "8032/2026": {
+    "packedAt": "2026-04-13T08:45:43.772Z",
+    "customer": "Ondřej Pekár"
+  },
+  "8022/2026": {
+    "packedAt": "2026-04-13T08:46:25.612Z",
+    "customer": "Vera Skopalova"
+  },
+  "8011/2026": {
+    "packedAt": "2026-04-13T08:47:06.671Z",
+    "customer": "Pavel Mejta"
+  },
+  "7857/2026": {
+    "packedAt": "2026-04-13T08:48:14.523Z",
+    "customer": "Hana Kopalová"
+  },
+  "8010/2026": {
+    "packedAt": "2026-04-13T08:48:14.523Z",
+    "customer": "Barbora Špačková"
+  },
+  "8008/2026": {
+    "packedAt": "2026-04-13T08:49:35.106Z",
+    "customer": "Bohuslava Trubačová"
+  },
+  "8021/2026": {
+    "packedAt": "2026-04-13T08:50:42.607Z",
+    "customer": "Zdenek Havala"
+  },
+  "7858/2026": {
+    "packedAt": "2026-04-13T08:53:08.990Z",
+    "customer": "Attila Koncz"
+  },
+  "7802/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Aneta Rokosová"
+  },
+  "7835/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "František Jegla"
+  },
+  "7786/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Hana Lišková"
+  },
+  "7897/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Ilona Pekařová"
+  },
+  "7803/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Jana Novotná"
+  },
+  "7913/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Jiří Šír"
+  },
+  "7842/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Ladislava Šestáková"
+  },
+  "7753/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Martin Drechsler"
+  },
+  "7689/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Michal Holzäpfel"
+  },
+  "7908/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Milan Vojta"
+  },
+  "7863/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Olga Lukesová"
+  },
+  "7722/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Petr Dvořák"
+  },
+  "7818/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Štefan Škorvaga"
+  },
+  "7791/2026": {
+    "packedAt": "2026-04-13T09:06:10.595Z",
+    "customer": "Taťána Bartůňková"
+  },
+  "7720/2026": {
+    "packedAt": "2026-04-13T10:05:50.665Z",
+    "customer": "Alessandro Ercolanetti"
+  },
+  "7839/2026": {
+    "packedAt": "2026-04-13T10:06:38.814Z",
+    "customer": "Carmine Sola"
+  },
+  "7991/2026": {
+    "packedAt": "2026-04-13T10:07:28.383Z",
+    "customer": "Enzo Maiellaro"
+  },
+  "7815/2026": {
+    "packedAt": "2026-04-13T10:08:19.854Z",
+    "customer": "franco ciotola"
+  },
+  "8150/2026": {
+    "packedAt": "2026-04-13T10:14:37.992Z",
+    "customer": "Aleš Hrnčíř"
+  },
+  "8151/2026": {
+    "packedAt": "2026-04-13T10:15:21.908Z",
+    "customer": "Agrogea Agrogea"
+  },
+  "8152/2026": {
+    "packedAt": "2026-04-13T10:16:02.410Z",
+    "customer": "Νικος Πασχάλης"
+  },
+  "8153/2026": {
+    "packedAt": "2026-04-13T10:17:15.057Z",
+    "customer": "Αντώνης Ζιγκος"
+  },
+  "8154/2026": {
+    "packedAt": "2026-04-13T10:18:01.775Z",
+    "customer": "ΦΛΩΡΑ Κοντε"
+  },
+  "8155/2026": {
+    "packedAt": "2026-04-13T10:18:39.154Z",
+    "customer": "Γιώργος Γκανατσιος"
+  },
+  "8164/2026": {
+    "packedAt": "2026-04-13T10:19:15.238Z",
+    "customer": "ΔΗΜΗΤΡΗΣ ΠΑΠΑΔΑΚΗΣ"
+  },
+  "8175/2026": {
+    "packedAt": "2026-04-13T10:19:52.763Z",
+    "customer": "ΚΩΝΣΤΑΝΤΙΝΟΣ ΤΑΡΑΝΤΙΛΗΣ"
+  },
+  "8176/2026": {
+    "packedAt": "2026-04-13T10:20:32.802Z",
+    "customer": "Gerasimos korsanos Korsanos"
+  },
+  "8177/2026": {
+    "packedAt": "2026-04-13T10:21:10.683Z",
+    "customer": "jim pakios"
+  },
+  "8165/2026": {
+    "packedAt": "2026-04-13T10:21:43.762Z",
+    "customer": "Νικόλαος Κοντόπουλος"
+  },
+  "7979/2026": {
+    "packedAt": "2026-04-13T10:33:08.886Z",
+    "customer": "Gianni Pinna"
+  },
+  "7760/2026": {
+    "packedAt": "2026-04-13T10:35:16.793Z",
+    "customer": "Mario soncin"
+  },
+  "8100/2026": {
+    "packedAt": "2026-04-13T10:35:48.087Z",
+    "customer": "maurizio Selva"
+  },
+  "7729/2026": {
+    "packedAt": "2026-04-13T10:36:25.369Z",
+    "customer": "Michele Pacucci"
+  },
+  "7853/2026": {
+    "packedAt": "2026-04-13T10:36:48.631Z",
+    "customer": "NICOLò BASILE"
+  },
+  "7766/2026": {
+    "packedAt": "2026-04-13T10:38:38.582Z",
+    "customer": "Samuele Cogoni"
+  },
+  "7733/2026": {
+    "packedAt": "2026-04-13T10:39:57.405Z",
+    "customer": "Vincenzo Castaldo"
+  },
+  "8114/2026": {
+    "packedAt": "2026-04-13T10:40:29.481Z",
+    "customer": "Vincenzo Ruffo"
+  },
+  "8243/2026": {
+    "packedAt": "2026-04-14T06:15:19.799Z",
+    "customer": "Fanni Kálmánné Bókony"
+  },
+  "8201/2026": {
+    "packedAt": "2026-04-14T06:16:31.579Z",
+    "customer": "Norbert Szabó"
+  },
+  "8235/2026": {
+    "packedAt": "2026-04-14T06:16:56.804Z",
+    "customer": "Károly Rácz"
+  },
+  "8167/2026": {
+    "packedAt": "2026-04-14T06:18:33.677Z",
+    "customer": "Lajos Erb"
+  },
+  "8192/2026": {
+    "packedAt": "2026-04-14T06:29:22.433Z",
+    "customer": "Natalija Sladić Jelača"
+  },
+  "8223/2026": {
+    "packedAt": "2026-04-14T06:29:56.437Z",
+    "customer": "Ivana Lončarević"
+  },
+  "8190/2026": {
+    "packedAt": "2026-04-14T06:30:59.822Z",
+    "customer": "Goran Vrdoljak"
+  },
+  "8174/2026": {
+    "packedAt": "2026-04-14T06:31:41.504Z",
+    "customer": "Antun Sokolović"
+  },
+  "8191/2026": {
+    "packedAt": "2026-04-14T06:35:31.683Z",
+    "customer": "Marija Čolić"
+  },
+  "8173/2026": {
+    "packedAt": "2026-04-14T06:36:08.897Z",
+    "customer": "Aleksandra Dužević"
+  },
+  "8212/2026": {
+    "packedAt": "2026-04-14T06:36:43.756Z",
+    "customer": "Zlatko Poturicek ZOVI!"
+  },
+  "8211/2026": {
+    "packedAt": "2026-04-14T06:37:16.203Z",
+    "customer": "Danijela Čobrnić"
+  },
+  "8188/2026": {
+    "packedAt": "2026-04-14T06:37:54.167Z",
+    "customer": "Zlatko Perčić"
+  },
+  "8224/2026": {
+    "packedAt": "2026-04-14T06:40:10.532Z",
+    "customer": "Jelena Šoštarić"
+  },
+  "8252/2026": {
+    "packedAt": "2026-04-14T06:40:30.299Z",
+    "customer": "Branka Bestak"
+  },
+  "8267/2026": {
+    "packedAt": "2026-04-14T06:40:56.489Z",
+    "customer": "Željko Majdak"
+  },
+  "8189/2026": {
+    "packedAt": "2026-04-14T06:48:02.992Z",
+    "customer": "Neos d.o.o Josip Belina"
+  },
+  "8294/2026": {
+    "packedAt": "2026-04-14T06:49:29.166Z",
+    "customer": "marin deur"
+  },
+  "8248/2026": {
+    "packedAt": "2026-04-14T07:23:20.097Z",
+    "customer": "Αυφαντής Γεώργιος"
+  },
+  "8277/2026": {
+    "packedAt": "2026-04-14T07:24:47.624Z",
+    "customer": "DIAMANTIS DIMITRIOS"
+  },
+  "8213/2026": {
+    "packedAt": "2026-04-14T07:26:25.995Z",
+    "customer": "Lazaros Harpantidis"
+  },
+  "8219/2026": {
+    "packedAt": "2026-04-14T07:27:47.534Z",
+    "customer": "Κατερίνα Δρουβαλακη"
+  },
+  "8194/2026": {
+    "packedAt": "2026-04-14T07:28:34.599Z",
+    "customer": "Πετρος Αναγνωστοπουλος"
+  },
+  "8196/2026": {
+    "packedAt": "2026-04-14T07:30:34.908Z",
+    "customer": "Γιώργος ΖΑΧΑΡΙΟΥΔΑΚΗΣ"
+  },
+  "8220/2026": {
+    "packedAt": "2026-04-14T07:31:24.507Z",
+    "customer": "Ioannis Ploumistakis"
+  },
+  "8225/2026": {
+    "packedAt": "2026-04-14T07:31:53.069Z",
+    "customer": "Ιωαννης Τσιακουρης"
+  },
+  "8226/2026": {
+    "packedAt": "2026-04-14T07:32:41.048Z",
+    "customer": "Δαυίδ Ζητοπουλος"
+  },
+  "8244/2026": {
+    "packedAt": "2026-04-14T07:33:13.220Z",
+    "customer": "Στυλιανός Γιαγμουριδης"
+  },
+  "8249/2026": {
+    "packedAt": "2026-04-14T07:34:20.798Z",
+    "customer": "EVANGELOS Vaggelis"
+  },
+  "8253/2026": {
+    "packedAt": "2026-04-14T07:35:15.092Z",
+    "customer": "Γιώργος Παναγιωτοπουλος"
+  },
+  "8260/2026": {
+    "packedAt": "2026-04-14T07:35:44.431Z",
+    "customer": "ΚΩΣΤΑΣ ΜΠΟΥΣΝΑΚΗΣ"
+  },
+  "8261/2026": {
+    "packedAt": "2026-04-14T07:36:28.565Z",
+    "customer": "Γιαννης ΠΡΟΒΙΔΑΚΗΣ"
+  },
+  "8269/2026": {
+    "packedAt": "2026-04-14T07:37:15.215Z",
+    "customer": "ΨΥΛΛΑΚΗΣ ΜΑΝΟΛΗΣ"
+  },
+  "8276/2026": {
+    "packedAt": "2026-04-14T07:38:21.212Z",
+    "customer": "Νίκος Κεφαλλωνιτης"
+  },
+  "8315/2026": {
+    "packedAt": "2026-04-14T07:39:33.382Z",
+    "customer": "Ευάγγελος Γιακουμάκης"
+  },
+  "8245/2026": {
+    "packedAt": "2026-04-14T07:40:27.439Z",
+    "customer": "Γιώργος Παγκαλης"
+  },
+  "8195/2026": {
+    "packedAt": "2026-04-14T07:43:16.985Z",
+    "customer": "NIKOS PRINTEZIS"
+  },
+  "8280/2026": {
+    "packedAt": "2026-04-14T07:45:55.969Z",
+    "customer": "Φώτιος Κανέλλος"
+  },
+  "8275/2026": {
+    "packedAt": "2026-04-14T07:47:35.930Z",
+    "customer": "Ηρακλης Λουρακης"
+  },
+  "8262/2026": {
+    "packedAt": "2026-04-14T07:56:02.889Z",
+    "customer": "ΧΑΡΑΛΑΜΠΟΣ ΠΑΝΤΕΛΙΔΑΚΗΣ"
+  },
+  "8316/2026": {
+    "packedAt": "2026-04-14T07:58:41.021Z",
+    "customer": "Štefan Szatmári"
+  },
+  "8279/2026": {
+    "packedAt": "2026-04-14T07:59:07.559Z",
+    "customer": "Milan Malenický"
+  },
+  "8193/2026": {
+    "packedAt": "2026-04-14T08:00:58.794Z",
+    "customer": "Petra Kudělová"
+  },
+  "8290/2026": {
+    "packedAt": "2026-04-14T08:23:13.930Z",
+    "customer": "Marián Dudis"
+  },
+  "8291/2026": {
+    "packedAt": "2026-04-14T08:24:36.733Z",
+    "customer": "marek varga"
+  },
+  "8320/2026": {
+    "packedAt": "2026-04-14T09:42:03.680Z",
+    "customer": "Alexandros Dourmousis"
+  },
+  "8321/2026": {
+    "packedAt": "2026-04-14T09:42:45.172Z",
+    "customer": "Βασίλης Πανουσης"
+  },
+  "8337/2026": {
+    "packedAt": "2026-04-14T09:43:34.485Z",
+    "customer": "Γιώργος Παπαδομιχελάκης"
+  },
+  "8336/2026": {
+    "packedAt": "2026-04-14T09:43:59.713Z",
+    "customer": "Παναγιώτης Μιχόπουλος"
+  },
+  "8351/2026": {
+    "packedAt": "2026-04-14T10:06:41.664Z",
+    "customer": "Λευτερης Μπριγγος"
+  },
+  "8345/2026": {
+    "packedAt": "2026-04-14T10:07:25.544Z",
+    "customer": "Peter Ďurica"
+  },
+  "8299/2026": {
+    "packedAt": "2026-04-14T10:13:07.442Z",
+    "customer": "Angelo Capodaglio"
+  },
+  "8162/2026": {
+    "packedAt": "2026-04-14T10:14:23.062Z",
+    "customer": "Daniele Melis"
+  },
+  "8210/2026": {
+    "packedAt": "2026-04-14T10:15:41.521Z",
+    "customer": "DOMENICO CARLOMAGNO"
+  },
+  "8342/2026": {
+    "packedAt": "2026-04-14T10:17:11.381Z",
+    "customer": "Maria Pignatelli"
+  },
+  "8187/2026": {
+    "packedAt": "2026-04-14T10:17:59.730Z",
+    "customer": "Pierpaolo Fele"
+  },
+  "8318/2026": {
+    "packedAt": "2026-04-14T10:32:21.034Z",
+    "customer": "Zsuzsanna Reinhardt"
+  },
+  "8343/2026": {
+    "packedAt": "2026-04-15T06:06:15.180Z",
+    "customer": "József Hofstetter"
+  },
+  "8324/2026": {
+    "packedAt": "2026-04-15T06:07:28.128Z",
+    "customer": "Csaba Ádám"
+  },
+  "8325/2026": {
+    "packedAt": "2026-04-15T06:08:19.151Z",
+    "customer": "Rea Barkanyi"
+  },
+  "8349/2026": {
+    "packedAt": "2026-04-15T06:08:59.460Z",
+    "customer": "Dániel Molnár"
+  },
+  "8350/2026": {
+    "packedAt": "2026-04-15T06:09:39.346Z",
+    "customer": "Ákos Papp"
+  },
+  "8391/2026": {
+    "packedAt": "2026-04-15T06:10:54.924Z",
+    "customer": "Tamás Csaszari"
+  },
+  "8420/2026": {
+    "packedAt": "2026-04-15T06:12:05.832Z",
+    "customer": "Henrietta Oroszné"
+  },
+  "8441/2026": {
+    "packedAt": "2026-04-15T06:12:56.873Z",
+    "customer": "Éva Neuhauser Törökné"
+  },
+  "8443/2026": {
+    "packedAt": "2026-04-15T06:13:31.870Z",
+    "customer": "Lakatos Sándor"
+  },
+  "8323/2026": {
+    "packedAt": "2026-04-15T06:14:00.337Z",
+    "customer": "MARTON ZSOLT"
+  },
+  "8452/2026": {
+    "packedAt": "2026-04-15T06:38:34.623Z",
+    "customer": "László Szatmári"
+  },
+  "8446/2026": {
+    "packedAt": "2026-04-15T06:39:45.638Z",
+    "customer": "Barbara Joó"
+  },
+  "8455/2026": {
+    "packedAt": "2026-04-15T06:40:21.259Z",
+    "customer": "József Beckl"
+  },
+  "8447/2026": {
+    "packedAt": "2026-04-15T06:41:18.094Z",
+    "customer": "László Szakáll"
+  },
+  "8477/2026": {
+    "packedAt": "2026-04-15T06:41:55.281Z",
+    "customer": "Jadranka Ilić"
+  },
+  "8444/2026": {
+    "packedAt": "2026-04-15T06:42:40.487Z",
+    "customer": "Aleksandar Šubert"
+  },
+  "8478/2026": {
+    "packedAt": "2026-04-15T06:43:28.197Z",
+    "customer": "Marijan Cucek"
+  },
+  "8399/2026": {
+    "packedAt": "2026-04-15T06:43:55.402Z",
+    "customer": "Petar Ezgeta"
+  },
+  "8319/2026": {
+    "packedAt": "2026-04-15T06:44:28.392Z",
+    "customer": "Dario Pleše"
+  },
+  "8390/2026": {
+    "packedAt": "2026-04-15T06:45:03.762Z",
+    "customer": "Mario Šaronić"
+  },
+  "8427/2026": {
+    "packedAt": "2026-04-15T06:46:09.455Z",
+    "customer": "Mladen Bedeković"
+  },
+  "8392/2026": {
+    "packedAt": "2026-04-15T06:47:27.444Z",
+    "customer": "Stjepan Jerkovic"
+  },
+  "8374/2026": {
+    "packedAt": "2026-04-15T06:48:03.465Z",
+    "customer": "Vlatka Dundov"
+  },
+  "8365/2026": {
+    "packedAt": "2026-04-15T06:48:31.291Z",
+    "customer": "Maria Nemec"
+  },
+  "8421/2026": {
+    "packedAt": "2026-04-15T06:49:24.983Z",
+    "customer": "Dragan Mladenović"
+  },
+  "8366/2026": {
+    "packedAt": "2026-04-15T06:49:56.769Z",
+    "customer": "Karmen Kraljevic"
+  },
+  "8486/2026": {
+    "packedAt": "2026-04-15T06:53:18.943Z",
+    "customer": "Ici Illés"
+  },
+  "8397/2026": {
+    "packedAt": "2026-04-15T06:59:32.335Z",
+    "customer": "Daniel Starman"
+  },
+  "8373/2026": {
+    "packedAt": "2026-04-15T07:00:32.334Z",
+    "customer": "Petkovic Angela"
+  },
+  "8387/2026": {
+    "packedAt": "2026-04-15T07:25:40.146Z",
+    "customer": "Martin Mrázek"
+  },
+  "8398/2026": {
+    "packedAt": "2026-04-15T07:26:13.098Z",
+    "customer": "Jan Zahálka"
+  },
+  "8422/2026": {
+    "packedAt": "2026-04-15T07:37:59.078Z",
+    "customer": "Jaro Kais"
+  },
+  "8379/2026": {
+    "packedAt": "2026-04-15T07:40:18.547Z",
+    "customer": "Martin Hargaš"
+  },
+  "8367/2026": {
+    "packedAt": "2026-04-15T07:40:58.477Z",
+    "customer": "ΠΑΥΛΟΣ ΠΑΠΑΔΑΚΗΣ"
+  },
+  "8445/2026": {
+    "packedAt": "2026-04-15T07:42:28.120Z",
+    "customer": "Σταυρος Σουσουρας"
+  },
+  "8480/2026": {
+    "packedAt": "2026-04-15T07:42:56.895Z",
+    "customer": "Γεώργιος Καπλανης"
+  },
+  "8400/2026": {
+    "packedAt": "2026-04-15T07:43:52.903Z",
+    "customer": "Ιωάννης Παπαδακης"
+  },
+  "8411/2026": {
+    "packedAt": "2026-04-15T07:45:22.337Z",
+    "customer": "Christos Karveloutsos"
+  },
+  "8352/2026": {
+    "packedAt": "2026-04-15T07:46:07.117Z",
+    "customer": "Κρεμμύδας Κων/νος"
+  },
+  "8353/2026": {
+    "packedAt": "2026-04-15T07:47:00.993Z",
+    "customer": "ΒΑΓΓΕΛΗΣ ΤΣΑΜΤΣΟΥΡΗΣ"
+  },
+  "8368/2026": {
+    "packedAt": "2026-04-15T07:47:51.848Z",
+    "customer": "Δημήτρης Παπαθανασίου"
+  },
+  "8375/2026": {
+    "packedAt": "2026-04-15T07:48:26.725Z",
+    "customer": "Myronas Papadakis"
+  },
+  "8376/2026": {
+    "packedAt": "2026-04-15T07:49:01.311Z",
+    "customer": "Κώστας Σακκος"
+  },
+  "8380/2026": {
+    "packedAt": "2026-04-15T07:49:56.341Z",
+    "customer": "Γεωργιος Γουμενοπουλος"
+  },
+  "8388/2026": {
+    "packedAt": "2026-04-15T07:50:37.942Z",
+    "customer": "Παναγιώτης Μεμητσας"
+  },
+  "8389/2026": {
+    "packedAt": "2026-04-15T07:51:15.061Z",
+    "customer": "ΒΙΒΙΑΝ Δεληγιάννη"
+  },
+  "8401/2026": {
+    "packedAt": "2026-04-15T07:52:36.805Z",
+    "customer": "Michael Hatzimitros"
+  },
+  "8412/2026": {
+    "packedAt": "2026-04-15T07:53:10.440Z",
+    "customer": "Δημήτρης Παπαδόπουλος"
+  },
+  "8413/2026": {
+    "packedAt": "2026-04-15T07:53:44.624Z",
+    "customer": "Σωκράτης Ποτουρίδης"
+  },
+  "8414/2026": {
+    "packedAt": "2026-04-15T07:54:15.242Z",
+    "customer": "ΑΡΙΣΤΕΙΔΗΣ ΧΡΙΣΤΟΦΟΡΟΣ"
+  },
+  "8423/2026": {
+    "packedAt": "2026-04-15T07:54:51.094Z",
+    "customer": "Μπάμπης Βραιμακης"
+  },
+  "8425/2026": {
+    "packedAt": "2026-04-15T07:55:17.124Z",
+    "customer": "Νικολετα Μαραυγακη"
+  },
+  "8432/2026": {
+    "packedAt": "2026-04-15T07:55:57.481Z",
+    "customer": "Ευαγγελος Ασβεστοπουλος"
+  },
+  "8437/2026": {
+    "packedAt": "2026-04-15T07:56:39.294Z",
+    "customer": "Γεώργιος Πετρακακης"
+  },
+  "8438/2026": {
+    "packedAt": "2026-04-15T07:57:19.562Z",
+    "customer": "κωστης Zacharias"
+  },
+  "8448/2026": {
+    "packedAt": "2026-04-15T07:57:55.366Z",
+    "customer": "Κοσαρης ΙΩΑΝΝΗΣ"
+  },
+  "8481/2026": {
+    "packedAt": "2026-04-15T07:59:41.690Z",
+    "customer": "Eυάγγελος Φάκος"
+  },
+  "8515/2026": {
+    "packedAt": "2026-04-15T09:53:58.550Z",
+    "customer": "Martin Langer"
+  },
+  "8490/2026": {
+    "packedAt": "2026-04-15T09:55:02.938Z",
+    "customer": "Pavlína Suchodolová"
+  },
+  "8500/2026": {
+    "packedAt": "2026-04-15T09:55:43.243Z",
+    "customer": "Vasileios Tzokas"
+  },
+  "8501/2026": {
+    "packedAt": "2026-04-15T09:56:33.217Z",
+    "customer": "MICHAEL KORASIDIS"
+  },
+  "8514/2026": {
+    "packedAt": "2026-04-15T09:58:09.262Z",
+    "customer": "Jason Lykouris"
+  },
+  "8491/2026": {
+    "packedAt": "2026-04-15T09:59:06.871Z",
+    "customer": "ΣΩΤΗΡΙΟΣ ΓΚΙΚΑΣ"
+  },
+  "8502/2026": {
+    "packedAt": "2026-04-15T09:59:36.989Z",
+    "customer": "Στάικος Ηλίας"
+  },
+  "8503/2026": {
+    "packedAt": "2026-04-15T10:00:16.937Z",
+    "customer": "Nikos Petasis"
+  },
+  "8359/2026": {
+    "packedAt": "2026-04-15T10:03:54.862Z",
+    "customer": "Danilo Manis"
+  },
+  "8507/2026": {
+    "packedAt": "2026-04-15T10:09:13.184Z",
+    "customer": "Zappala Agatino"
+  },
+  "8495/2026": {
+    "packedAt": "2026-04-15T10:09:13.185Z",
+    "customer": "Francesco Di santo"
+  },
+  "8497/2026": {
+    "packedAt": "2026-04-16T06:13:53.693Z",
+    "customer": "Ágnes Idrisz"
+  },
+  "8510/2026": {
+    "packedAt": "2026-04-16T06:13:53.694Z",
+    "customer": "Anita Tihanyi"
+  },
+  "8542/2026": {
+    "packedAt": "2026-04-16T06:13:53.694Z",
+    "customer": "David Regeczy"
+  },
+  "8496/2026": {
+    "packedAt": "2026-04-16T06:14:45.833Z",
+    "customer": "György Ott"
+  },
+  "8509/2026": {
+    "packedAt": "2026-04-16T06:15:26.455Z",
+    "customer": "Zsuzsanna Unger"
+  },
+  "8592/2026": {
+    "packedAt": "2026-04-16T06:19:34.158Z",
+    "customer": "Attila Johann"
+  },
+  "8536/2026": {
+    "packedAt": "2026-04-16T06:19:34.158Z",
+    "customer": "Attila Boros"
+  },
+  "8508/2026": {
+    "packedAt": "2026-04-16T06:19:34.158Z",
+    "customer": "Endre Lukács"
+  },
+  "8593/2026": {
+    "packedAt": "2026-04-16T06:19:34.158Z",
+    "customer": "Péter Albrecht"
+  },
+  "8591/2026": {
+    "packedAt": "2026-04-16T06:19:34.158Z",
+    "customer": "Imre Kovács"
+  },
+  "8523/2026": {
+    "packedAt": "2026-04-16T06:19:34.158Z",
+    "customer": "Papp Jenő"
+  },
+  "8640/2026": {
+    "packedAt": "2026-04-16T06:51:20.949Z",
+    "customer": "László Vitkolczi"
+  },
+  "8612/2026": {
+    "packedAt": "2026-04-16T06:51:20.949Z",
+    "customer": "Éva Kissné Bódizs"
+  },
+  "8537/2026": {
+    "packedAt": "2026-04-16T06:55:31.794Z",
+    "customer": "Dino Glavaš"
+  },
+  "8547/2026": {
+    "packedAt": "2026-04-16T06:57:01.745Z",
+    "customer": "Danijela Bubanović"
+  },
+  "8601/2026": {
+    "packedAt": "2026-04-16T06:57:51.312Z",
+    "customer": "IGOR KUČICA"
+  },
+  "8499/2026": {
+    "packedAt": "2026-04-16T06:59:11.298Z",
+    "customer": "Adina Čečur  PAKETOMAT LIDL PROŠTINSKE BUNE"
+  },
+  "8636/2026": {
+    "packedAt": "2026-04-16T06:59:20.732Z",
+    "customer": "Aleš Marinko"
+  },
+  "8571/2026": {
+    "packedAt": "2026-04-16T06:59:20.732Z",
+    "customer": "Jasna Ilić"
+  },
+  "8498/2026": {
+    "packedAt": "2026-04-16T07:00:02.349Z",
+    "customer": "Janko Dereta"
+  },
+  "8525/2026": {
+    "packedAt": "2026-04-16T07:00:23.421Z",
+    "customer": "Branimir Potočnjak"
+  },
+  "8489/2026": {
+    "packedAt": "2026-04-16T07:01:08.050Z",
+    "customer": "Jelena Joka Gašpić"
+  },
+  "8583/2026": {
+    "packedAt": "2026-04-16T07:01:46.665Z",
+    "customer": "Maja Vučić"
+  },
+  "8516/2026": {
+    "packedAt": "2026-04-16T07:02:13.153Z",
+    "customer": "Lucia Waller"
+  },
+  "8543/2026": {
+    "packedAt": "2026-04-16T07:03:04.189Z",
+    "customer": "Ivan Domijan"
+  },
+  "8544/2026": {
+    "packedAt": "2026-04-16T07:03:43.268Z",
+    "customer": "Ivica Kozjan"
+  },
+  "8570/2026": {
+    "packedAt": "2026-04-16T07:06:10.910Z",
+    "customer": "Vladimir Vuković"
+  },
+  "8641/2026": {
+    "packedAt": "2026-04-16T07:06:46.907Z",
+    "customer": "Vladimir Bratic"
+  },
+  "8617/2026": {
+    "packedAt": "2026-04-16T07:07:14.761Z",
+    "customer": "Matija Vidak"
+  },
+  "8607/2026": {
+    "packedAt": "2026-04-16T07:09:44.883Z",
+    "customer": "Tamara Tomaić"
+  },
+  "8603/2026": {
+    "packedAt": "2026-04-16T07:09:44.884Z",
+    "customer": "Vladimir Čičak"
+  },
+  "8609/2026": {
+    "packedAt": "2026-04-16T07:57:15.750Z",
+    "customer": "Νίκος Τριγγας"
+  },
+  "8600/2026": {
+    "packedAt": "2026-04-16T07:57:58.926Z",
+    "customer": "Σωτήρης Λιαπης"
+  },
+  "8594/2026": {
+    "packedAt": "2026-04-16T07:59:25.247Z",
+    "customer": "Στελιος Στιβακτακης"
+  },
+  "8585/2026": {
+    "packedAt": "2026-04-16T08:00:07.861Z",
+    "customer": "ΔΗΜΗΤΡΗΣ ΑΝΑΓΝΩΣΤΟΠΟΥΛΟΣ"
+  },
+  "8572/2026": {
+    "packedAt": "2026-04-16T08:01:45.721Z",
+    "customer": "ΔΗΜΗΤΡΗΣ ΝΕΣΤΟΡΑΣ"
+  },
+  "8560/2026": {
+    "packedAt": "2026-04-16T08:02:26.209Z",
+    "customer": "Δημήτριος Κοτρογιαννος"
+  },
+  "8550/2026": {
+    "packedAt": "2026-04-16T08:03:05.861Z",
+    "customer": "Αναστασιος ΜΕΡΤΖΑΝΙΔΗΣ"
+  },
+  "8539/2026": {
+    "packedAt": "2026-04-16T08:03:39.509Z",
+    "customer": "Kostas Gamotos"
+  },
+  "8538/2026": {
+    "packedAt": "2026-04-16T08:04:15.821Z",
+    "customer": "Νικος Παπαβραμίδης"
+  },
+  "8637/2026": {
+    "packedAt": "2026-04-16T08:04:52.409Z",
+    "customer": "Vasileios Kontos"
+  },
+  "8561/2026": {
+    "packedAt": "2026-04-16T08:07:06.920Z",
+    "customer": "Δημητρης Ροζης"
+  },
+  "8549/2026": {
+    "packedAt": "2026-04-16T08:07:48.083Z",
+    "customer": "Βασίλης Κατσαράς"
+  },
+  "8548/2026": {
+    "packedAt": "2026-04-16T08:08:25.117Z",
+    "customer": "Antonie Sekerová"
+  },
+  "8526/2026": {
+    "packedAt": "2026-04-16T08:08:57.021Z",
+    "customer": "Vladimír Kajan"
+  },
+  "8653/2026": {
+    "packedAt": "2026-04-16T09:56:23.871Z",
+    "customer": "Martin Karasek"
+  },
+  "8652/2026": {
+    "packedAt": "2026-04-16T09:57:53.938Z",
+    "customer": "Παπαδημητριου Παναγιώτης"
+  },
+  "8658/2026": {
+    "packedAt": "2026-04-16T09:57:53.938Z",
+    "customer": "Sandra Kokan"
+  },
+  "8651/2026": {
+    "packedAt": "2026-04-16T09:57:53.938Z",
+    "customer": "panagiotis vlaxos"
+  },
+  "8669/2026": {
+    "packedAt": "2026-04-16T10:04:18.461Z",
+    "customer": "Αλεξανδρος Σιφης"
+  },
+  "8668/2026": {
+    "packedAt": "2026-04-16T10:04:18.461Z",
+    "customer": "ΘΕΟΔΩΡΟΣ ΜΟΥΡΤΟΣ"
+  },
+  "8667/2026": {
+    "packedAt": "2026-04-16T10:04:18.461Z",
+    "customer": "ΑΝΑΣΤΑΣΙΟΣ ΓΕΩΡΓΙΟΥ"
+  },
+  "8666/2026": {
+    "packedAt": "2026-04-16T10:07:07.013Z",
+    "customer": "Veronika Supova"
+  },
+  "8639/2026": {
+    "packedAt": "2026-04-16T10:14:16.384Z",
+    "customer": "Stefano Bongiorno"
+  },
+  "8553/2026": {
+    "packedAt": "2026-04-16T10:14:16.385Z",
+    "customer": "Veronica Bruno leggio"
+  },
+  "8522/2026": {
+    "packedAt": "2026-04-16T10:14:51.286Z",
+    "customer": "Luigi Puorto"
+  },
+  "8559/2026": {
+    "packedAt": "2026-04-16T10:15:26.815Z",
+    "customer": "Giovanni Lotito"
+  },
+  "8535/2026": {
+    "packedAt": "2026-04-16T10:17:05.059Z",
+    "customer": "Geremia Iona"
+  },
+  "8646/2026": {
+    "packedAt": "2026-04-16T10:18:35.066Z",
+    "customer": "Valerio Chiri"
+  },
+  "8680/2026": {
+    "packedAt": "2026-04-17T06:15:02.711Z",
+    "customer": "Boglárka Molnárné Bóta"
+  },
+  "8732/2026": {
+    "packedAt": "2026-04-17T06:16:38.916Z",
+    "customer": "Endre Péter Nagy"
+  },
+  "8739/2026": {
+    "packedAt": "2026-04-17T06:17:16.232Z",
+    "customer": "László Hódi"
+  },
+  "8752/2026": {
+    "packedAt": "2026-04-17T06:18:27.855Z",
+    "customer": "Attila Kiss"
+  },
+  "8753/2026": {
+    "packedAt": "2026-04-17T06:19:02.627Z",
+    "customer": "Istvàn Heim"
+  },
+  "8755/2026": {
+    "packedAt": "2026-04-17T06:19:41.776Z",
+    "customer": "János Illés"
+  },
+  "8758/2026": {
+    "packedAt": "2026-04-17T06:20:38.036Z",
+    "customer": "Simon Tibor"
+  },
+  "8751/2026": {
+    "packedAt": "2026-04-17T06:21:19.744Z",
+    "customer": "Zoltán Oláh"
+  },
+  "8678/2026": {
+    "packedAt": "2026-04-17T06:22:20.330Z",
+    "customer": "Sándor Sánta"
+  },
+  "8733/2026": {
+    "packedAt": "2026-04-17T06:23:16.731Z",
+    "customer": "László Szatmári"
+  },
+  "8677/2026": {
+    "packedAt": "2026-04-17T06:24:36.056Z",
+    "customer": "Beáta Bartosné Molnár"
+  },
+  "8760/2026": {
+    "packedAt": "2026-04-17T06:25:43.998Z",
+    "customer": "Katalin Gyurász"
+  },
+  "8679/2026": {
+    "packedAt": "2026-04-17T06:26:49.165Z",
+    "customer": "Gyöngyi Némedi"
+  },
+  "8746/2026": {
+    "packedAt": "2026-04-17T06:27:33.644Z",
+    "customer": "Melinda Bernáth"
+  },
+  "8734/2026": {
+    "packedAt": "2026-04-17T06:28:27.016Z",
+    "customer": "Lívia Csontos"
+  },
+  "8766/2026": {
+    "packedAt": "2026-04-17T06:48:54.714Z",
+    "customer": "Miklos Fekete"
+  },
+  "8782/2026": {
+    "packedAt": "2026-04-17T06:49:16.469Z",
+    "customer": "Pálkerti Norbert"
+  },
+  "8718/2026": {
+    "packedAt": "2026-04-17T06:49:18.918Z",
+    "customer": "Kalman Szekely"
+  },
+  "8780/2026": {
+    "packedAt": "2026-04-17T06:49:42.373Z",
+    "customer": "Balázs Margit"
+  },
+  "8781/2026": {
+    "packedAt": "2026-04-17T06:50:32.757Z",
+    "customer": "István Svidró"
+  },
+  "8724/2026": {
+    "packedAt": "2026-04-17T06:53:47.124Z",
+    "customer": "Emil Bogdan"
+  },
+  "8748/2026": {
+    "packedAt": "2026-04-17T06:55:41.729Z",
+    "customer": "Zlatko Merlin"
+  },
+  "8691/2026": {
+    "packedAt": "2026-04-17T06:56:32.384Z",
+    "customer": "Danijel Fištrović"
+  },
+  "8754/2026": {
+    "packedAt": "2026-04-17T06:57:22.389Z",
+    "customer": "Josip Čančar"
+  },
+  "8747/2026": {
+    "packedAt": "2026-04-17T06:58:14.824Z",
+    "customer": "Neven Krnić"
+  },
+  "8740/2026": {
+    "packedAt": "2026-04-17T06:59:16.563Z",
+    "customer": "Silvija Šešelj"
+  },
+  "8654/2026": {
+    "packedAt": "2026-04-17T06:59:46.269Z",
+    "customer": "Ivan Jazvic"
+  },
+  "8664/2026": {
+    "packedAt": "2026-04-17T07:00:13.767Z",
+    "customer": "Gregor Perčić"
+  },
+  "8665/2026": {
+    "packedAt": "2026-04-17T07:00:45.038Z",
+    "customer": "Sandra Siljan"
+  },
+  "8681/2026": {
+    "packedAt": "2026-04-17T07:01:05.216Z",
+    "customer": "Neno Šoljan"
+  },
+  "8692/2026": {
+    "packedAt": "2026-04-17T07:01:51.049Z",
+    "customer": "Franjo Koš"
+  },
+  "8702/2026": {
+    "packedAt": "2026-04-17T07:02:28.961Z",
+    "customer": "Ivica Tačković"
+  },
+  "8725/2026": {
+    "packedAt": "2026-04-17T07:03:12.920Z",
+    "customer": "Mirela Petran"
+  },
+  "8768/2026": {
+    "packedAt": "2026-04-17T07:03:50.454Z",
+    "customer": "Ivana Bescec"
+  },
+  "8776/2026": {
+    "packedAt": "2026-04-17T07:06:11.607Z",
+    "customer": "Tatjana Matičić"
+  },
+  "8657/2026": {
+    "packedAt": "2026-04-17T07:32:36.195Z",
+    "customer": "Nenad Čirjak"
+  },
+  "8767/2026": {
+    "packedAt": "2026-04-17T08:17:42.444Z",
+    "customer": "Dominik Chudzik"
+  },
+  "8769/2026": {
+    "packedAt": "2026-04-17T08:18:44.840Z",
+    "customer": "Jaroslav Došlý"
+  },
+  "8806/2026": {
+    "packedAt": "2026-04-17T08:21:32.754Z",
+    "customer": "Michal Madarasz"
+  },
+  "8777/2026": {
+    "packedAt": "2026-04-17T08:23:05.032Z",
+    "customer": "Spyros Melissourgos"
+  },
+  "8727/2026": {
+    "packedAt": "2026-04-17T08:23:43.709Z",
+    "customer": "Μιχάλης Λαδας"
+  },
+  "8708/2026": {
+    "packedAt": "2026-04-17T08:24:21.733Z",
+    "customer": "Κωστας Χραμπανης"
+  },
+  "8706/2026": {
+    "packedAt": "2026-04-17T08:25:00.307Z",
+    "customer": "giorgos korakas"
+  },
+  "8703/2026": {
+    "packedAt": "2026-04-17T08:25:34.390Z",
+    "customer": "ΑΘΑΝΑΣΙΟΣ ΣΧΙΖΑΣ"
+  },
+  "8798/2026": {
+    "packedAt": "2026-04-17T08:26:17.751Z",
+    "customer": "ΠΑΝΑΓΙΏΤΗΣ ΝΤΖΌΙΔΟΣ"
+  },
+  "8728/2026": {
+    "packedAt": "2026-04-17T08:26:59.874Z",
+    "customer": "VASILIS KOUTROULAKIS"
+  },
+  "8699/2026": {
+    "packedAt": "2026-04-17T09:53:26.520Z",
+    "customer": "Patrizio Bardoni"
+  },
+  "8723/2026": {
+    "packedAt": "2026-04-17T09:54:48.855Z",
+    "customer": "Luciano Barucci"
+  },
+  "8745/2026": {
+    "packedAt": "2026-04-17T09:55:33.404Z",
+    "customer": "Ivan Serano"
+  },
+  "8700/2026": {
+    "packedAt": "2026-04-17T09:56:16.786Z",
+    "customer": "Ferrero silvano"
+  },
+  "8813/2026": {
+    "packedAt": "2026-04-17T09:56:20.594Z",
+    "customer": "Fausto Corrieri"
+  },
+  "8815/2026": {
+    "packedAt": "2026-04-17T09:56:20.594Z",
+    "customer": "Enrico Fanzio"
+  },
+  "8814/2026": {
+    "packedAt": "2026-04-17T09:56:20.594Z",
+    "customer": "Alessio Latina"
+  },
+  "8812/2026": {
+    "packedAt": "2026-04-17T09:56:20.595Z",
+    "customer": "Riccardo Mafessoni"
+  },
+  "8750/2026": {
+    "packedAt": "2026-04-17T09:56:57.285Z",
+    "customer": "Angelo Tamborrino"
+  },
+  "8676/2026": {
+    "packedAt": "2026-04-17T09:57:31.083Z",
+    "customer": "Alessandro Zufoletto"
+  },
+  "8697/2026": {
+    "packedAt": "2026-04-17T09:59:18.527Z",
+    "customer": "Stefano Rossi"
+  },
+  "8823/2026": {
+    "packedAt": "2026-04-17T10:08:02.979Z",
+    "customer": "Radek Bartoš"
+  },
+  "8717/2026": {
+    "packedAt": "2026-04-17T10:08:13.321Z",
+    "customer": "Miloš Kolársky"
+  },
+  "8816/2026": {
+    "packedAt": "2026-04-17T10:09:07.073Z",
+    "customer": "Βασιλης Μαργωμενος"
+  },
+  "8824/2026": {
+    "packedAt": "2026-04-17T10:10:15.788Z",
+    "customer": "Αθανάσιος Χριστοφιλεας"
+  },
+  "9112/2026": {
+    "packedAt": "2026-04-19T08:14:49.500Z",
+    "customer": "László Gulyás"
+  },
+  "9089/2026": {
+    "packedAt": "2026-04-19T08:15:36.155Z",
+    "customer": "Róbert Kovács"
+  },
+  "8972/2026": {
+    "packedAt": "2026-04-19T08:16:34.050Z",
+    "customer": "Koszta Tibor"
+  },
+  "8887/2026": {
+    "packedAt": "2026-04-19T08:17:40.401Z",
+    "customer": "Makovics Tamás"
+  },
+  "8811/2026": {
+    "packedAt": "2026-04-19T08:19:59.220Z",
+    "customer": "Kráz Szilvi"
+  },
+  "8821/2026": {
+    "packedAt": "2026-04-19T08:21:42.491Z",
+    "customer": "Dániel Molnár"
+  },
+  "8828/2026": {
+    "packedAt": "2026-04-19T08:21:42.491Z",
+    "customer": "Beáta Dr. Salamon"
+  },
+  "8845/2026": {
+    "packedAt": "2026-04-19T08:23:43.405Z",
+    "customer": "László Zsiga"
+  },
+  "8851/2026": {
+    "packedAt": "2026-04-19T08:25:05.067Z",
+    "customer": "Tamás Dombóvári"
+  },
+  "8855/2026": {
+    "packedAt": "2026-04-19T08:25:53.462Z",
+    "customer": "Csekő Richárd"
+  },
+  "8856/2026": {
+    "packedAt": "2026-04-19T08:31:43.080Z",
+    "customer": "Viktor Vámos"
+  },
+  "8857/2026": {
+    "packedAt": "2026-04-19T08:36:35.601Z",
+    "customer": "Lilla Heller"
+  },
+  "8864/2026": {
+    "packedAt": "2026-04-19T08:36:35.602Z",
+    "customer": "Gergő Kovács"
+  },
+  "8866/2026": {
+    "packedAt": "2026-04-19T08:37:11.174Z",
+    "customer": "Sándor Balázs"
+  },
+  "8879/2026": {
+    "packedAt": "2026-04-19T08:38:08.656Z",
+    "customer": "Roland Ramocsa"
+  },
+  "8880/2026": {
+    "packedAt": "2026-04-19T08:38:53.665Z",
+    "customer": "Erik Molnár"
+  },
+  "8885/2026": {
+    "packedAt": "2026-04-19T08:40:25.295Z",
+    "customer": "Csuka Gábor"
+  },
+  "8886/2026": {
+    "packedAt": "2026-04-19T08:41:07.852Z",
+    "customer": "Dániel Boros"
+  },
+  "8892/2026": {
+    "packedAt": "2026-04-19T08:42:14.749Z",
+    "customer": "Béla Marton"
+  },
+  "8893/2026": {
+    "packedAt": "2026-04-19T08:42:46.593Z",
+    "customer": "Kinga Moldvai"
+  },
+  "8940/2026": {
+    "packedAt": "2026-04-19T08:43:27.628Z",
+    "customer": "Csaba Ifju"
+  },
+  "8945/2026": {
+    "packedAt": "2026-04-19T08:44:12.439Z",
+    "customer": "Zoltánné Polonkai"
+  },
+  "8953/2026": {
+    "packedAt": "2026-04-19T08:45:06.152Z",
+    "customer": "József Illés"
+  },
+  "8957/2026": {
+    "packedAt": "2026-04-19T08:46:03.772Z",
+    "customer": "Péter Málhai"
+  },
+  "8971/2026": {
+    "packedAt": "2026-04-19T08:46:54.474Z",
+    "customer": "Krisztina Kiss"
+  },
+  "8989/2026": {
+    "packedAt": "2026-04-19T08:51:16.425Z",
+    "customer": "Miklós Szontagh"
+  },
+  "8990/2026": {
+    "packedAt": "2026-04-19T08:52:00.408Z",
+    "customer": "Zsolt Kovács"
+  },
+  "9000/2026": {
+    "packedAt": "2026-04-19T08:52:45.772Z",
+    "customer": "Sándor József Kovács"
+  },
+  "9014/2026": {
+    "packedAt": "2026-04-19T08:54:13.274Z",
+    "customer": "Emese Bozsó-Szabó"
+  },
+  "9015/2026": {
+    "packedAt": "2026-04-19T08:55:25.307Z",
+    "customer": "Hajnalka Rejtélyi"
+  },
+  "9027/2026": {
+    "packedAt": "2026-04-19T08:56:48.659Z",
+    "customer": "Heiczinger Mihály"
+  },
+  "9044/2026": {
+    "packedAt": "2026-04-19T08:57:31.618Z",
+    "customer": "Lajos Fòrika"
+  },
+  "9060/2026": {
+    "packedAt": "2026-04-19T08:59:13.537Z",
+    "customer": "Balazs Egri"
+  },
+  "9071/2026": {
+    "packedAt": "2026-04-19T08:59:57.912Z",
+    "customer": "István Somfai"
+  },
+  "9072/2026": {
+    "packedAt": "2026-04-19T09:02:00.778Z",
+    "customer": "Gergely Kámán"
+  },
+  "9083/2026": {
+    "packedAt": "2026-04-19T09:02:40.034Z",
+    "customer": "Ferenc Magyar"
+  },
+  "9095/2026": {
+    "packedAt": "2026-04-19T09:05:18.019Z",
+    "customer": "Szórádi Zoltán"
+  },
+  "9099/2026": {
+    "packedAt": "2026-04-19T09:05:55.434Z",
+    "customer": "Ottó Kovács"
+  },
+  "9107/2026": {
+    "packedAt": "2026-04-19T09:06:42.237Z",
+    "customer": "Zoltán Görög"
+  },
+  "9111/2026": {
+    "packedAt": "2026-04-19T09:07:54.301Z",
+    "customer": "Rollo-Flex Kft"
+  },
+  "9117/2026": {
+    "packedAt": "2026-04-19T09:08:40.602Z",
+    "customer": "Győr Tamás"
+  },
+  "9118/2026": {
+    "packedAt": "2026-04-19T09:09:05.673Z",
+    "customer": "Ferenc Baranek"
+  },
+  "8905/2026": {
+    "packedAt": "2026-04-19T09:10:53.699Z",
+    "customer": "Tamás Dunai"
+  },
+  "8958/2026": {
+    "packedAt": "2026-04-19T09:11:40.349Z",
+    "customer": "Ferenc Németh"
+  },
+  "8973/2026": {
+    "packedAt": "2026-04-19T09:14:25.162Z",
+    "customer": "Fanni Ungvárszki"
+  },
+  "9082/2026": {
+    "packedAt": "2026-04-19T09:15:18.421Z",
+    "customer": "Tamás Tóth"
+  },
+  "8865/2026": {
+    "packedAt": "2026-04-19T09:16:41.315Z",
+    "customer": "Balázs Pajor"
+  },
+  "8849/2026": {
+    "packedAt": "2026-04-19T09:17:27.933Z",
+    "customer": "Szilárd Vizi"
+  },
+  "9126/2026": {
+    "packedAt": "2026-04-19T09:20:43.788Z",
+    "customer": "Bartok Lajos"
+  },
+  "8852/2026": {
+    "packedAt": "2026-04-19T09:26:46.364Z",
+    "customer": "vedran Dikovic"
+  },
+  "8822/2026": {
+    "packedAt": "2026-04-19T09:27:47.640Z",
+    "customer": "Eugen Stanissa"
+  },
+  "8895/2026": {
+    "packedAt": "2026-04-19T09:27:47.640Z",
+    "customer": "Milan čorak"
+  },
+  "9053/2026": {
+    "packedAt": "2026-04-19T09:28:26.597Z",
+    "customer": "Nikolina Pranjić"
+  },
+  "8897/2026": {
+    "packedAt": "2026-04-19T09:30:17.219Z",
+    "customer": "Danijela Alasović"
+  },
+  "9100/2026": {
+    "packedAt": "2026-04-19T09:32:32.742Z",
+    "customer": "Kosta Urumović"
+  },
+  "9001/2026": {
+    "packedAt": "2026-04-19T09:33:50.102Z",
+    "customer": "Dobitak Doo"
+  },
+  "8860/2026": {
+    "packedAt": "2026-04-19T09:34:44.674Z",
+    "customer": "Domagoj Rafajec"
+  },
+  "8915/2026": {
+    "packedAt": "2026-04-19T09:36:21.286Z",
+    "customer": "Ante Simic"
+  },
+  "8894/2026": {
+    "packedAt": "2026-04-19T09:39:48.373Z",
+    "customer": "Dubravko Ratkajec"
+  },
+  "8807/2026": {
+    "packedAt": "2026-04-19T09:41:02.466Z",
+    "customer": "Marko Katic"
+  },
+  "8867/2026": {
+    "packedAt": "2026-04-19T09:41:42.293Z",
+    "customer": "Ilija Ilija"
+  },
+  "8868/2026": {
+    "packedAt": "2026-04-19T09:42:53.191Z",
+    "customer": "Marica Domić"
+  },
+  "8946/2026": {
+    "packedAt": "2026-04-19T09:46:32.274Z",
+    "customer": "Nino Kovač"
+  },
+  "8991/2026": {
+    "packedAt": "2026-04-19T09:47:45.879Z",
+    "customer": "Dubravka Vuković"
+  },
+  "8992/2026": {
+    "packedAt": "2026-04-19T09:48:25.833Z",
+    "customer": "Ivana Čevra"
+  },
+  "9019/2026": {
+    "packedAt": "2026-04-19T09:48:56.489Z",
+    "customer": "Nenad Mikadi"
+  },
+  "9062/2026": {
+    "packedAt": "2026-04-19T09:51:04.057Z",
+    "customer": "Ivana Glumpak"
+  },
+  "9101/2026": {
+    "packedAt": "2026-04-19T09:52:08.386Z",
+    "customer": "Marijan Radović"
+  },
+  "9108/2026": {
+    "packedAt": "2026-04-19T09:52:49.874Z",
+    "customer": "Stipe Lešina"
+  },
+  "8829/2026": {
+    "packedAt": "2026-04-19T09:53:17.094Z",
+    "customer": "Nedeljko Tomić"
+  },
+  "9061/2026": {
+    "packedAt": "2026-04-19T09:54:09.391Z",
+    "customer": "Marko Keskic"
+  },
+  "9119/2026": {
+    "packedAt": "2026-04-19T09:54:46.281Z",
+    "customer": "marin žanić"
+  },
+  "8906/2026": {
+    "packedAt": "2026-04-19T09:57:52.973Z",
+    "customer": "Vasilis Chatziefstratioy"
+  },
+  "8952/2026": {
+    "packedAt": "2026-04-19T09:58:53.057Z",
+    "customer": "Veran Božak"
+  },
+  "8898/2026": {
+    "packedAt": "2026-04-19T09:59:39.969Z",
+    "customer": "Nick Zachariadis"
+  },
+  "8889/2026": {
+    "packedAt": "2026-04-19T10:00:21.487Z",
+    "customer": "Ck Κωτουλας"
+  },
+  "8888/2026": {
+    "packedAt": "2026-04-19T10:01:03.478Z",
+    "customer": "Βασίλης Αβραμόπουλος"
+  },
+  "9045/2026": {
+    "packedAt": "2026-04-19T10:02:03.909Z",
+    "customer": "Željko Czechsky"
+  },
+  "8881/2026": {
+    "packedAt": "2026-04-19T10:03:31.837Z",
+    "customer": "Γιωργος Περιστερας"
+  },
+  "8878/2026": {
+    "packedAt": "2026-04-19T10:04:57.314Z",
+    "customer": "Νικος Ρουκακιανακης"
+  },
+  "8913/2026": {
+    "packedAt": "2026-04-19T10:06:11.231Z",
+    "customer": "ΓΕΩΡΓΙΟΣ ΓΚΙΖΑΣ"
+  },
+  "8877/2026": {
+    "packedAt": "2026-04-19T10:06:26.459Z",
+    "customer": "Αντρεας Κονδυλαρος"
+  },
+  "8916/2026": {
+    "packedAt": "2026-04-19T10:06:53.896Z",
+    "customer": "Γκίκας Σωτήρης"
+  },
+  "8876/2026": {
+    "packedAt": "2026-04-19T10:07:31.488Z",
+    "customer": "Ανδρέας Δρογγιτης"
+  },
+  "8920/2026": {
+    "packedAt": "2026-04-19T10:07:48.435Z",
+    "customer": "Andreas Adamos"
+  },
+  "8873/2026": {
+    "packedAt": "2026-04-19T10:08:16.118Z",
+    "customer": "Nikos Dridakis"
+  },
+  "8921/2026": {
+    "packedAt": "2026-04-19T10:09:23.722Z",
+    "customer": "Xristos Stefanakis"
+  },
+  "8872/2026": {
+    "packedAt": "2026-04-19T10:09:51.864Z",
+    "customer": "Θωμας Κουρουνακος"
+  },
+  "8922/2026": {
+    "packedAt": "2026-04-19T10:10:04.821Z",
+    "customer": "Χρηστος Ηλιας"
+  },
+  "8871/2026": {
+    "packedAt": "2026-04-19T10:10:27.591Z",
+    "customer": "Απόστολος Κοσμάς"
+  },
+  "8923/2026": {
+    "packedAt": "2026-04-19T10:10:40.387Z",
+    "customer": "Ιωάννης Παπαδόπουλος"
+  },
+  "8870/2026": {
+    "packedAt": "2026-04-19T10:11:02.953Z",
+    "customer": "γεωργιος ζωντανος"
+  },
+  "8925/2026": {
+    "packedAt": "2026-04-19T10:11:30.250Z",
+    "customer": "Νίκος Μουζουράκης"
+  },
+  "8863/2026": {
+    "packedAt": "2026-04-19T10:11:39.814Z",
+    "customer": "Χαράλαμπος Παπαδόπουλος"
+  },
+  "8854/2026": {
+    "packedAt": "2026-04-19T10:12:34.527Z",
+    "customer": "Νεκτάριος Θεοχάρης"
+  },
+  "8927/2026": {
+    "packedAt": "2026-04-19T10:12:35.671Z",
+    "customer": "ΔΗΜΗΤΡΗΣ ΡΊΖΟΣ"
+  },
+  "8837/2026": {
+    "packedAt": "2026-04-19T10:13:51.095Z",
+    "customer": "ΠΑΝΑΓΙΩΤΗΣ ΛΙΩΡΗΣ"
+  },
+  "8836/2026": {
+    "packedAt": "2026-04-19T10:14:27.111Z",
+    "customer": "Nikos Moldovanidis"
+  },
+  "8931/2026": {
+    "packedAt": "2026-04-19T10:14:27.906Z",
+    "customer": "Αλέξανδρος Κουκιας"
+  },
+  "8935/2026": {
+    "packedAt": "2026-04-19T10:14:59.285Z",
+    "customer": "Παντελης Ρηγας"
+  },
+  "8938/2026": {
+    "packedAt": "2026-04-19T10:15:35.123Z",
+    "customer": "Χρηστος Μοσχοπουλος"
+  },
+  "8941/2026": {
+    "packedAt": "2026-04-19T10:16:32.777Z",
+    "customer": "Petros Bathrellos"
+  },
+  "8994/2026": {
+    "packedAt": "2026-04-19T10:16:56.419Z",
+    "customer": "ΠΑΝΑΓΙΩΤΗΣ ΜΑΝΙΑΤΗΣ"
+  },
+  "8943/2026": {
+    "packedAt": "2026-04-19T10:16:57.251Z",
+    "customer": "Μιχάλης Λιακας"
+  },
+  "8955/2026": {
+    "packedAt": "2026-04-19T10:17:48.480Z",
+    "customer": "Αναστασια Ευφροσύνη"
+  },
+  "8960/2026": {
+    "packedAt": "2026-04-19T10:18:24.733Z",
+    "customer": "ΗΛΙΑΣ ΧΑΜΗΣ"
+  },
+  "9004/2026": {
+    "packedAt": "2026-04-19T10:27:47.400Z",
+    "customer": "Βασιλης Καλτσας"
+  },
+  "8961/2026": {
+    "packedAt": "2026-04-19T10:19:11.076Z",
+    "customer": "Παντελής Κουντουρακης"
+  },
+  "8962/2026": {
+    "packedAt": "2026-04-19T10:19:41.813Z",
+    "customer": "Τζούλια Μαστροκωστα"
+  },
+  "8963/2026": {
+    "packedAt": "2026-04-19T10:20:18.540Z",
+    "customer": "ΑΝΑΣΤΑΣΗΣ ΣΥΜΙΑΝΑΚΗΣ"
+  },
+  "9040/2026": {
+    "packedAt": "2026-04-19T10:20:24.149Z",
+    "customer": "Giorgos Giannios"
+  },
+  "8964/2026": {
+    "packedAt": "2026-04-19T10:21:01.183Z",
+    "customer": "ANASTASIOS METAXAS"
+  },
+  "8977/2026": {
+    "packedAt": "2026-04-19T10:21:48.202Z",
+    "customer": "Nίκος Τζινίκος"
+  },
+  "9035/2026": {
+    "packedAt": "2026-04-19T10:21:52.426Z",
+    "customer": "Μαρία Ελευθερίου"
+  },
+  "8978/2026": {
+    "packedAt": "2026-04-19T10:22:54.648Z",
+    "customer": "Αντωνης Μπαρπαγιαννης"
+  },
+  "9006/2026": {
+    "packedAt": "2026-04-19T10:23:08.839Z",
+    "customer": "Χρήστος Μπέλλος"
+  },
+  "8979/2026": {
+    "packedAt": "2026-04-19T10:23:36.741Z",
+    "customer": "Emm Pitharoylis"
+  },
+  "9003/2026": {
+    "packedAt": "2026-04-19T10:24:13.899Z",
+    "customer": "Ανδρεας ΦΟΥΣΤΕΡΗΣ"
+  },
+  "8980/2026": {
+    "packedAt": "2026-04-19T10:24:16.877Z",
+    "customer": "Giorgos Τσακοφιτης"
+  },
+  "8981/2026": {
+    "packedAt": "2026-04-19T10:24:56.837Z",
+    "customer": "Νικος Αχλαδιωτης"
+  },
+  "8996/2026": {
+    "packedAt": "2026-04-19T10:24:57.415Z",
+    "customer": "ΜΙΜΗΣ Καρατζάς"
+  },
+  "8995/2026": {
+    "packedAt": "2026-04-19T10:25:42.208Z",
+    "customer": "Μανος Βαλιδάκης"
+  },
+  "8869/2026": {
+    "packedAt": "2026-04-19T10:26:24.770Z",
+    "customer": "Μάριος Μαλτζης"
+  },
+  "9002/2026": {
+    "packedAt": "2026-04-19T10:26:38.338Z",
+    "customer": "Achilleas Vlachonatsios"
+  },
+  "8831/2026": {
+    "packedAt": "2026-04-19T10:27:25.379Z",
+    "customer": "Γεώργιος Σιδηρόπουλος"
+  },
+  "8830/2026": {
+    "packedAt": "2026-04-19T10:27:47.099Z",
+    "customer": "ΑΘΑΝΑΣΙΟΣ Πατσιουρας"
+  },
+  "9005/2026": {
+    "packedAt": "2026-04-19T10:29:06.418Z",
+    "customer": "Nikitas Stampoulidis"
+  },
+  "9036/2026": {
+    "packedAt": "2026-04-19T10:30:09.940Z",
+    "customer": "Apostolos Kiouras"
+  },
+  "9039/2026": {
+    "packedAt": "2026-04-19T10:31:56.883Z",
+    "customer": "Χρήστος Πασσάς"
+  },
+  "9007/2026": {
+    "packedAt": "2026-04-19T10:32:25.945Z",
+    "customer": "ΚΟΥΚΟΣ ΣΩΤΗΡΙΟΣ"
+  }
+}
