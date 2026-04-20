@@ -3607,7 +3607,7 @@ app.get('/api/packing/orders', async (req, res) => {
         };
         
         // Filter by Noriks shops only at API level (eshop_name_list)
-        const NORIKS_SHOPS = 'noriks.com/hr,noriks.com/hu,noriks.com/cz,noriks.com/gr,noriks.com/it,noriks.com/sk,noriks.com/pl';
+        const NORIKS_SHOPS = 'noriks.com/hr,noriks.com/hu,noriks.com/cz,noriks.com/gr,noriks.com/it,noriks.com/sk,noriks.com/pl,noriks.com/si,noriks.com/ro';
         queryAdvance.push({ type: 'eshop_name_list', value: NORIKS_SHOPS });
         
         requestBody.query_advance = queryAdvance;
