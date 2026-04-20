@@ -3606,15 +3606,16 @@ app.get('/api/packing/orders', async (req, res) => {
             order_direction: 'desc'
         };
         
-        if (queryAdvance.length > 0) {
-            requestBody.query_advance = queryAdvance;
-        }
+        // Filter by Noriks shops only at API level (eshop_name_list)
+        const NORIKS_SHOPS = 'noriks.com/hr,noriks.com/hu,noriks.com/cz,noriks.com/gr,noriks.com/it,noriks.com/sk,noriks.com/pl';
+        queryAdvance.push({ type: 'eshop_name_list', value: NORIKS_SHOPS });
         
-        // Paginate Metakocka API - filter noriks orders immediately per page
+        requestBody.query_advance = queryAdvance;
+        
+        // Paginate Metakocka API (only Noriks orders returned)
         let results = [];
         const MAX_PAGES = 20;
         let offset = 0;
-        let totalFetched = 0;
         let pageNum = 0;
         while (pageNum < MAX_PAGES) {
             const pageBody = { ...requestBody, limit: 100, offset };
@@ -3632,20 +3633,18 @@ app.get('/api/packing/orders', async (req, res) => {
             }
             
             const page = data.result || [];
-            totalFetched += page.length;
-            
-            // Filter noriks + status immediately per page
-            let filtered = page.filter(o => (o.eshop_name || '').toLowerCase().includes('noriks'));
-            if (status) {
-                filtered = filtered.filter(o => (o.status_code || '').startsWith(status));
-            }
-            results = results.concat(filtered);
-            
+            results = results.concat(page);
             if (page.length < 100) break;
             offset += 100;
             pageNum++;
         }
-        console.log('[Packing] Fetched ' + totalFetched + ' from Metakocka (' + (pageNum + 1) + ' pages), ' + results.length + ' noriks orders match');
+        console.log('[Packing] Fetched ' + results.length + ' Noriks orders from Metakocka (' + (pageNum + 1) + ' pages, eshop_name_list filter)');
+        
+        // Filter by status locally
+        if (status) {
+            results = results.filter(o => (o.status_code || '').startsWith(status));
+            console.log('[Packing] After status filter (' + status + '): ' + results.length + ' orders');
+        }
         
         // Limit to requested amount
         results = results.slice(0, parseInt(limit));
