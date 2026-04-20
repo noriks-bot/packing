@@ -3610,9 +3610,9 @@ app.get('/api/packing/orders', async (req, res) => {
             requestBody.query_advance = queryAdvance;
         }
         
-        // Paginate Metakocka API (max 100 per request, fetch up to 500)
+        // Paginate Metakocka API (max 100 per request, fetch up to 2000)
         let results = [];
-        const MAX_RESULTS = 500;
+        const MAX_RESULTS = 2000;
         let offset = 0;
         while (offset < MAX_RESULTS) {
             const pageBody = { ...requestBody, limit: 100, offset };
@@ -3632,15 +3632,15 @@ app.get('/api/packing/orders', async (req, res) => {
             const page = data.result || [];
             results = results.concat(page);
             if (page.length < 100) break;
-            // Early exit: if no matching status in this page, stop paginating
-            if (status && !page.some(o => o.status_code === status)) break;
+            // Continue paginating - do not early exit (noriks orders may be on later pages)
+            // (removed early exit to handle high-volume weekends)
             offset += 100;
         }
         console.log(`[Packing] Fetched ${results.length} orders from Metakocka (${Math.ceil((offset)/100)+1} pages)`);
         
         // Filter by status locally
         if (status) {
-            results = results.filter(o => o.status_code === status);
+            results = results.filter(o => (o.status_code || "").startsWith(status));
             console.log(`[Packing] After status filter (${status}): ${results.length} orders`);
         }
 
