@@ -3729,7 +3729,7 @@ app.get('/api/packing/orders', async (req, res) => {
                             allItems = parsedItems;
                         }
                         // Validate items — flag warnings
-                        const knownSlovenianColors = ['Črna', 'Modra', 'Bela', 'Siva', 'Zelena', 'Rdeča', 'Rjava', 'Bež', 'Roza', 'Oranžna', 'Vijolična', 'Rumena', 'Turkizna', 'Temno modra', 'Svetlo modra', 'Tamnoplava', 'Smeđa', 'Črna & Bela', 'Ni podatka', ''];
+                        const knownSlovenianColors = ['Črna', 'Modra', 'Bela', 'Siva', 'Zelena', 'Rdeča', 'Rjava', 'Bež', 'Roza', 'Oranžna', 'Vijolična', 'Rumena', 'Turkizna', 'Temno modra', 'Temnomodra', 'Svetlo modra', 'Svetlomodra', 'Tamnoplava', 'Smeđa', 'Črna & Bela', 'Ni podatka', ''];
                         const knownTypes = ['Majica', 'Boksarice', 'Starter paket', 'Nogavice', ''];
                         for (const item of allItems) {
                             if (item.noWarning) { delete item.noWarning; continue; }
