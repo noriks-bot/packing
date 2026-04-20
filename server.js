@@ -4388,10 +4388,15 @@ function parseDocDesc(docDesc, productCode, productName) {
         'ONE-DARKBLUE': 'Temno modra', 'ONE-BLACK': 'Črna', 'ONE-WHITE': 'Bela',
         'ONE-GREY': 'Siva', 'ONE-GREEN': 'Zelena', 'ONE-BLUE': 'Modra',
         'ONE-BROWN': 'Rjava', 'ONE-BEIGE': 'Bež', 'ONE-RED': 'Rdeča',
+        // Boxers (single + upsell)
+        'BOXERS-BLACK': 'Črna', 'BOXERS-GRAY': 'Siva', 'BOXERS-RED': 'Rdeča',
+        'BOXERS-BLUE': 'Modra', 'BOXERS-GREEN': 'Zelena', 'BOXERS-WHITE': 'Bela',
+        'BOXERS-DARKBLUE': 'Temno modra', 'BOXERS-BROWN': 'Rjava',
     };
     for (const [key, color] of Object.entries(singleProductColors)) {
         if (code.includes(key)) {
-            return [{ type: productType || 'Majica', color, size: bundleSize }];
+            const type = key.startsWith('BOXERS') ? (productType || 'Boksarice') : (productType || 'Majica');
+            return [{ type, color, size: bundleSize }];
         }
     }
     
