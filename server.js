@@ -3610,11 +3610,13 @@ app.get('/api/packing/orders', async (req, res) => {
             requestBody.query_advance = queryAdvance;
         }
         
-        // Paginate Metakocka API (max 100 per request, fetch up to 2000)
+        // Paginate Metakocka API - filter noriks orders immediately per page
         let results = [];
-        const MAX_RESULTS = 2000;
+        const MAX_PAGES = 20;
         let offset = 0;
-        while (offset < MAX_RESULTS) {
+        let totalFetched = 0;
+        let pageNum = 0;
+        while (pageNum < MAX_PAGES) {
             const pageBody = { ...requestBody, limit: 100, offset };
             const response = await fetch('https://main.metakocka.si/rest/eshop/v1/search', {
                 method: 'POST',
@@ -3630,23 +3632,20 @@ app.get('/api/packing/orders', async (req, res) => {
             }
             
             const page = data.result || [];
-            results = results.concat(page);
+            totalFetched += page.length;
+            
+            // Filter noriks + status immediately per page
+            let filtered = page.filter(o => (o.eshop_name || '').toLowerCase().includes('noriks'));
+            if (status) {
+                filtered = filtered.filter(o => (o.status_code || '').startsWith(status));
+            }
+            results = results.concat(filtered);
+            
             if (page.length < 100) break;
-            // Continue paginating - do not early exit (noriks orders may be on later pages)
-            // (removed early exit to handle high-volume weekends)
             offset += 100;
+            pageNum++;
         }
-        console.log(`[Packing] Fetched ${results.length} orders from Metakocka (${Math.ceil((offset)/100)+1} pages)`);
-        
-        // Filter by status locally
-        if (status) {
-            results = results.filter(o => (o.status_code || "").startsWith(status));
-            console.log(`[Packing] After status filter (${status}): ${results.length} orders`);
-        }
-
-        // Filter: only Noriks orders (exclude non-noriks shops like shopdbestshop)
-        results = results.filter(o => (o.eshop_name || '').toLowerCase().includes('noriks'));
-        console.log(`[Packing] After noriks-only filter: ${results.length} orders`);
+        console.log('[Packing] Fetched ' + totalFetched + ' from Metakocka (' + (pageNum + 1) + ' pages), ' + results.length + ' noriks orders match');
         
         // Limit to requested amount
         results = results.slice(0, parseInt(limit));
