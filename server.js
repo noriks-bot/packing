@@ -3610,42 +3610,56 @@ app.get('/api/packing/orders', async (req, res) => {
             requestBody.query_advance = queryAdvance;
         }
         
-        // Paginate Metakocka API - filter noriks orders immediately per page
-        let results = [];
-        const MAX_PAGES = 20;
-        let offset = 0;
-        let totalFetched = 0;
-        let pageNum = 0;
-        while (pageNum < MAX_PAGES) {
-            const pageBody = { ...requestBody, limit: 100, offset };
-            const response = await fetch('https://main.metakocka.si/rest/eshop/v1/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(pageBody)
-            });
+        // Fetch ONLY Noriks orders using delivery_type filter (no shopdbestshop)
+        const NORIKS_DELIVERY_TYPES = [
+            'EXPEDICO CZ NORIKS',
+            'EXPEDICO GR GENIKI NORIKS',
+            'GLS HU NORIKS',
+            'NORIKS HR POŠTA',
+            'GLS Italy',
+            'EXPEDICO SK',
+            'EXPEDICO PL'
+        ];
+        
+        // Parallel fetch for each delivery type
+        const fetchPromises = NORIKS_DELIVERY_TYPES.map(async (deliveryType) => {
+            const body = { ...requestBody };
+            if (!body.query_advance) body.query_advance = [];
+            body.query_advance = [...body.query_advance, { type: 'delivery_type', value: deliveryType }];
+            body.limit = 100;
             
-            const data = await response.json();
-            
-            if (data.opr_code !== '0') {
-                console.error('[Packing] Metakocka error:', data);
-                return res.status(500).json({ error: 'Metakocka API error', details: data });
+            // Paginate per delivery type
+            let dtResults = [];
+            let offset = 0;
+            while (offset < 500) {
+                const pageBody = { ...body, offset };
+                const response = await fetch('https://main.metakocka.si/rest/eshop/v1/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pageBody)
+                });
+                const data = await response.json();
+                if (data.opr_code !== '0') {
+                    console.error('[Packing] Metakocka error for ' + deliveryType + ':', data);
+                    break;
+                }
+                const page = data.result || [];
+                dtResults = dtResults.concat(page);
+                if (page.length < 100) break;
+                offset += 100;
             }
-            
-            const page = data.result || [];
-            totalFetched += page.length;
-            
-            // Filter noriks + status immediately per page
-            let filtered = page.filter(o => (o.eshop_name || '').toLowerCase().includes('noriks'));
-            if (status) {
-                filtered = filtered.filter(o => (o.status_code || '').startsWith(status));
-            }
-            results = results.concat(filtered);
-            
-            if (page.length < 100) break;
-            offset += 100;
-            pageNum++;
+            return dtResults;
+        });
+        
+        const allResults = await Promise.all(fetchPromises);
+        let results = allResults.flat();
+        
+        // Filter by status
+        if (status) {
+            results = results.filter(o => (o.status_code || '').startsWith(status));
         }
-        console.log('[Packing] Fetched ' + totalFetched + ' from Metakocka (' + (pageNum + 1) + ' pages), ' + results.length + ' noriks orders match');
+        
+        console.log('[Packing] Fetched ' + results.length + ' Noriks orders (delivery_type filter, ' + NORIKS_DELIVERY_TYPES.length + ' types)');
         
         // Limit to requested amount
         results = results.slice(0, parseInt(limit));
