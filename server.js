@@ -642,7 +642,9 @@ const productNames = {
     gr: { boxers: 'μποξεράκια', tshirt: 'μπλούζα', set: 'σετ' },
     it: { boxers: 'boxer', tshirt: 'maglietta', set: 'set' },
     hu: { boxers: 'boxerrel', tshirt: 'pólóval', set: 'szettel' },
-    sk: { boxers: 'boxerkami', tshirt: 'tričkom', set: 'setom' }
+    sk: { boxers: 'boxerkami', tshirt: 'tričkom', set: 'setom' },
+    si: { boxers: 'boksaricami', tshirt: 'majico', set: 'kompletom' },
+    ro: { boxers: 'boxeri', tshirt: 'tricou', set: 'set' }
 };
 
 app.post('/api/social-proof/generate', async (req, res) => {
@@ -3469,7 +3471,9 @@ async function enrichOrtoOrdersFromWC(orders) {
     const wcTypeMap = {
         'majica': 'Majica', 'tričko': 'Majica', 'koszulka': 'Majica', 'póló': 'Majica', 'maglietta': 'Majica', 'μπλούζα': 'Majica', 'shirt': 'Majica', 't-shirt': 'Majica',
         'bokserica': 'Boksarice', 'boksarice': 'Boksarice', 'boxerky': 'Boksarice', 'bokserki': 'Boksarice', 'boxer': 'Boksarice', 'μπόξερ': 'Boksarice',
-        'nogavice': 'Nogavice', 'ponožky': 'Nogavice', 'skarpetki': 'Nogavice', 'zokni': 'Nogavice', 'calzini': 'Nogavice', 'κάλτσες': 'Nogavice',
+        'nogavice': 'Nogavice', 'ponožky': 'Nogavice', 'skarpetki': 'Nogavice', 'zokni': 'Nogavice', 'calzini': 'Nogavice', 'κάλτσες': 'Nogavice', 'șosete': 'Nogavice', 'sosete': 'Nogavice',
+        // Romanian
+        'tricou': 'Majica', 'tricouri': 'Majica', 'boxeri': 'Boksarice', 'chiloți': 'Boksarice', 'chiloti': 'Boksarice',
     };
     
     function translateWcColor(raw) {
@@ -4246,6 +4250,26 @@ const colorTranslationsServer = {
     'różowy': 'Roza', 'rozowy': 'Roza', 'pomarańczowy': 'Oranžna', 'pomaranczowy': 'Oranžna',
     'fioletowy': 'Vijolična', 'żółty': 'Rumena', 'zolty': 'Rumena',
     'granatowy': 'Temno modra', 'turkusowy': 'Turkizna',
+    // Romanian
+    'negru': 'Črna', 'neagră': 'Črna', 'neagra': 'Črna',
+    'albastru': 'Modra', 'albastră': 'Modra', 'albastra': 'Modra',
+    'alb': 'Bela', 'albă': 'Bela', 'alba': 'Bela',
+    'gri': 'Siva',
+    'roșu': 'Rdeča', 'rosu': 'Rdeča', 'roșie': 'Rdeča', 'rosie': 'Rdeča',
+    'verde': 'Zelena',
+    'bleumarin': 'Temno modra',
+    'maro': 'Rjava', 'maroniu': 'Rjava',
+    'bej': 'Bež',
+    'roz': 'Roza',
+    'portocaliu': 'Oranžna',
+    'mov': 'Vijolična', 'violet': 'Vijolična',
+    'galben': 'Rumena', 'galbenă': 'Rumena', 'galbena': 'Rumena',
+    'turcoaz': 'Turkizna',
+    'bleumarin majica': 'Temno modra', 'Bleumarin Majica': 'Temno modra',
+    'gri majica': 'Siva', 'Gri Majica': 'Siva',
+    'negru majica': 'Črna', 'Negru Majica': 'Črna',
+    'zelena majica': 'Zelena', 'Zelena Majica': 'Zelena',
+    'maro majica': 'Rjava', 'Maro Majica': 'Rjava',
     // Slovenian (pass through)
     'Črna': 'Črna', 'Modra': 'Modra', 'Bela': 'Bela', 'Siva': 'Siva',
     'Zelena': 'Zelena', 'Rdeča': 'Rdeča', 'Rjava': 'Rjava', 'Bež': 'Bež',
