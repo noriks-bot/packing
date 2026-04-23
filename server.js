@@ -3052,7 +3052,7 @@ const META_AD_ACCOUNT = 'act_1922887421998222';
 // VAT rates by country code
 const VAT_RATES = {
     'SI': 0.22, 'HR': 0.25, 'CZ': 0.21, 'PL': 0.23,
-    'GR': 0.24, 'IT': 0.22, 'HU': 0.27, 'SK': 0.20
+    'GR': 0.24, 'IT': 0.22, 'HU': 0.27, 'SK': 0.20, 'DE': 0.19
 };
 
 // Map WooCommerce country to our codes
@@ -3064,7 +3064,8 @@ const COUNTRY_MAP = {
     'Greece': 'GR', 'Grčija': 'GR', 'GR': 'GR',
     'Italy': 'IT', 'Italija': 'IT', 'IT': 'IT',
     'Hungary': 'HU', 'Madžarska': 'HU', 'HU': 'HU',
-    'Slovakia': 'SK', 'Slovaška': 'SK', 'SK': 'SK'
+    'Slovakia': 'SK', 'Slovaška': 'SK', 'SK': 'SK',
+    'Germany': 'DE', 'Nemčija': 'DE', 'Deutschland': 'DE', 'DE': 'DE'
 };
 
 // Get finance summary from Metakocka
