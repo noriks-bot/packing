@@ -4197,6 +4197,10 @@ const typeTranslations = {
     'Μπλούζα': 'Majica', 'Μπλούζα 1': 'Majica', 'Μπλούζα 2': 'Majica', 'Μπλούζα 3': 'Majica',
     'Μπόξερ': 'Boksarice', 'Μπόξερ 1': 'Boksarice', 'Μπόξερ 2': 'Boksarice', 'Μπόξερ 3': 'Boksarice',
     'Μπόξερ 2 2': 'Boksarice',
+    // German
+    'Unterhemd': 'Majica', 'Unterhemd 1': 'Majica', 'Unterhemd 2': 'Majica', 'Unterhemd 3': 'Majica',
+    'Unterhose': 'Boksarice', 'Unterhose 1': 'Boksarice', 'Unterhose 2': 'Boksarice', 'Unterhose 3': 'Boksarice',
+    'Socken': 'Nogavice', 'Socken 1': 'Nogavice', 'Socken 2': 'Nogavice', 'Socken 3': 'Nogavice',
 };
 
 // Color translations for doc_desc (multi-language → Slovenian)
@@ -4272,6 +4276,22 @@ const colorTranslationsServer = {
     'negru majica': 'Črna', 'Negru Majica': 'Črna',
     'zelena majica': 'Zelena', 'Zelena Majica': 'Zelena',
     'maro majica': 'Rjava', 'Maro Majica': 'Rjava',
+    // German
+    'schwarz': 'Črna', 'Schwarz': 'Črna',
+    'weiß': 'Bela', 'weiss': 'Bela', 'Weiß': 'Bela', 'Weiss': 'Bela',
+    'grau': 'Siva', 'Grau': 'Siva',
+    'blau': 'Modra', 'Blau': 'Modra',
+    'rot': 'Rdeča', 'Rot': 'Rdeča',
+    'grün': 'Zelena', 'grun': 'Zelena', 'Grün': 'Zelena', 'Grun': 'Zelena',
+    'braun': 'Rjava', 'Braun': 'Rjava',
+    'dunkelblau': 'Temno modra', 'Dunkelblau': 'Temno modra',
+    'marineblau': 'Temno modra', 'Marineblau': 'Temno modra',
+    'hellblau': 'Svetlo modra', 'Hellblau': 'Svetlo modra',
+    'rosa': 'Roza', 'Rosa': 'Roza',
+    'orange': 'Oranžna', 'Orange': 'Oranžna',
+    'lila': 'Vijolična', 'Lila': 'Vijolična',
+    'gelb': 'Rumena', 'Gelb': 'Rumena',
+    'türkis': 'Turkizna', 'turkis': 'Turkizna', 'Türkis': 'Turkizna', 'Turkis': 'Turkizna',
     // Slovenian (pass through)
     'Črna': 'Črna', 'Modra': 'Modra', 'Bela': 'Bela', 'Siva': 'Siva',
     'Zelena': 'Zelena', 'Rdeča': 'Rdeča', 'Rjava': 'Rjava', 'Bež': 'Bež',
