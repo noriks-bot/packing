@@ -1249,10 +1249,11 @@
                             <a href="/launches/api/localizer/job/${item.id}/zip" class="btn btn-primary">⬇️ ZIP vse</a>
                         </div>
                         <div class="download-flags">
-                            ${['HR', 'CZ', 'PL', 'GR', 'IT', 'HU', 'SK'].map(lang => `
+                            ${['HR', 'CZ', 'PL', 'GR', 'IT', 'HU', 'SK', 'DE'].map(lang => `
                                 <a href="/launches/api/localizer/job/${item.id}/video/${lang}" class="flag-btn">
                                     ${lang === 'HR' ? '🇭🇷' : lang === 'CZ' ? '🇨🇿' : lang === 'PL' ? '🇵🇱' : 
-                                      lang === 'GR' ? '🇬🇷' : lang === 'IT' ? '🇮🇹' : lang === 'HU' ? '🇭🇺' : '🇸🇰'} ${lang}
+                                      lang === 'GR' ? '🇬🇷' : lang === 'IT' ? '🇮🇹' : lang === 'HU' ? '🇭🇺' : 
+                                      lang === 'DE' ? '🇩🇪' : '🇸🇰'} ${lang}
                                 </a>
                             `).join('')}
                         </div>

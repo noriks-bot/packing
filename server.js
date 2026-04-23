@@ -187,7 +187,7 @@ function loadData() {
         return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     } catch (e) {
         return {
-            countries: ["HR", "CZ", "PL", "GR", "IT", "HU", "SK"],
+            countries: ["HR", "CZ", "PL", "GR", "IT", "HU", "SK", "DE"],
             defaultTasks: [],
             assignees: ["Ajda", "Dejan", "Grega", "Petra", "Teja"],
             countryData: {}
@@ -2361,7 +2361,7 @@ app.post('/api/localizer/generate', async (req, res) => {
     if (!fs.existsSync(videoPath)) return res.status(404).json({ error: 'Video not found' });
     
     // Validate and default countries
-    const ALL_COUNTRIES = ['HR', 'CZ', 'PL', 'GR', 'IT', 'HU', 'SK'];
+    const ALL_COUNTRIES = ['HR', 'CZ', 'PL', 'GR', 'IT', 'HU', 'SK', 'DE'];
     const selectedCountries = (countries && Array.isArray(countries) && countries.length > 0) 
         ? countries.filter(c => ALL_COUNTRIES.includes(c))
         : ALL_COUNTRIES;
@@ -2509,7 +2509,7 @@ Return JSON array with verdicts:
 
 async function generateAllCountries(job, videoPath) {
     // Use job.countries if specified, otherwise default to all
-    const LANGUAGES = job.countries || ['HR', 'CZ', 'PL', 'GR', 'IT', 'HU', 'SK'];
+    const LANGUAGES = job.countries || ['HR', 'CZ', 'PL', 'GR', 'IT', 'HU', 'SK', 'DE'];
     const LANG_NAMES = {
         HR: 'Croatian', CZ: 'Czech', PL: 'Polish', 
         GR: 'Greek', IT: 'Italian', HU: 'Hungarian', SK: 'Slovak'
@@ -2930,7 +2930,7 @@ app.post('/api/queue/add', (req, res) => {
     }
     
     // Validate countries
-    const ALL_COUNTRIES = ['HR', 'CZ', 'PL', 'GR', 'IT', 'HU', 'SK'];
+    const ALL_COUNTRIES = ['HR', 'CZ', 'PL', 'GR', 'IT', 'HU', 'SK', 'DE'];
     const selectedCountries = (countries && Array.isArray(countries) && countries.length > 0) 
         ? countries.filter(c => ALL_COUNTRIES.includes(c))
         : ALL_COUNTRIES;
@@ -3455,16 +3455,16 @@ async function enrichOrtoOrdersFromWC(orders) {
     
     // Color translation for WC meta values (Croatian and other languages)
     const wcColorMap = {
-        'crna': 'Črna', 'crno': 'Črna', 'černá': 'Črna', 'czarna': 'Črna', 'fekete': 'Črna', 'nero': 'Črna', 'μαύρο': 'Črna', 'black': 'Črna',
-        'bijela': 'Bela', 'bela': 'Bela', 'biela': 'Bela', 'biała': 'Bela', 'fehér': 'Bela', 'bianco': 'Bela', 'λευκό': 'Bela', 'white': 'Bela',
-        'siva': 'Siva', 'šedá': 'Siva', 'szürke': 'Siva', 'szara': 'Siva', 'grigio': 'Siva', 'γκρι': 'Siva', 'grey': 'Siva', 'gray': 'Siva',
-        'zelena': 'Zelena', 'zelená': 'Zelena', 'zielona': 'Zelena', 'zöld': 'Zelena', 'verde': 'Zelena', 'πράσινο': 'Zelena', 'green': 'Zelena',
-        'modra': 'Modra', 'modrá': 'Modra', 'niebieska': 'Modra', 'kék': 'Modra', 'blu': 'Modra', 'μπλε': 'Modra', 'blue': 'Modra',
-        'rdeča': 'Rdeča', 'crvena': 'Rdeča', 'červená': 'Rdeča', 'czerwona': 'Rdeča', 'piros': 'Rdeča', 'rosso': 'Rdeča', 'κόκκινο': 'Rdeča', 'red': 'Rdeča',
-        'rjava': 'Rjava', 'smeđa': 'Rjava', 'hnědá': 'Rjava', 'brązowa': 'Rjava', 'barna': 'Rjava', 'marrone': 'Rjava', 'καφέ': 'Rjava', 'brown': 'Rjava',
+        'crna': 'Črna', 'crno': 'Črna', 'černá': 'Črna', 'czarna': 'Črna', 'fekete': 'Črna', 'nero': 'Črna', 'μαύρο': 'Črna', 'black': 'Črna', 'schwarz': 'Črna',
+        'bijela': 'Bela', 'bela': 'Bela', 'biela': 'Bela', 'biała': 'Bela', 'fehér': 'Bela', 'bianco': 'Bela', 'λευκό': 'Bela', 'white': 'Bela', 'weiß': 'Bela', 'weiss': 'Bela',
+        'siva': 'Siva', 'šedá': 'Siva', 'szürke': 'Siva', 'szara': 'Siva', 'grigio': 'Siva', 'γκρι': 'Siva', 'grey': 'Siva', 'gray': 'Siva', 'grau': 'Siva',
+        'zelena': 'Zelena', 'zelená': 'Zelena', 'zielona': 'Zelena', 'zöld': 'Zelena', 'verde': 'Zelena', 'πράσινο': 'Zelena', 'green': 'Zelena', 'grün': 'Zelena',
+        'modra': 'Modra', 'modrá': 'Modra', 'niebieska': 'Modra', 'kék': 'Modra', 'blu': 'Modra', 'μπλε': 'Modra', 'blue': 'Modra', 'blau': 'Modra',
+        'rdeča': 'Rdeča', 'crvena': 'Rdeča', 'červená': 'Rdeča', 'czerwona': 'Rdeča', 'piros': 'Rdeča', 'rosso': 'Rdeča', 'κόκκινο': 'Rdeča', 'red': 'Rdeča', 'rot': 'Rdeča',
+        'rjava': 'Rjava', 'smeđa': 'Rjava', 'hnědá': 'Rjava', 'brązowa': 'Rjava', 'barna': 'Rjava', 'marrone': 'Rjava', 'καφέ': 'Rjava', 'brown': 'Rjava', 'braun': 'Rjava',
         'bež': 'Bež', 'bežová': 'Bež', 'beżowa': 'Bež', 'bézs': 'Bež', 'beige': 'Bež', 'μπεζ': 'Bež',
-        'tamno modra': 'Temno modra', 'tamnoplava': 'Temno modra', 'tamno plava': 'Temno modra', 'dark blue': 'Temno modra', 'σκούρο μπλε': 'Temno modra',
-        'roza': 'Roza', 'pink': 'Roza', 'ροζ': 'Roza',
+        'tamno modra': 'Temno modra', 'tamnoplava': 'Temno modra', 'tamno plava': 'Temno modra', 'dark blue': 'Temno modra', 'σκούρο μπλε': 'Temno modra', 'dunkelblau': 'Temno modra',
+        'roza': 'Roza', 'pink': 'Roza', 'ροζ': 'Roza', 'rosa': 'Roza',
     };
     
     // Type translation for WC meta values
@@ -3474,6 +3474,8 @@ async function enrichOrtoOrdersFromWC(orders) {
         'nogavice': 'Nogavice', 'ponožky': 'Nogavice', 'skarpetki': 'Nogavice', 'zokni': 'Nogavice', 'calzini': 'Nogavice', 'κάλτσες': 'Nogavice', 'șosete': 'Nogavice', 'sosete': 'Nogavice',
         // Romanian
         'tricou': 'Majica', 'tricouri': 'Majica', 'boxeri': 'Boksarice', 'chiloți': 'Boksarice', 'chiloti': 'Boksarice',
+        // German
+        'unterhemd': 'Majica', 'unterhose': 'Boksarice', 'socken': 'Nogavice',
     };
     
     function translateWcColor(raw) {
@@ -3611,7 +3613,7 @@ app.get('/api/packing/orders', async (req, res) => {
         };
         
         // Filter by Noriks shops only at API level (eshop_name_list)
-        const NORIKS_SHOPS = 'noriks.com/hr,noriks.com/hu,noriks.com/cz,noriks.com/gr,noriks.com/it,noriks.com/sk,noriks.com/pl,noriks.com/si,noriks.com/ro';
+        const NORIKS_SHOPS = 'noriks.com/hr,noriks.com/hu,noriks.com/cz,noriks.com/gr,noriks.com/it,noriks.com/sk,noriks.com/pl,noriks.com/si,noriks.com/ro,noriks.com/de';
         queryAdvance.push({ type: 'eshop_name_list', value: NORIKS_SHOPS });
         
         requestBody.query_advance = queryAdvance;
@@ -4589,6 +4591,7 @@ const wcStores = {
     hu: { url: 'https://noriks.com/hu', ck: 'ck_e591c2a0bf8c7a59ec5893e03adde3c760fbdaae', cs: 'cs_d84113ee7a446322d191be0725c0c92883c984c3' },
     gr: { url: 'https://noriks.com/gr', ck: 'ck_2595568b83966151e08031e42388dd1c34307107', cs: 'cs_dbd091b4fc11091638f8ec4c838483be32cfb15b' },
     it: { url: 'https://noriks.com/it', ck: 'ck_84a1e1425710ff9eeed69b100ed9ac445efc39e2', cs: 'cs_81d25dcb0371773387da4d30482afc7ce83d1b3e' },
+    de: { url: 'https://noriks.com/de', ck: 'ck_aa7a83a913953447892295072cecb7ad7bb2b700', cs: 'cs_9feaecca33c0df3213abfbbb454ba00a1bdbc3f3' },
 };
 
 // Verify bundles endpoint - analyze WC product images vs our definitions

@@ -195,12 +195,12 @@
     <script>
         const FLAGS = {
             HR: '🇭🇷', PL: '🇵🇱', CZ: '🇨🇿', SK: '🇸🇰',
-            HU: '🇭🇺', GR: '🇬🇷', IT: '🇮🇹', SI: '🇸🇮'
+            HU: '🇭🇺', GR: '🇬🇷', IT: '🇮🇹', SI: '🇸🇮', DE: '🇩🇪'
         };
         
         const COUNTRY_NAMES = {
             HR: 'Hrvaška', PL: 'Poljska', CZ: 'Češka', SK: 'Slovaška',
-            HU: 'Madžarska', GR: 'Grčija', IT: 'Italija', SI: 'Slovenija'
+            HU: 'Madžarska', GR: 'Grčija', IT: 'Italija', SI: 'Slovenija', DE: 'Nemčija'
         };
         
         // Average time per country in seconds (based on typical generation time)
@@ -377,7 +377,7 @@
                     for (const video of mp4s) {
                         let country = '??';
                         const parts = video.name.replace('.mp4', '').split('_');
-                        if (parts.length >= 3 && ['HR','CZ','PL','GR','IT','HU','SK','SI'].includes(parts[2])) {
+                        if (parts.length >= 3 && ['HR','CZ','PL','GR','IT','HU','SK','SI','DE'].includes(parts[2])) {
                             country = parts[2];
                         } else {
                             const match = video.name.match(/-([A-Z]{2})\.mp4$/);
@@ -410,7 +410,7 @@
                     for (const video of mp4s) {
                         let country = '??';
                         const parts = video.name.replace('.mp4', '').split('_');
-                        if (parts.length >= 3 && ['HR','CZ','PL','GR','IT','HU','SK','SI'].includes(parts[2])) {
+                        if (parts.length >= 3 && ['HR','CZ','PL','GR','IT','HU','SK','SI','DE'].includes(parts[2])) {
                             country = parts[2];
                         } else {
                             const match = video.name.match(/-([A-Z]{2})\.mp4$/);
