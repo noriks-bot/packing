@@ -7,7 +7,8 @@
     "IT",
     "HU",
     "SK",
-    "DE"
+    "DE",
+    "EN"
   ],
   "defaultTasks": [
     "Instagram review",
@@ -23,7 +24,7 @@
     "Influencerji",
     "Upselli na strani",
     "Jackpot na strani",
-    "Poro\u010dilo upselli",
+    "Poročilo upselli",
     "Kampanje vsi paketi",
     "Trustpilot API",
     "YouTube oglasi",
@@ -145,7 +146,7 @@
         },
         {
           "id": "default-13",
-          "name": "Poro\u010dilo upselli",
+          "name": "Poročilo upselli",
           "done": false,
           "assignee": "",
           "notes": "",
@@ -198,8 +199,8 @@
           "assignee": "Ajda",
           "notes": "",
           "link": "/launches/social-proof/",
-          "linkLabel": "\ud83c\udfa8 Social Proof Generator",
-          "shortNote": "Vsak dan vsaka dr\u017eava po 2. reviewa, ki se potem dodata v highlights dolo\u010dene dr\u017eave. ",
+          "linkLabel": "🎨 Social Proof Generator",
+          "shortNote": "Vsak dan vsaka država po 2. reviewa, ki se potem dodata v highlights določene države. ",
           "dailyLog": {
             "2026-02-23": {
               "done": true,
@@ -331,7 +332,7 @@
           "notes": "",
           "isCustom": true,
           "category": "other",
-          "shortNote": "Vsak dan ena angle\u0161ka objava"
+          "shortNote": "Vsak dan ena angleška objava"
         }
       ]
     },
@@ -345,7 +346,7 @@
           "notes": "",
           "category": "marketing",
           "link": "/launches/social-proof/",
-          "linkLabel": "\ud83c\udfa8 Social Proof Generator"
+          "linkLabel": "🎨 Social Proof Generator"
         },
         {
           "id": "default-1",
@@ -445,7 +446,7 @@
         },
         {
           "id": "default-13",
-          "name": "Poro\u010dilo upselli",
+          "name": "Poročilo upselli",
           "done": false,
           "assignee": "",
           "notes": "",
@@ -563,7 +564,7 @@
           "notes": "",
           "category": "marketing",
           "link": "/launches/social-proof/",
-          "linkLabel": "\ud83c\udfa8 Social Proof Generator"
+          "linkLabel": "🎨 Social Proof Generator"
         },
         {
           "id": "default-1",
@@ -663,7 +664,7 @@
         },
         {
           "id": "default-13",
-          "name": "Poro\u010dilo upselli",
+          "name": "Poročilo upselli",
           "done": false,
           "assignee": "",
           "notes": "",
@@ -781,7 +782,7 @@
           "notes": "",
           "category": "marketing",
           "link": "/launches/social-proof/",
-          "linkLabel": "\ud83c\udfa8 Social Proof Generator"
+          "linkLabel": "🎨 Social Proof Generator"
         },
         {
           "id": "default-1",
@@ -881,7 +882,7 @@
         },
         {
           "id": "default-13",
-          "name": "Poro\u010dilo upselli",
+          "name": "Poročilo upselli",
           "done": false,
           "assignee": "",
           "notes": "",
@@ -999,7 +1000,7 @@
           "notes": "",
           "category": "marketing",
           "link": "/launches/social-proof/",
-          "linkLabel": "\ud83c\udfa8 Social Proof Generator"
+          "linkLabel": "🎨 Social Proof Generator"
         },
         {
           "id": "default-1",
@@ -1099,7 +1100,7 @@
         },
         {
           "id": "default-13",
-          "name": "Poro\u010dilo upselli",
+          "name": "Poročilo upselli",
           "done": false,
           "assignee": "",
           "notes": "",
@@ -1217,7 +1218,7 @@
           "notes": "",
           "category": "marketing",
           "link": "/launches/social-proof/",
-          "linkLabel": "\ud83c\udfa8 Social Proof Generator"
+          "linkLabel": "🎨 Social Proof Generator"
         },
         {
           "id": "default-1",
@@ -1317,7 +1318,7 @@
         },
         {
           "id": "default-13",
-          "name": "Poro\u010dilo upselli",
+          "name": "Poročilo upselli",
           "done": false,
           "assignee": "",
           "notes": "",
@@ -1435,7 +1436,7 @@
           "notes": "",
           "category": "marketing",
           "link": "/launches/social-proof/",
-          "linkLabel": "\ud83c\udfa8 Social Proof Generator"
+          "linkLabel": "🎨 Social Proof Generator"
         },
         {
           "id": "default-1",
@@ -1535,7 +1536,7 @@
         },
         {
           "id": "default-13",
-          "name": "Poro\u010dilo upselli",
+          "name": "Poročilo upselli",
           "done": false,
           "assignee": "",
           "notes": "",
@@ -1642,6 +1643,10 @@
           "category": "other"
         }
       ]
+    },
+    "EN": {
+      "tasks": [],
+      "customTasks": []
     }
   }
 }

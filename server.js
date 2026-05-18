@@ -3685,7 +3685,11 @@ app.get('/api/packing/orders', async (req, res) => {
             const customerName = receiver.customer || partner.customer || 'Neznano';
             
             // Get country from partner
-            const country = partner.country || '';
+            let country = partner.country || '';
+            // EN / global store (noriks.com without country prefix) — treat as own 'country'
+            if ((order.eshop_name || '').trim() === 'noriks.com') {
+                country = 'International';
+            }
             
             // Parse products
             const rawProducts = order.product_list || [];
@@ -4634,7 +4638,7 @@ const wcStores = {
     it: { url: 'https://noriks.com/it', ck: 'ck_84a1e1425710ff9eeed69b100ed9ac445efc39e2', cs: 'cs_81d25dcb0371773387da4d30482afc7ce83d1b3e' },
     de: { url: 'https://noriks.com/de', ck: 'ck_aa7a83a913953447892295072cecb7ad7bb2b700', cs: 'cs_9feaecca33c0df3213abfbbb454ba00a1bdbc3f3' },
     // EN / global store (noriks.com without country prefix) — TODO: fill in real WooCommerce ck/cs
-    en: { url: 'https://noriks.com', ck: process.env.WOO_CK_EN || '', cs: process.env.WOO_CS_EN || '' },
+    en: { url: 'https://noriks.com', ck: 'ck_b720bdc96d86124c7d9ec869c3f261015d1e6495', cs: 'cs_1fe2c5915aec85743cf4b8b943e536e392b15478' },
 };
 
 // Verify bundles endpoint - analyze WC product images vs our definitions
