@@ -3082,7 +3082,8 @@ const COUNTRY_MAP = {
     'Italy': 'IT', 'Italija': 'IT', 'IT': 'IT',
     'Hungary': 'HU', 'Madžarska': 'HU', 'HU': 'HU',
     'Slovakia': 'SK', 'Slovaška': 'SK', 'SK': 'SK',
-    'Germany': 'DE', 'Nemčija': 'DE', 'Deutschland': 'DE', 'DE': 'DE'
+    'Germany': 'DE', 'Nemčija': 'DE', 'Deutschland': 'DE', 'DE': 'DE',
+    'English': 'EN', 'International': 'EN', 'EN': 'EN'
 };
 
 // Get finance summary from Metakocka
@@ -3688,7 +3689,7 @@ app.get('/api/packing/orders', async (req, res) => {
             let country = partner.country || '';
             // EN / global store (noriks.com without country prefix) — treat as own 'country'
             if ((order.eshop_name || '').trim() === 'noriks.com') {
-                country = 'International';
+                country = 'English';
             }
             
             // Parse products
