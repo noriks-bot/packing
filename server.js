@@ -3461,7 +3461,10 @@ async function enrichOrtoOrdersFromWC(orders) {
     
     // Map eshop_name to store key (e.g. "noriks.com/hr" → "hr")
     function getStoreKey(eshopName) {
-        const match = (eshopName || '').match(/noriks\.com\/(\w+)/);
+        const e = (eshopName || '').trim();
+        // EN / global store has no country prefix
+        if (e === 'noriks.com') return 'en';
+        const match = e.match(/noriks\.com\/(\w+)/);
         return match ? match[1] : null;
     }
     
@@ -3631,7 +3634,7 @@ app.get('/api/packing/orders', async (req, res) => {
         };
         
         // Filter by Noriks shops only at API level (eshop_name_list)
-        const NORIKS_SHOPS = 'noriks.com/hr,noriks.com/hu,noriks.com/cz,noriks.com/gr,noriks.com/it,noriks.com/sk,noriks.com/pl,noriks.com/si,noriks.com/ro,noriks.com/de';
+        const NORIKS_SHOPS = 'noriks.com/hr,noriks.com/hu,noriks.com/cz,noriks.com/gr,noriks.com/it,noriks.com/sk,noriks.com/pl,noriks.com/si,noriks.com/ro,noriks.com/de,noriks.com';
         queryAdvance.push({ type: 'eshop_name_list', value: NORIKS_SHOPS });
         
         requestBody.query_advance = queryAdvance;
@@ -4630,6 +4633,8 @@ const wcStores = {
     gr: { url: 'https://noriks.com/gr', ck: 'ck_2595568b83966151e08031e42388dd1c34307107', cs: 'cs_dbd091b4fc11091638f8ec4c838483be32cfb15b' },
     it: { url: 'https://noriks.com/it', ck: 'ck_84a1e1425710ff9eeed69b100ed9ac445efc39e2', cs: 'cs_81d25dcb0371773387da4d30482afc7ce83d1b3e' },
     de: { url: 'https://noriks.com/de', ck: 'ck_aa7a83a913953447892295072cecb7ad7bb2b700', cs: 'cs_9feaecca33c0df3213abfbbb454ba00a1bdbc3f3' },
+    // EN / global store (noriks.com without country prefix) — TODO: fill in real WooCommerce ck/cs
+    en: { url: 'https://noriks.com', ck: process.env.WOO_CK_EN || '', cs: process.env.WOO_CS_EN || '' },
 };
 
 // Verify bundles endpoint - analyze WC product images vs our definitions
