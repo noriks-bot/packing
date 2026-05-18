@@ -828,12 +828,12 @@
         
         // Check all statuses on load and every 15 min
         checkAllStatusWarnings();
-        setInterval(checkAllStatusWarnings, 15 * 60 * 1000);
+        // setInterval(checkAllStatusWarnings, 15 * 60 * 1000); // disabled — manual refresh only
         
         // ========== INIT ==========
         refreshOrders();
         
-        setInterval(refreshOrders, 15 * 60 * 1000);
+        // setInterval(refreshOrders, 15 * 60 * 1000); // disabled — manual refresh only
         
         // Refresh log
         let refreshLog = JSON.parse(sessionStorage.getItem('packing-refresh-log') || '[]');
