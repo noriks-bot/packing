@@ -3706,14 +3706,17 @@ app.get('/api/packing/orders', async (req, res) => {
                     
                     // Skip shipping keywords
                     const shippingKeywords = [
-                        'doručenie', 'dorucenie', 'dostava', 'pošta', 'posta', 
+                        'doručenie', 'dorucenie', 'dostava', 'pošta', 'posta',
                         'gls', 'dpd', 'shipping', 'dobierka', 'dobírka', 'dobirka',
                         'poplatek', 'poplatok', 'standard', 'štandard', 'standart',
-                        'express', 'balík', 'balik', 'paket24',
+                        'express', 'paket24',
                         'kurýr', 'kuryr', 'kurier'
                     ];
-                    // Additional exact-word shipping patterns (avoid substring false positives like "midnight" containing "dni")
-                    const shippingWordPatterns = [/\bdní\b/, /\bdni\b/, /\bdana\b/];
+                    // Additional exact-word shipping patterns (avoid substring false positives like
+                    // "midnight" containing "dni" or "3-balík" / "6-balík" containing "balík").
+                    // For balík/balik: require start-of-string or whitespace before (NOT preceded by
+                    // digit-dash, which would match SK/CZ bundle product names like "Monochromatický 3-balík").
+                    const shippingWordPatterns = [/\bdní\b/, /\bdni\b/, /\bdana\b/, /(^|\s)balík\b/, /(^|\s)balik\b/];
                     
                     for (const kw of shippingKeywords) {
                         if (code.includes(kw) || name.includes(kw)) {
