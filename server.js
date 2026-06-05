@@ -3647,13 +3647,31 @@ app.get('/api/packing/orders', async (req, res) => {
         let pageNum = 0;
         while (pageNum < MAX_PAGES) {
             const pageBody = { ...requestBody, limit: 100, offset };
-            const response = await fetch('https://main.metakocka.si/rest/eshop/v1/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(pageBody)
-            });
-            
-            const data = await response.json();
+            // Timeout 15s + 1 retry on failure (fixes 5min default fetch hang)
+            let response, data, lastErr;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    response = await fetch('https://main.metakocka.si/rest/eshop/v1/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(pageBody),
+                        signal: AbortSignal.timeout(15000)
+                    });
+                    const ct = response.headers.get('content-type') || '';
+                    if (!ct.includes('json')) throw new Error('Non-JSON response (content-type: ' + ct + ')');
+                    data = await response.json();
+                    lastErr = null;
+                    break;
+                } catch (e) {
+                    lastErr = e;
+                    console.warn('[Packing] Metakocka fetch attempt ' + (attempt+1) + '/2 failed:', e.message);
+                    if (attempt === 0) await new Promise(r => setTimeout(r, 500));
+                }
+            }
+            if (lastErr) {
+                console.error('[Packing] Metakocka fetch failed after 2 attempts:', lastErr.message);
+                return res.status(503).json({ error: 'Metakocka unreachable', details: lastErr.message });
+            }
             
             if (data.opr_code !== '0') {
                 console.error('[Packing] Metakocka error:', data);
