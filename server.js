@@ -3609,8 +3609,22 @@ async function enrichOrtoOrdersFromWC(orders) {
 // Get packing orders from Metakocka
 app.get('/api/packing/orders', async (req, res) => {
     const { status = 'Odpremljen', date, limit = 500 } = req.query;
-    
+
     try {
+        // FAST PATH: ce imamo svez cache (< 5 min) za to (status,date) kombinacijo, vrni TAKOJ.
+        // V ozadju background warmup itak skrbi za sveze podatke.
+        try {
+            const fastKey = `orders_${status || 'all'}_${date || 'last3d'}`;
+            const fastAll = readPackingCache();
+            const entry = fastAll[fastKey];
+            if (entry && entry.orders && entry.cachedAt) {
+                const ageMs = Date.now() - new Date(entry.cachedAt).getTime();
+                if (ageMs < PACKING_CACHE_FRESH_MS) {
+                    return res.json({ orders: entry.orders, count: entry.orders.length, cached: true, cachedAt: entry.cachedAt, cacheAgeSeconds: Math.round(ageMs/1000) });
+                }
+            }
+        } catch (_) {}
+
         console.log(`[Packing] Fetching orders with status: ${status}, date: ${date || 'all'}`);
         
         const queryAdvance = [];
@@ -3655,7 +3669,7 @@ app.get('/api/packing/orders', async (req, res) => {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(pageBody),
-                        signal: AbortSignal.timeout(15000)
+                        signal: AbortSignal.timeout(35000)
                     });
                     const ct = response.headers.get('content-type') || '';
                     if (!ct.includes('json')) throw new Error('Non-JSON response (content-type: ' + ct + ')');
@@ -3670,6 +3684,21 @@ app.get('/api/packing/orders', async (req, res) => {
             }
             if (lastErr) {
                 console.error('[Packing] Metakocka fetch failed after 2 attempts:', lastErr.message);
+                // Cache fallback — vrni zadnji uspesen snapshot za to (status,date) kombinacijo
+                try {
+                    const cacheKey = `orders_${status || 'all'}_${date || 'last3d'}`;
+                    const cacheFile = path.join(__dirname, 'data', 'orders-cache.json');
+                    if (fs.existsSync(cacheFile)) {
+                        const cacheAll = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+                        const entry = cacheAll[cacheKey];
+                        if (entry && entry.orders) {
+                            console.warn('[Packing] Returning STALE cache for ' + cacheKey + ' (cached ' + entry.cachedAt + ', ' + entry.orders.length + ' orders)');
+                            return res.json({ orders: entry.orders, count: entry.orders.length, stale: true, cachedAt: entry.cachedAt, reason: 'Metakocka unreachable — prikazani podatki iz cacha' });
+                        }
+                    }
+                } catch (cacheErr) {
+                    console.error('[Packing] Cache read failed:', cacheErr.message);
+                }
                 return res.status(503).json({ error: 'Metakocka unreachable', details: lastErr.message });
             }
             
@@ -3860,7 +3889,29 @@ app.get('/api/packing/orders', async (req, res) => {
         
         // Clean up internal fields before sending
         for (const o of orders) { delete o._wcRef; delete o._eshop; delete o._rawProducts; }
-        
+
+        // Write to cache for offline fallback
+        try {
+            const cacheKey = `orders_${status || 'all'}_${date || 'last3d'}`;
+            const cacheDir = path.join(__dirname, 'data');
+            if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
+            const cacheFile = path.join(cacheDir, 'orders-cache.json');
+            let cacheAll = {};
+            if (fs.existsSync(cacheFile)) {
+                try { cacheAll = JSON.parse(fs.readFileSync(cacheFile, 'utf8')); } catch (_) {}
+            }
+            cacheAll[cacheKey] = { orders, cachedAt: new Date().toISOString() };
+            // Keep cache file small: limit to last 20 keys
+            const keys = Object.keys(cacheAll);
+            if (keys.length > 20) {
+                const sorted = keys.sort((a, b) => (cacheAll[a].cachedAt || '').localeCompare(cacheAll[b].cachedAt || ''));
+                for (const k of sorted.slice(0, keys.length - 20)) delete cacheAll[k];
+            }
+            fs.writeFileSync(cacheFile, JSON.stringify(cacheAll));
+        } catch (cacheErr) {
+            console.error('[Packing] Cache write failed:', cacheErr.message);
+        }
+
         res.json({ orders, count: orders.length });
         
     } catch (e) {
@@ -4783,6 +4834,89 @@ app.post('/api/packing/save-bundle', async (req, res) => {
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+
+// ============ PACKING ORDERS CACHE WARMUP ============
+// V ozadju vsakih 5 minut osvezi cache za 3 glavne statuse.
+// UI tako vedno dobi sveze podatke iz cacha tudi ko Metakocka leze.
+const PACKING_CACHE_DIR = path.join(__dirname, 'data');
+const PACKING_CACHE_FILE = path.join(PACKING_CACHE_DIR, 'orders-cache.json');
+const PACKING_CACHE_FRESH_MS = 5 * 60 * 1000; // 5 min
+
+function readPackingCache() {
+    try {
+        if (!fs.existsSync(PACKING_CACHE_FILE)) return {};
+        return JSON.parse(fs.readFileSync(PACKING_CACHE_FILE, 'utf8'));
+    } catch (e) { return {}; }
+}
+
+function writePackingCacheEntry(cacheKey, orders) {
+    try {
+        if (!fs.existsSync(PACKING_CACHE_DIR)) fs.mkdirSync(PACKING_CACHE_DIR, { recursive: true });
+        const all = readPackingCache();
+        all[cacheKey] = { orders, cachedAt: new Date().toISOString() };
+        const keys = Object.keys(all);
+        if (keys.length > 30) {
+            const sorted = keys.sort((a, b) => (all[a].cachedAt || '').localeCompare(all[b].cachedAt || ''));
+            for (const k of sorted.slice(0, keys.length - 30)) delete all[k];
+        }
+        fs.writeFileSync(PACKING_CACHE_FILE, JSON.stringify(all));
+    } catch (e) { console.error('[Packing] Cache write failed:', e.message); }
+}
+
+let BACKGROUND_WARMUP_RUNNING = false;
+async function warmupPackingCache() {
+    if (BACKGROUND_WARMUP_RUNNING) {
+        console.log('[Packing/Warmup] Skipped — previous still running');
+        return;
+    }
+    BACKGROUND_WARMUP_RUNNING = true;
+    const t0 = Date.now();
+    const statuses = ['Odpremljen', 'Novo', 'Pripravljen za odpremo'];
+    let okCount = 0;
+    for (const status of statuses) {
+        try {
+            // Pozeni fake express request skozi router — najlazji nacin za reuse celotne logike
+            // (transformacija, enrichment, filter). Uporabimo internal http klic preko app handler-ja
+            // preko mock req/res, ki samo capture-a JSON odgovor.
+            const mockReq = { query: { status, limit: '500' }, method: 'GET', url: `/api/packing/orders?status=${encodeURIComponent(status)}` };
+            const capturedData = await new Promise((resolve) => {
+                let resolved = false;
+                const mockRes = {
+                    setHeader: () => {},
+                    status: function(code) { this._status = code; return this; },
+                    json: function(d) { if (!resolved) { resolved = true; resolve({ status: this._status || 200, data: d }); } }
+                };
+                // Najdemo handler
+                const stack = app._router && app._router.stack || [];
+                const route = stack.find(l => l.route && l.route.path === '/api/packing/orders');
+                if (!route) { resolve({ status: 500, data: { error: 'no route' } }); return; }
+                const handler = route.route.stack[0].handle;
+                Promise.resolve(handler(mockReq, mockRes, () => {})).catch(e => {
+                    if (!resolved) { resolved = true; resolve({ status: 500, data: { error: e.message } }); }
+                });
+                // 60s safety
+                setTimeout(() => { if (!resolved) { resolved = true; resolve({ status: 504, data: { error: 'warmup timeout' } }); } }, 60000);
+            });
+            if (capturedData.status === 200 && capturedData.data && capturedData.data.orders && !capturedData.data.stale) {
+                okCount++;
+            }
+        } catch (e) {
+            console.error('[Packing/Warmup] Status ' + status + ' failed:', e.message);
+        }
+    }
+    BACKGROUND_WARMUP_RUNNING = false;
+    console.log('[Packing/Warmup] Done in ' + (Date.now()-t0) + 'ms, ok=' + okCount + '/' + statuses.length);
+}
+
+// Zazeni warmup 10s po startu + vsakih 5 min
+setTimeout(() => {
+    warmupPackingCache().catch(e => console.error('[Packing/Warmup] First run error:', e.message));
+    setInterval(() => {
+        warmupPackingCache().catch(e => console.error('[Packing/Warmup] Run error:', e.message));
+    }, 5 * 60 * 1000);
+}, 10 * 1000);
+// =====================================================
 
 app.listen(PORT, () => {
     console.log(`🚀 Launches server running on port ${PORT}`);
