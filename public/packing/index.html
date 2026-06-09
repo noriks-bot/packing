@@ -633,16 +633,31 @@
                 logRefresh(newOrderIds.size);
                 filterByCountry();
 
-                // Stale cache banner
+                // Stale cache banner z severity + live age timer
                 const banner = document.getElementById('stale-banner');
                 if (banner) banner.remove();
+                if (window._staleBannerTimer) { clearInterval(window._staleBannerTimer); window._staleBannerTimer = null; }
                 if (data.stale) {
                     const div = document.createElement('div');
                     div.id = 'stale-banner';
-                    div.style.cssText = 'background:#ffd60a;color:#000;padding:10px 14px;margin:10px;border-radius:6px;font-weight:600;text-align:center;';
-                    const cachedTime = data.cachedAt ? new Date(data.cachedAt).toLocaleString('sl-SI') : 'neznano';
-                    div.textContent = '⚠️ Metakocka ne odgovarja — prikazani so podatki iz cacha (zadnji uspesen fetch: ' + cachedTime + ')';
+                    const cachedAtMs = data.cachedAt ? new Date(data.cachedAt).getTime() : Date.now();
+                    const renderBanner = () => {
+                        const ageSec = Math.round((Date.now() - cachedAtMs) / 1000);
+                        const ageMin = Math.floor(ageSec / 60);
+                        const ageStr = ageMin >= 60 ? Math.floor(ageMin/60) + 'h ' + (ageMin%60) + 'min' : ageMin + ' min ' + (ageSec%60) + 's';
+                        const critical = ageSec > 3600; // > 1h
+                        const bg = critical ? '#dc2626' : '#ffd60a';
+                        const fg = critical ? '#fff' : '#000';
+                        const icon = critical ? '🔴' : '⚠️';
+                        const label = critical ? 'KRITICNO' : 'OPOZORILO';
+                        const cachedTime = data.cachedAt ? new Date(data.cachedAt).toLocaleString('sl-SI') : 'neznano';
+                        const circuitNote = data.circuitOpen ? ' (Metakocka unreachable - circuit breaker active)' : '';
+                        div.style.cssText = 'background:' + bg + ';color:' + fg + ';padding:10px 14px;margin:10px;border-radius:6px;font-weight:600;text-align:center;';
+                        div.innerHTML = icon + ' ' + label + ': prikazani podatki iz cacha (star ' + ageStr + ') &mdash; zadnji uspesen fetch: ' + cachedTime + circuitNote + '<br><small style="opacity:0.8;font-weight:400;">Skladisce: pakirajte po teh podatkih, sistem auto-osvezi ko Metakocka oziva.</small>';
+                    };
+                    renderBanner();
                     container.parentNode.insertBefore(div, container);
+                    window._staleBannerTimer = setInterval(renderBanner, 30000); // refresh vsakih 30s
                 }
                 
             } catch (e) {

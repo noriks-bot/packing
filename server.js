@@ -3611,8 +3611,8 @@ app.get('/api/packing/orders', async (req, res) => {
     const { status = 'Odpremljen', date, limit = 500 } = req.query;
 
     try {
-        // FAST PATH: ce imamo svez cache (< 5 min) za to (status,date) kombinacijo, vrni TAKOJ.
-        // V ozadju background warmup itak skrbi za sveze podatke.
+        // FAST PATH 1: svez cache (< 15 min) - vrni TAKOJ brez klica.
+        // FAST PATH 2: circuit breaker open (Metakocka pada) - vrni STALE cache TAKOJ brez 35s timeouta.
         try {
             const fastKey = `orders_${status || 'all'}_${date || 'last3d'}`;
             const fastAll = readPackingCache();
@@ -3620,9 +3620,26 @@ app.get('/api/packing/orders', async (req, res) => {
             if (entry && entry.orders && entry.cachedAt) {
                 const ageMs = Date.now() - new Date(entry.cachedAt).getTime();
                 if (ageMs < PACKING_CACHE_FRESH_MS) {
-                    return res.json({ orders: entry.orders, count: entry.orders.length, cached: true, cachedAt: entry.cachedAt, cacheAgeSeconds: Math.round(ageMs/1000) });
+                    return res.json({
+                        orders: entry.orders, count: entry.orders.length,
+                        cached: true, cachedAt: entry.cachedAt,
+                        cacheAgeSeconds: Math.round(ageMs/1000)
+                    });
+                }
+                // Circuit breaker active - ne klici Metakocke, vrni cache takoj kot stale
+                if (isMetakockaCircuitOpen()) {
+                    console.warn('[Packing] Circuit OPEN - vracam STALE cache (age=' + Math.round(ageMs/1000) + 's) brez klica');
+                    return res.json({
+                        orders: entry.orders, count: entry.orders.length,
+                        stale: true, cachedAt: entry.cachedAt,
+                        cacheAgeSeconds: Math.round(ageMs/1000),
+                        circuitOpen: true,
+                        reason: 'Metakocka ne odgovarja (circuit breaker) - prikazani podatki iz cacha'
+                    });
                 }
             }
+            // Cache obstaja brez fresh in brez circuit - se vedno poskusi klicat,
+            // ampak ce ne uspe, bo standard fallback vrnil ta entry
         } catch (_) {}
 
         console.log(`[Packing] Fetching orders with status: ${status}, date: ${date || 'all'}`);
@@ -3669,11 +3686,12 @@ app.get('/api/packing/orders', async (req, res) => {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(pageBody),
-                        signal: AbortSignal.timeout(35000)
+                        signal: AbortSignal.timeout(20000)  // 35s -> 20s: hitrejsi fail-fast
                     });
                     const ct = response.headers.get('content-type') || '';
                     if (!ct.includes('json')) throw new Error('Non-JSON response (content-type: ' + ct + ')');
                     data = await response.json();
+                    markMetakockaSuccess();
                     lastErr = null;
                     break;
                 } catch (e) {
@@ -3684,7 +3702,8 @@ app.get('/api/packing/orders', async (req, res) => {
             }
             if (lastErr) {
                 console.error('[Packing] Metakocka fetch failed after 2 attempts:', lastErr.message);
-                // Cache fallback — vrni zadnji uspesen snapshot za to (status,date) kombinacijo
+                markMetakockaFail();
+                // Cache fallback - vrni zadnji uspesen snapshot za to (status,date) kombinacijo
                 try {
                     const cacheKey = `orders_${status || 'all'}_${date || 'last3d'}`;
                     const cacheFile = path.join(__dirname, 'data', 'orders-cache.json');
@@ -3692,8 +3711,14 @@ app.get('/api/packing/orders', async (req, res) => {
                         const cacheAll = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
                         const entry = cacheAll[cacheKey];
                         if (entry && entry.orders) {
-                            console.warn('[Packing] Returning STALE cache for ' + cacheKey + ' (cached ' + entry.cachedAt + ', ' + entry.orders.length + ' orders)');
-                            return res.json({ orders: entry.orders, count: entry.orders.length, stale: true, cachedAt: entry.cachedAt, reason: 'Metakocka unreachable — prikazani podatki iz cacha' });
+                            const ageMs = Date.now() - new Date(entry.cachedAt).getTime();
+                            console.warn('[Packing] Returning STALE cache for ' + cacheKey + ' (cached ' + entry.cachedAt + ', age=' + Math.round(ageMs/1000) + 's, ' + entry.orders.length + ' orders)');
+                            return res.json({
+                                orders: entry.orders, count: entry.orders.length,
+                                stale: true, cachedAt: entry.cachedAt,
+                                cacheAgeSeconds: Math.round(ageMs/1000),
+                                reason: 'Metakocka unreachable - prikazani podatki iz cacha'
+                            });
                         }
                     }
                 } catch (cacheErr) {
@@ -4828,6 +4853,34 @@ app.post('/api/packing/save-bundle', async (req, res) => {
     }
 });
 
+// Health endpoint za monitoring (Telegram alert, skladisce check)
+app.get('/api/packing/health', (req, res) => {
+    const now = Date.now();
+    const cache = readPackingCache();
+    const keys = Object.keys(cache);
+    const cacheEntries = keys.map(k => ({
+        key: k,
+        cachedAt: cache[k].cachedAt,
+        ageSeconds: cache[k].cachedAt ? Math.round((now - new Date(cache[k].cachedAt).getTime())/1000) : null,
+        orderCount: (cache[k].orders || []).length
+    }));
+    const oldestAge = cacheEntries.length ? Math.max(...cacheEntries.map(e => e.ageSeconds || 0)) : null;
+    const newestAge = cacheEntries.length ? Math.min(...cacheEntries.map(e => e.ageSeconds || Infinity)) : null;
+    const circuit = {
+        open: isMetakockaCircuitOpen(),
+        downUntil: metakockaDownUntil ? new Date(metakockaDownUntil).toISOString() : null,
+        lastSuccess: metakockaLastSuccess ? new Date(metakockaLastSuccess).toISOString() : null,
+        lastFail: metakockaLastFail ? new Date(metakockaLastFail).toISOString() : null,
+        consecFails: metakockaConsecFails,
+        secondsSinceLastSuccess: metakockaLastSuccess ? Math.round((now - metakockaLastSuccess)/1000) : null
+    };
+    const healthy = !circuit.open && (newestAge === null || newestAge < 1800); // < 30 min
+    res.json({
+        healthy, circuit, cache: { entries: cacheEntries, oldestAge, newestAge },
+        timestamp: new Date().toISOString()
+    });
+});
+
 // ============ END PACKING API ============
 
 // Serve index.html for root
@@ -4841,7 +4894,30 @@ app.get('/', (req, res) => {
 // UI tako vedno dobi sveze podatke iz cacha tudi ko Metakocka leze.
 const PACKING_CACHE_DIR = path.join(__dirname, 'data');
 const PACKING_CACHE_FILE = path.join(PACKING_CACHE_DIR, 'orders-cache.json');
-const PACKING_CACHE_FRESH_MS = 5 * 60 * 1000; // 5 min
+const PACKING_CACHE_FRESH_MS = 15 * 60 * 1000; // 15 min - sirsi sveze obdobje, manj klicev na Metakocko
+const PACKING_CACHE_STALE_CRITICAL_MS = 60 * 60 * 1000; // 60 min - nad to mejo banner=rdec
+
+// Circuit breaker: ce Metakocka pada, NE klici je 2 min - vrni cache takoj.
+const PACKING_CIRCUIT_OPEN_MS = 2 * 60 * 1000;
+let metakockaDownUntil = 0;
+let metakockaLastSuccess = 0;
+let metakockaLastFail = 0;
+let metakockaConsecFails = 0;
+function isMetakockaCircuitOpen() { return Date.now() < metakockaDownUntil; }
+function markMetakockaSuccess() {
+    metakockaLastSuccess = Date.now();
+    metakockaDownUntil = 0;
+    if (metakockaConsecFails > 0) {
+        console.log('[Packing/Circuit] CLOSED - Metakocka okrevana po ' + metakockaConsecFails + ' fail-ih');
+        metakockaConsecFails = 0;
+    }
+}
+function markMetakockaFail() {
+    metakockaLastFail = Date.now();
+    metakockaConsecFails++;
+    metakockaDownUntil = Date.now() + PACKING_CIRCUIT_OPEN_MS;
+    console.warn('[Packing/Circuit] OPEN za ' + (PACKING_CIRCUIT_OPEN_MS/1000) + 's (consec_fails=' + metakockaConsecFails + ')');
+}
 
 function readPackingCache() {
     try {
@@ -4867,7 +4943,13 @@ function writePackingCacheEntry(cacheKey, orders) {
 let BACKGROUND_WARMUP_RUNNING = false;
 async function warmupPackingCache() {
     if (BACKGROUND_WARMUP_RUNNING) {
-        console.log('[Packing/Warmup] Skipped — previous still running');
+        console.log('[Packing/Warmup] Skipped - previous still running');
+        return;
+    }
+    // Ce je circuit breaker open, ne kuri Metakocke - cakaj cooldown
+    if (isMetakockaCircuitOpen()) {
+        const waitMs = metakockaDownUntil - Date.now();
+        console.log('[Packing/Warmup] Skipped - circuit breaker OPEN (' + Math.round(waitMs/1000) + 's preostalo)');
         return;
     }
     BACKGROUND_WARMUP_RUNNING = true;
@@ -4909,13 +4991,13 @@ async function warmupPackingCache() {
     console.log('[Packing/Warmup] Done in ' + (Date.now()-t0) + 'ms, ok=' + okCount + '/' + statuses.length);
 }
 
-// Zazeni warmup 10s po startu + vsakih 5 min
+// Zazeni warmup TAKOJ po startu (3s zaradi express init) + vsakih 90s
 setTimeout(() => {
     warmupPackingCache().catch(e => console.error('[Packing/Warmup] First run error:', e.message));
     setInterval(() => {
         warmupPackingCache().catch(e => console.error('[Packing/Warmup] Run error:', e.message));
-    }, 5 * 60 * 1000);
-}, 10 * 1000);
+    }, 90 * 1000);  // 5min -> 90s: bolj svez cache, manjsa luknja ob outage-u
+}, 3 * 1000);  // 10s -> 3s: hitrejsi cold-start cache fill
 // =====================================================
 
 app.listen(PORT, () => {
