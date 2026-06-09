@@ -3,3 +3,8 @@ node_modules/
 *.log
 uploads/
 *.bak
+
+# runtime data (warehouse writes these — never track)
+data/packed-orders.json
+data/localizer-jobs.json
+data/orders-cache.json
