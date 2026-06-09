@@ -305,14 +305,32 @@
         let showPacked = false;
         let selectedOrderIds = new Set();
         
-        // Load packed orders from server on init
+        // Load packed orders from server on init.
+        // Global promise da lahko refreshOrders pocaka ce se inicializacija se ni koncala.
+        // Retry 2x z 500ms pauzo - server cold start ali momentary network blip ne sme zlomiti UI.
+        let _packedOrdersReady = null;
         async function loadPackedOrders() {
-            try {
-                const res = await fetch('/api/packing/packed-orders');
-                if (res.status === 401) { window.location.href = '/packing/login.html'; return; }
-                packedOrders = await res.json();
-            } catch(e) { console.error('Failed to load packed orders:', e); }
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    const res = await fetch('/api/packing/packed-orders', { cache: 'no-store' });
+                    if (res.status === 401) { window.location.href = '/packing/login.html'; return; }
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const data = await res.json();
+                    if (data && typeof data === 'object') {
+                        packedOrders = data;
+                        console.log('[Packing] Loaded ' + Object.keys(packedOrders).length + ' packed orders (attempt ' + attempt + ')');
+                        return;
+                    }
+                    throw new Error('Invalid response shape');
+                } catch(e) {
+                    console.warn('[Packing] loadPackedOrders attempt ' + attempt + ' failed:', e.message);
+                    if (attempt < 3) await new Promise(r => setTimeout(r, 500));
+                }
+            }
+            console.error('[Packing] loadPackedOrders FAILED po 3 poskusih - packedOrders ostane:', Object.keys(packedOrders).length, 'entries');
         }
+        // Kick off load takoj, save promise da ga refreshOrders lahko awaita
+        _packedOrdersReady = loadPackedOrders();
         
         function isOrderPacked(orderId) {
             return !!packedOrders[orderId];
@@ -355,7 +373,7 @@
                 if (res.status === 401) window.location.href = '/packing/login.html';
             } catch(e) { console.error('Failed to unpack:', e); }
         }
-        loadPackedOrders();
+        // (loadPackedOrders is kicked off above with promise saved in _packedOrdersReady)
         
         function toggleShowPacked() {
             showPacked = !showPacked;
@@ -659,6 +677,9 @@
         }
 
         async function refreshOrders() {
+            // Pocakaj da je packedOrders nalozen, drugace bi vsi orderji renderirali kot "nespakirano"
+            // tudi ce so na server-side ze packed. Race condition fix.
+            if (_packedOrdersReady) { try { await _packedOrdersReady; } catch(_) {} }
             try { const _nr = await fetch("/api/packing/notes"); window._packingNotes = await _nr.json(); } catch(e) { if (!window._packingNotes) window._packingNotes = {}; }
             const container = document.getElementById('orders-container');
             container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Nalagam naročila...</p></div>';
