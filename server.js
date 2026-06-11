@@ -4894,7 +4894,7 @@ app.get('/', (req, res) => {
 // UI tako vedno dobi sveze podatke iz cacha tudi ko Metakocka leze.
 const PACKING_CACHE_DIR = path.join(__dirname, 'data');
 const PACKING_CACHE_FILE = path.join(PACKING_CACHE_DIR, 'orders-cache.json');
-const PACKING_CACHE_FRESH_MS = 15 * 60 * 1000; // 15 min - sirsi sveze obdobje, manj klicev na Metakocko
+const PACKING_CACHE_FRESH_MS = 5 * 60 * 1000; // 5 min - hitrejsa sveza narocila (Dejan 11.6.2026); circuit breaker se vedno scuva Metakocko
 const PACKING_CACHE_STALE_CRITICAL_MS = 60 * 60 * 1000; // 60 min - nad to mejo banner=rdec
 
 // Circuit breaker: ce Metakocka pada, NE klici je 2 min - vrni cache takoj.
