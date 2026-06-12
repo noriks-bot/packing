@@ -3511,14 +3511,26 @@ async function enrichOrtoOrdersFromWC(orders) {
     }
     
     // Parse WC meta value like "Majica: Zelena - 2XL" or "Bokserica: Crna - 2XL"
-    function parseWcMetaValue(value) {
-        // Pattern: "Type: Color - Size" 
+    function parseWcMetaValue(value, sku) {
+        // Pattern: "Type: Color - Size"
         const match = (value || '').match(/^([^:]+):\s*([^-]+)\s*-\s*(\S+)$/);
         if (match) {
             return {
                 type: translateWcType(match[1]),
                 color: translateWcColor(match[2]),
                 size: match[3].trim().toUpperCase()
+            };
+        }
+        // Fallback: "Color - Size" brez Type prefiksa (npr. HU "Fekete - XL", SI "Črna - M")
+        // — type izpeljemo iz SKU (SHIRTS-ORTO -> Majica, BOXERS-ORTO -> Boksarice)
+        const m2 = (value || '').match(/^([^-]+?)\s*-\s*(\S+)$/);
+        if (m2) {
+            const s = (sku || '').toUpperCase();
+            const type = s.includes('BOXER') ? 'Boksarice' : (s.includes('SOCK') || s.includes('NOGAVIC')) ? 'Nogavice' : 'Majica';
+            return {
+                type,
+                color: translateWcColor(m2[1]),
+                size: m2[2].trim().toUpperCase()
             };
         }
         return null;
@@ -3557,7 +3569,7 @@ async function enrichOrtoOrdersFromWC(orders) {
                 if (sku.includes('ORTO')) {
                     for (const meta of metaData) {
                         if (!/^\d+$/.test(meta.key)) continue;
-                        const parsed = parseWcMetaValue(meta.value);
+                        const parsed = parseWcMetaValue(meta.value, sku);
                         if (parsed) wcItems.push(parsed);
                     }
                     continue;
@@ -4753,6 +4765,9 @@ const wcStores = {
     gr: { url: 'https://noriks.com/gr', ck: 'ck_2595568b83966151e08031e42388dd1c34307107', cs: 'cs_dbd091b4fc11091638f8ec4c838483be32cfb15b' },
     it: { url: 'https://noriks.com/it', ck: 'ck_84a1e1425710ff9eeed69b100ed9ac445efc39e2', cs: 'cs_81d25dcb0371773387da4d30482afc7ce83d1b3e' },
     de: { url: 'https://noriks.com/de', ck: 'ck_aa7a83a913953447892295072cecb7ad7bb2b700', cs: 'cs_9feaecca33c0df3213abfbbb454ba00a1bdbc3f3' },
+    si: { url: 'https://noriks.com/si', ck: 'ck_8fe81e37ac7c8aca9fe47ac3bbe27482d62d2e32', cs: 'cs_0be037bb7bf9a92ed7f886c5ceb9dd279f564900' },
+    ro: { url: 'https://noriks.com/ro', ck: 'ck_69ef14e1be3423cb74613c64ce4243e8c47e0e00', cs: 'cs_a00df9b005bb9e964df5e3bf3af816b9c49a9423' },
+    bg: { url: 'https://noriks.com/bg', ck: 'ck_da0017d35633e592ea20fc464aa3b4109ccdf5c2', cs: 'cs_51d455b0232cff26cf9e3645ef1c989b674975ac' },
     // EN / global store (noriks.com without country prefix) — TODO: fill in real WooCommerce ck/cs
     en: { url: 'https://noriks.com', ck: 'ck_b720bdc96d86124c7d9ec869c3f261015d1e6495', cs: 'cs_1fe2c5915aec85743cf4b8b943e536e392b15478' },
 };
