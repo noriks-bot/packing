@@ -3766,17 +3766,10 @@ app.get('/api/packing/orders', async (req, res) => {
         }
         console.log('[Packing] Fetched ' + results.length + ' Noriks orders from Metakocka (' + (pageNum + 1) + ' pages, eshop_name_list filter)');
         
-        // Filter by status locally
-        if (status) {
-            results = results.filter(o => (o.status_code || '').startsWith(status));
-            console.log('[Packing] After status filter (' + status + '): ' + results.length + ' orders');
-        }
-        
-        // Limit to requested amount
-        results = results.slice(0, parseInt(limit));
-        
-        // Transform orders for packing display
-        const orders = results.map(order => {
+        // EN FETCH ZA VSE STATUSE: transformiramo VSA narocila, status filter se aplicira
+        // sele pri pisanju cache keyev in pri odgovoru. Tako 1 Metakocka fetch napolni
+        // vse 3 cache keye namesto 3 locenih fetchev (3x manj MK search-lock obremenitve).
+        const allOrders = results.map(order => {
             const partner = order.partner || {};
             const receiver = order.receiver || partner;
             
@@ -3936,32 +3929,31 @@ app.get('/api/packing/orders', async (req, res) => {
         });
         
         // === WooCommerce enrichment for ORTO orders missing doc_desc ===
-        await enrichOrtoOrdersFromWC(orders);
-        
-        // Clean up internal fields before sending
-        for (const o of orders) { delete o._wcRef; delete o._eshop; delete o._rawProducts; }
+        await enrichOrtoOrdersFromWC(allOrders);
 
-        // Write to cache for offline fallback
+        // Clean up internal fields before sending
+        for (const o of allOrders) { delete o._wcRef; delete o._eshop; delete o._rawProducts; }
+
+        // Write cache za VSE 3 statuse iz ENEGA fetcha (+ zahtevani status, ce je drugacen).
+        // En MK fetch -> warmup rabi samo 1 klic namesto 3.
         try {
-            const cacheKey = `orders_${status || 'all'}_${date || 'last3d'}`;
-            const cacheDir = path.join(__dirname, 'data');
-            if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
-            const cacheFile = path.join(cacheDir, 'orders-cache.json');
-            let cacheAll = {};
-            if (fs.existsSync(cacheFile)) {
-                try { cacheAll = JSON.parse(fs.readFileSync(cacheFile, 'utf8')); } catch (_) {}
+            const datePart = date || 'last3d';
+            const cacheStatuses = [...new Set(['Odpremljen', 'Novo', 'Pripravljen za odpremo', status].filter(Boolean))];
+            for (const s of cacheStatuses) {
+                writePackingCacheEntry(`orders_${s}_${datePart}`, allOrders.filter(o => (o.status || '').startsWith(s)));
             }
-            cacheAll[cacheKey] = { orders, cachedAt: new Date().toISOString() };
-            // Keep cache file small: limit to last 20 keys
-            const keys = Object.keys(cacheAll);
-            if (keys.length > 20) {
-                const sorted = keys.sort((a, b) => (cacheAll[a].cachedAt || '').localeCompare(cacheAll[b].cachedAt || ''));
-                for (const k of sorted.slice(0, keys.length - 20)) delete cacheAll[k];
-            }
-            fs.writeFileSync(cacheFile, JSON.stringify(cacheAll));
+            if (!status) writePackingCacheEntry(`orders_all_${datePart}`, allOrders);
         } catch (cacheErr) {
             console.error('[Packing] Cache write failed:', cacheErr.message);
         }
+
+        // Odgovor: filtriraj po zahtevanem statusu + limit
+        let orders = allOrders;
+        if (status) {
+            orders = orders.filter(o => (o.status || '').startsWith(status));
+            console.log('[Packing] After status filter (' + status + '): ' + orders.length + ' orders');
+        }
+        orders = orders.slice(0, parseInt(limit));
 
         res.json({ orders, count: orders.length });
         
@@ -4981,15 +4973,27 @@ async function warmupPackingCache() {
     BACKGROUND_WARMUP_RUNNING = true;
     const t0 = Date.now();
     const statuses = ['Odpremljen', 'Novo', 'Pripravljen za odpremo'];
-    let okCount = 0;
-    for (const status of statuses) {
+    const freshCount = () => {
+        const all = readPackingCache();
+        return statuses.filter(s => {
+            const e = all[`orders_${s}_last3d`];
+            return e && e.cachedAt && (Date.now() - new Date(e.cachedAt).getTime()) < PACKING_CACHE_FRESH_MS;
+        }).length;
+    };
+    try {
+        // EN SAM klic: handler zdaj iz enega MK fetcha napise vse 3 cache keye,
+        // zato warmup ne rabi vec loop-a cez 3 statuse (3x manj MK obremenitve).
+        if (freshCount() === statuses.length) {
+            console.log('[Packing/Warmup] Vsi 3 cache keyi svezi - skip');
+            return;
+        }
         try {
             // Pozeni fake express request skozi router — najlazji nacin za reuse celotne logike
-            // (transformacija, enrichment, filter). Uporabimo internal http klic preko app handler-ja
-            // preko mock req/res, ki samo capture-a JSON odgovor.
+            // (transformacija, enrichment, cache write). Mock req/res samo capture-a JSON odgovor.
             // _bg=1: dovoli dolge Metakocka timeoute (5 min/page) - samo background sme cakati
+            const status = 'Odpremljen';
             const mockReq = { query: { status, limit: '500', _bg: '1' }, method: 'GET', url: `/api/packing/orders?status=${encodeURIComponent(status)}&_bg=1` };
-            const capturedData = await new Promise((resolve) => {
+            await new Promise((resolve) => {
                 let resolved = false;
                 const mockRes = {
                     setHeader: () => {},
@@ -5008,15 +5012,13 @@ async function warmupPackingCache() {
                 // legitimno rabi 10-25 min; prej je 60s cap obupal in cache se ponoci NIKOLI ni osvezil
                 setTimeout(() => { if (!resolved) { resolved = true; resolve({ status: 504, data: { error: 'warmup timeout' } }); } }, 30 * 60 * 1000);
             });
-            if (capturedData.status === 200 && capturedData.data && capturedData.data.orders && !capturedData.data.stale) {
-                okCount++;
-            }
         } catch (e) {
-            console.error('[Packing/Warmup] Status ' + status + ' failed:', e.message);
+            console.error('[Packing/Warmup] Fetch failed:', e.message);
         }
+        console.log('[Packing/Warmup] Done in ' + (Date.now()-t0) + 'ms, fresh=' + freshCount() + '/' + statuses.length);
+    } finally {
+        BACKGROUND_WARMUP_RUNNING = false;
     }
-    BACKGROUND_WARMUP_RUNNING = false;
-    console.log('[Packing/Warmup] Done in ' + (Date.now()-t0) + 'ms, ok=' + okCount + '/' + statuses.length);
 }
 
 // Zazeni warmup TAKOJ po startu (3s zaradi express init) + vsakih 90s
