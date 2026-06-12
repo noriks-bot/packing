@@ -4973,17 +4973,19 @@ async function warmupPackingCache() {
     BACKGROUND_WARMUP_RUNNING = true;
     const t0 = Date.now();
     const statuses = ['Odpremljen', 'Novo', 'Pripravljen za odpremo'];
-    const freshCount = () => {
+    const staleStatuses = () => {
         const all = readPackingCache();
         return statuses.filter(s => {
             const e = all[`orders_${s}_last3d`];
-            return e && e.cachedAt && (Date.now() - new Date(e.cachedAt).getTime()) < PACKING_CACHE_FRESH_MS;
-        }).length;
+            return !(e && e.cachedAt && (Date.now() - new Date(e.cachedAt).getTime()) < PACKING_CACHE_FRESH_MS);
+        });
     };
+    const freshCount = () => statuses.length - staleStatuses().length;
     try {
         // EN SAM klic: handler zdaj iz enega MK fetcha napise vse 3 cache keye,
         // zato warmup ne rabi vec loop-a cez 3 statuse (3x manj MK obremenitve).
-        if (freshCount() === statuses.length) {
+        const stale = staleStatuses();
+        if (stale.length === 0) {
             console.log('[Packing/Warmup] Vsi 3 cache keyi svezi - skip');
             return;
         }
@@ -4991,7 +4993,9 @@ async function warmupPackingCache() {
             // Pozeni fake express request skozi router — najlazji nacin za reuse celotne logike
             // (transformacija, enrichment, cache write). Mock req/res samo capture-a JSON odgovor.
             // _bg=1: dovoli dolge Metakocka timeoute (5 min/page) - samo background sme cakati
-            const status = 'Odpremljen';
+            // POMEMBNO: klici s PRVIM STALE statusom — ce bi klicali s svezim, handler vrne
+            // cache takoj in ostala 2 keya nikoli ne dobita refresha.
+            const status = stale[0];
             const mockReq = { query: { status, limit: '500', _bg: '1' }, method: 'GET', url: `/api/packing/orders?status=${encodeURIComponent(status)}&_bg=1` };
             await new Promise((resolve) => {
                 let resolved = false;
