@@ -694,16 +694,21 @@
                     const renderBanner = () => {
                         const ageSec = Math.round((Date.now() - cachedAtMs) / 1000);
                         const ageMin = Math.floor(ageSec / 60);
-                        const ageStr = ageMin >= 60 ? Math.floor(ageMin/60) + 'h ' + (ageMin%60) + 'min' : ageMin + ' min ' + (ageSec%60) + 's';
-                        const critical = ageSec > 3600; // > 1h
-                        const bg = critical ? '#dc2626' : '#ffd60a';
-                        const fg = critical ? '#fff' : '#000';
-                        const icon = critical ? '🔴' : '⚠️';
-                        const label = critical ? 'KRITICNO' : 'OPOZORILO';
-                        const cachedTime = data.cachedAt ? new Date(data.cachedAt).toLocaleString('sl-SI') : 'neznano';
-                        const circuitNote = data.circuitOpen ? ' (Metakocka unreachable - circuit breaker active)' : '';
-                        div.style.cssText = 'background:' + bg + ';color:' + fg + ';padding:10px 14px;margin:10px;border-radius:6px;font-weight:600;text-align:center;';
-                        div.innerHTML = icon + ' ' + label + ': prikazani podatki iz cacha (star ' + ageStr + ') &mdash; zadnji uspesen fetch: ' + cachedTime + circuitNote + '<br><small style="opacity:0.8;font-weight:400;">Skladisce: pakirajte po teh podatkih, sistem auto-osvezi ko Metakocka oziva. <a href="#" onclick="resetNewOrderTracking();return false;" style="color:inherit;text-decoration:underline;font-weight:600;">[Resetiraj NOV oznake]</a></small>';
+                        // < 30 min stale = poslovno irelevantno, ne kazi nicesar (sistem se osvezuje v ozadju)
+                        if (ageMin < 30) { div.style.display = 'none'; return; }
+                        div.style.display = '';
+                        const cachedFull = data.cachedAt ? new Date(data.cachedAt).toLocaleString('sl-SI') : 'neznano';
+                        const resetLink = ' <a href="#" onclick="resetNewOrderTracking();return false;" style="color:inherit;text-decoration:underline;font-weight:600;">[Resetiraj NOV oznake]</a>';
+                        if (ageSec <= 12 * 3600) {
+                            // Normalno nocno/dnevno MK okno: podatki so veljavni do cachedAt - MIREN info, ne alarm.
+                            div.style.cssText = 'background:#eef2f7;color:#1f2937;border:1px solid #cbd5e1;padding:10px 14px;margin:10px;border-radius:6px;font-weight:500;text-align:center;';
+                            div.innerHTML = 'ℹ️ Prikazana so vsa naročila, prejeta do <b>' + cachedFull + '</b>. Pakirajte normalno — novejša naročila se prikažejo samodejno.<small style="opacity:0.75;font-weight:400;">' + resetLink + '</small>';
+                        } else {
+                            // > 12h = res nekaj narobe (vec kot nocno okno) - sele zdaj rdece
+                            const ageStr = Math.floor(ageMin/60) + 'h ' + (ageMin%60) + 'min';
+                            div.style.cssText = 'background:#dc2626;color:#fff;padding:10px 14px;margin:10px;border-radius:6px;font-weight:600;text-align:center;';
+                            div.innerHTML = '🔴 Podatki so stari ' + ageStr + ' (zadnja osvežitev ' + cachedFull + '). Pakirajte po prikazanem seznamu in obvestite Dejana.<br><small style="opacity:0.85;font-weight:400;">Sistem se samodejno osveži, ko bo Metakocka spet dosegljiva.' + resetLink + '</small>';
+                        }
                     };
                     renderBanner();
                     container.parentNode.insertBefore(div, container);

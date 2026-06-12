@@ -3610,10 +3610,13 @@ async function enrichOrtoOrdersFromWC(orders) {
 const _packingInflight = new Map(); // key -> ts; dedup pocasnih Metakocka fetchev
 app.get('/api/packing/orders', async (req, res) => {
     const { status = 'Odpremljen', date, limit = 500 } = req.query;
+    // _bg=1 oznaci background warmup klic: edini sme cakati dolgo na Metakocko.
+    const isBg = req.query._bg === '1';
 
     try {
-        // FAST PATH 1: svez cache (< 15 min) - vrni TAKOJ brez klica.
-        // FAST PATH 2: circuit breaker open (Metakocka pada) - vrni STALE cache TAKOJ brez 35s timeouta.
+        // STALE-WHILE-REVALIDATE: uporabniski request NIKOLI ne caka na Metakocko,
+        // ce obstaja KAKRSENKOLI cache. Svez (<5 min) -> cached, starejsi -> stale takoj
+        // + sproZi background warmup. Edino background warmup (_bg=1) gre naprej do fetcha.
         try {
             const fastKey = `orders_${status || 'all'}_${date || 'last3d'}`;
             const fastAll = readPackingCache();
@@ -3627,26 +3630,25 @@ app.get('/api/packing/orders', async (req, res) => {
                         cacheAgeSeconds: Math.round(ageMs/1000)
                     });
                 }
-                // Circuit breaker active - ne klici Metakocke, vrni cache takoj kot stale
-                if (isMetakockaCircuitOpen()) {
-                    console.warn('[Packing] Circuit OPEN - vracam STALE cache (age=' + Math.round(ageMs/1000) + 's) brez klica');
+                if (!isBg) {
+                    // Uporabnik: vrni stale TAKOJ, osvezitev prepusti background warmupu
+                    setImmediate(() => { try { warmupPackingCache().catch(() => {}); } catch (_) {} });
                     return res.json({
                         orders: entry.orders, count: entry.orders.length,
-                        stale: true, cachedAt: entry.cachedAt,
+                        stale: true, refreshing: true, cachedAt: entry.cachedAt,
                         cacheAgeSeconds: Math.round(ageMs/1000),
-                        circuitOpen: true,
-                        reason: 'Metakocka ne odgovarja (circuit breaker) - prikazani podatki iz cacha'
+                        circuitOpen: isMetakockaCircuitOpen()
                     });
                 }
             }
-            // Cache obstaja brez fresh in brez circuit - se vedno poskusi klicat,
-            // ampak ce ne uspe, bo standard fallback vrnil ta entry
+            // Ni cache-a (cold start) ali background warmup -> nadaljuj na pravi fetch
         } catch (_) {}
 
         // IN-FLIGHT DEDUP: ce fetch za ta key ze tece (Metakocka pocasna), vrni stale cache takoj - prepreci pile-up
+        // 30 min okno: background fetch z dolgimi timeouti lahko tece dlje od 10 min
         const _ifKey = `orders_${status || 'all'}_${date || 'last3d'}`;
         const _ifTs = _packingInflight.get(_ifKey);
-        if (_ifTs && Date.now() - _ifTs < 10 * 60 * 1000) {
+        if (_ifTs && Date.now() - _ifTs < 30 * 60 * 1000) {
             try {
                 const _all = readPackingCache();
                 const _e = _all[_ifKey];
@@ -3692,17 +3694,24 @@ app.get('/api/packing/orders', async (req, res) => {
         const MAX_PAGES = 20;
         let offset = 0;
         let pageNum = 0;
+        // Background warmup tolerira pocasno Metakocko (nocna degradacija 02-07h: query rabi
+        // tudi 2-4 min); user cold-start ostane na 90s. Skupni budget prepreci neskoncen fetch.
+        const PAGE_TIMEOUT_MS = isBg ? 300000 : 90000;
+        const FETCH_BUDGET_MS = 25 * 60 * 1000;
+        const fetchStart = Date.now();
         while (pageNum < MAX_PAGES) {
             const pageBody = { ...requestBody, limit: 100, offset };
-            // Timeout 15s + 1 retry on failure (fixes 5min default fetch hang)
             let response, data, lastErr;
+            if (Date.now() - fetchStart > FETCH_BUDGET_MS) {
+                lastErr = new Error('Metakocka fetch budget exceeded (25 min, ' + pageNum + ' pages done)');
+            } else {
             for (let attempt = 0; attempt < 2; attempt++) {
                 try {
                     response = await fetch('https://main.metakocka.si/rest/eshop/v1/search', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(pageBody),
-                        signal: AbortSignal.timeout(90000)  // 20s -> 90s: Metakocka degradirana, query-ji rabijo 60s+ (12.6.2026)
+                        signal: AbortSignal.timeout(PAGE_TIMEOUT_MS)
                     });
                     const ct = response.headers.get('content-type') || '';
                     if (!ct.includes('json')) throw new Error('Non-JSON response (content-type: ' + ct + ')');
@@ -3712,9 +3721,10 @@ app.get('/api/packing/orders', async (req, res) => {
                     break;
                 } catch (e) {
                     lastErr = e;
-                    console.warn('[Packing] Metakocka fetch attempt ' + (attempt+1) + '/2 failed:', e.message);
+                    console.warn('[Packing] ' + new Date().toISOString() + ' Metakocka fetch attempt ' + (attempt+1) + '/2 failed (timeout=' + (PAGE_TIMEOUT_MS/1000) + 's, bg=' + isBg + '):', e.message);
                     if (attempt === 0) await new Promise(r => setTimeout(r, 500));
                 }
+            }
             }
             if (lastErr) {
                 console.error('[Packing] Metakocka fetch failed after 2 attempts:', lastErr.message);
@@ -4977,7 +4987,8 @@ async function warmupPackingCache() {
             // Pozeni fake express request skozi router — najlazji nacin za reuse celotne logike
             // (transformacija, enrichment, filter). Uporabimo internal http klic preko app handler-ja
             // preko mock req/res, ki samo capture-a JSON odgovor.
-            const mockReq = { query: { status, limit: '500' }, method: 'GET', url: `/api/packing/orders?status=${encodeURIComponent(status)}` };
+            // _bg=1: dovoli dolge Metakocka timeoute (5 min/page) - samo background sme cakati
+            const mockReq = { query: { status, limit: '500', _bg: '1' }, method: 'GET', url: `/api/packing/orders?status=${encodeURIComponent(status)}&_bg=1` };
             const capturedData = await new Promise((resolve) => {
                 let resolved = false;
                 const mockRes = {
@@ -4993,8 +5004,9 @@ async function warmupPackingCache() {
                 Promise.resolve(handler(mockReq, mockRes, () => {})).catch(e => {
                     if (!resolved) { resolved = true; resolve({ status: 500, data: { error: e.message } }); }
                 });
-                // 60s safety
-                setTimeout(() => { if (!resolved) { resolved = true; resolve({ status: 504, data: { error: 'warmup timeout' } }); } }, 60000);
+                // 30 min safety - background fetch cez nocno-degradirano Metakocko (5 min/page)
+                // legitimno rabi 10-25 min; prej je 60s cap obupal in cache se ponoci NIKOLI ni osvezil
+                setTimeout(() => { if (!resolved) { resolved = true; resolve({ status: 504, data: { error: 'warmup timeout' } }); } }, 30 * 60 * 1000);
             });
             if (capturedData.status === 200 && capturedData.data && capturedData.data.orders && !capturedData.data.stale) {
                 okCount++;
