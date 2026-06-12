@@ -3607,6 +3607,7 @@ async function enrichOrtoOrdersFromWC(orders) {
 }
 
 // Get packing orders from Metakocka
+const _packingInflight = new Map(); // key -> ts; dedup pocasnih Metakocka fetchev
 app.get('/api/packing/orders', async (req, res) => {
     const { status = 'Odpremljen', date, limit = 500 } = req.query;
 
@@ -3641,6 +3642,21 @@ app.get('/api/packing/orders', async (req, res) => {
             // Cache obstaja brez fresh in brez circuit - se vedno poskusi klicat,
             // ampak ce ne uspe, bo standard fallback vrnil ta entry
         } catch (_) {}
+
+        // IN-FLIGHT DEDUP: ce fetch za ta key ze tece (Metakocka pocasna), vrni stale cache takoj - prepreci pile-up
+        const _ifKey = `orders_${status || 'all'}_${date || 'last3d'}`;
+        const _ifTs = _packingInflight.get(_ifKey);
+        if (_ifTs && Date.now() - _ifTs < 10 * 60 * 1000) {
+            try {
+                const _all = readPackingCache();
+                const _e = _all[_ifKey];
+                if (_e && _e.orders) {
+                    return res.json({ orders: _e.orders, count: _e.orders.length, stale: true, refreshing: true, cachedAt: _e.cachedAt, cacheAgeSeconds: Math.round((Date.now() - new Date(_e.cachedAt).getTime()) / 1000) });
+                }
+            } catch (_) {}
+        }
+        _packingInflight.set(_ifKey, Date.now());
+        { const _origJson = res.json.bind(res); res.json = (d) => { _packingInflight.delete(_ifKey); return _origJson(d); }; }
 
         console.log(`[Packing] Fetching orders with status: ${status}, date: ${date || 'all'}`);
         
@@ -3686,7 +3702,7 @@ app.get('/api/packing/orders', async (req, res) => {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(pageBody),
-                        signal: AbortSignal.timeout(20000)  // 35s -> 20s: hitrejsi fail-fast
+                        signal: AbortSignal.timeout(90000)  // 20s -> 90s: Metakocka degradirana, query-ji rabijo 60s+ (12.6.2026)
                     });
                     const ct = response.headers.get('content-type') || '';
                     if (!ct.includes('json')) throw new Error('Non-JSON response (content-type: ' + ct + ')');
