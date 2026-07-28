@@ -4354,6 +4354,19 @@ const typeTranslations = {
     'Unterhemd': 'Majica', 'Unterhemd 1': 'Majica', 'Unterhemd 2': 'Majica', 'Unterhemd 3': 'Majica',
     'Unterhose': 'Boksarice', 'Unterhose 1': 'Boksarice', 'Unterhose 2': 'Boksarice', 'Unterhose 3': 'Boksarice',
     'Socken': 'Nogavice', 'Socken 1': 'Nogavice', 'Socken 2': 'Nogavice', 'Socken 3': 'Nogavice',
+    // Manjkajoci lokalizirani tipi za SHGIFTS bundle (T-Shirt/Boxershorts + nogavice po jezikih)
+    'T-Shirt': 'Majica', 'T-Shirt 1': 'Majica', 'T-Shirt 2': 'Majica',
+    'Boxershorts': 'Boksarice', 'Boxershorts 1': 'Boksarice', 'Boxershorts 2': 'Boksarice',
+    // Nogavice po jezikih
+    'Skarpety': 'Nogavice', 'Ponozky': 'Nogavice', 'Ponožky': 'Nogavice',
+    'Sosete': 'Nogavice', 'Șosete': 'Nogavice', 'Sosete 1': 'Nogavice',
+    'Zokni': 'Nogavice', 'Calze': 'Nogavice', 'Zoknik': 'Nogavice', 'Nogavice': 'Nogavice',
+    'Καλτσες': 'Nogavice', 'Κάλτσες': 'Nogavice', 'κάλτσες': 'Nogavice',
+    // Grski deminutivi (SHGIFTS): Μπλουζάκι=majica, Μποξεράκι=boksarice
+    'Μπλουζάκι': 'Majica', 'μπλουζάκι': 'Majica', 'Μπλουζάκι 1': 'Majica', 'Μπλουζάκι 2': 'Majica',
+    'Μποξεράκι': 'Boksarice', 'μποξεράκι': 'Boksarice', 'Μποξεράκι 1': 'Boksarice',
+    // PL/RO boksarice varijante
+    'Bokserki 3': 'Boksarice', 'Boxeri': 'Boksarice', 'Boxeri 1': 'Boksarice',
 };
 
 // Color translations for doc_desc (multi-language → Slovenian)
@@ -4562,14 +4575,17 @@ function parseDocDesc(docDesc, productCode, productName) {
     // doc_desc oblike "velikost : L ... _noriks_upsell_pieces : 4 1 : Modre Boksarice - L 2 : ... 4 : ..."
     // Brez tega guarda bi singleProductColors (BOXERS-BLUE) vrnil SAMO 1 kos namesto 4.
     // Ce doc_desc vsebuje ostevilcene pozicije (\d+ : <barva> - <velikost>), jih naStejemo VSE.
-    if (docDesc && /\b\d+\s*:\s*[^:]+?-\s*\d*X*[SMLX]{1,3}L?/i.test(docDesc)) {
-        const posRe = /(\d+)\s*:\s*(?:([^:\-]+?):\s*)?([^-\d]+?)\s*-\s*(\d*X*[SMLX]{1,3}L?)/gi;
+    // NUMBERED-POSITION regex (deljen): "N : [Tip:] Barva - Velikost"
+    // Tip lahko vsebuje vezaj (T-Shirt), velikost je XL-oblika ALI nogavicna (43-46).
+    // Lookahead loci pozicije + izloci _meta (_bundle_pairs/_offer_id/_noriks_upsell...).
+    const NUM_POS_RE = /(\d+)\s*:\s*(?:((?:(?!\s-\s)[^:_])+?)\s*:\s*)?((?:(?!\s-\s)[^:_])+?)\s*-\s*(\d{2,3}\s*-\s*\d{2,3}|\d*X*[SMLX]{1,3}L?)(?=\s+\d+\s*:|\s+_[a-zA-Z]|$)/g;
+    if (docDesc && new RegExp(NUM_POS_RE.source).test(docDesc)) {
         const posItems = [];
-        let pm;
-        while ((pm = posRe.exec(docDesc)) !== null) {
+        let pm; NUM_POS_RE.lastIndex = 0;
+        while ((pm = NUM_POS_RE.exec(docDesc)) !== null) {
             let itemType = productType;
-            if (pm[2]) { const tk = pm[2].trim(); itemType = typeTranslations[tk] || tk; }
-            posItems.push({ type: itemType, color: translateColorServer(pm[3].trim()), size: pm[4].trim().toUpperCase() });
+            if (pm[2]) { const tk = pm[2].trim(); itemType = typeTranslations[tk] || typeTranslations[tk.replace(/\s+\d+$/,'')] || tk; }
+            posItems.push({ type: itemType, color: translateColorServer(pm[3].trim()), size: pm[4].replace(/\s+/g,'').toUpperCase() });
         }
         if (posItems.length > 1) return posItems;
     }
@@ -4702,20 +4718,20 @@ function parseDocDesc(docDesc, productCode, productName) {
         let cleanDesc = docDesc.replace(/_bundle_pairs\s*:.*$/i, '').replace(/_offer_id\s*:.*$/i, '').trim();
         
         // Pattern: "1 : Type: Color - Size" or "1 : Color - Size"
-        // Also handles Greek: "1 : Μπλούζα 1: Μαύρο - XL"
-        const regex = /(\d+)\s*:\s*(?:([^:\-]+?):\s*)?([^-\d]+?)\s*-\s*(\d*X*[SMLX]{1,3}L?)/gi;
+        // Also handles Greek + SHGIFTS (tip z vezajem T-Shirt, nogavicna velikost 43-46).
+        const regex = /(\d+)\s*:\s*(?:((?:(?!\s-\s)[^:_])+?)\s*:\s*)?((?:(?!\s-\s)[^:_])+?)\s*-\s*(\d{2,3}\s*-\s*\d{2,3}|\d*X*[SMLX]{1,3}L?)(?=\s+\d+\s*:|\s+_[a-zA-Z]|$)/g;
         let match;
         
         while ((match = regex.exec(cleanDesc)) !== null) {
             let itemType = productType;
             if (match[2]) {
                 const typeKey = match[2].trim();
-                itemType = typeTranslations[typeKey] || typeKey;
+                itemType = typeTranslations[typeKey] || typeTranslations[typeKey.replace(/\s+\d+$/,'')] || typeKey;
             }
             
             const rawColor = match[3].trim();
             const color = translateColorServer(rawColor);
-            const size = match[4].trim().toUpperCase();
+            const size = match[4].replace(/\s+/g,'').toUpperCase();
             
             items.push({ type: itemType, color, size });
         }
