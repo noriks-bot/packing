@@ -3864,17 +3864,17 @@ app.get('/api/packing/orders', async (req, res) => {
                         }
                         // Validate items — flag warnings
                         const knownSlovenianColors = ['Črna', 'Modra', 'Bela', 'Siva', 'Zelena', 'Rdeča', 'Rjava', 'Bež', 'Roza', 'Oranžna', 'Vijolična', 'Rumena', 'Turkizna', 'Temno modra', 'Temnomodra', 'Svetlo modra', 'Svetlomodra', 'Tamnoplava', 'Smeđa', 'Črna & Bela', 'Ni podatka', ''];
-                        const knownTypes = ['Majica', 'Boksarice', 'Starter paket', 'Nogavice', ''];
+                        const knownTypes = ['Majica', 'Boksarice', 'Starter paket', 'Nogavice', 'Nogavica', ''];
                         for (const item of allItems) {
                             if (item.noWarning) { delete item.noWarning; continue; }
                             const warnings = [];
                             if (item.color && !knownSlovenianColors.includes(item.color)) {
                                 warnings.push(`Neprevedena barva: "${item.color}"`);
                             }
-                            if (item.type && !knownTypes.includes(item.type) && !item.type.startsWith('Nogavice')) {
+                            if (item.type && !knownTypes.includes(item.type) && !item.type.startsWith('Nogavic')) {
                                 warnings.push(`Neprepoznan tip: "${item.type}"`);
                             }
-                            if (!item.color && !item.type.startsWith('Nogavice')) {
+                            if (!item.color && !item.type.startsWith('Nogavic')) {
                                 warnings.push('Manjka barva');
                             }
                             if (!item.size) {
