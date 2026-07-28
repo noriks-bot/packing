@@ -4580,14 +4580,14 @@ function parseDocDesc(docDesc, productCode, productName) {
     // NUMBERED-POSITION regex (deljen): "N : [Tip:] Barva - Velikost"
     // Tip lahko vsebuje vezaj (T-Shirt), velikost je XL-oblika ALI nogavicna (43-46).
     // Lookahead loci pozicije + izloci _meta (_bundle_pairs/_offer_id/_noriks_upsell...).
-    const NUM_POS_RE = /(\d+)\s*:\s*(?:((?:(?!\s-\s)[^:_])+?)\s*:\s*)?((?:(?!\s-\s)[^:_])+?)\s*-\s*(\d{2,3}\s*-\s*\d{2,3}|\d*X*[SMLX]{1,3}L?)(?=\s+\d+\s*:|\s+_[a-zA-Z]|$)/g;
+    const NUM_POS_RE = /(\d+)\s*:\s*(?:((?:(?!\s-\s)[^:_])+?)\s*:\s*)?((?:(?!\s-\s)[^:_])+?)\s*-\s*(\d{2,3}\s*-\s*\d{2,3}|\d*X*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?(?:\s+\d{2,3}\s*-\s*\d{2,3})?)(?=\s+\d+\s*:|\s+_[a-zA-Z]|$)/g;
     if (docDesc && new RegExp(NUM_POS_RE.source).test(docDesc)) {
         const posItems = [];
         let pm; NUM_POS_RE.lastIndex = 0;
         while ((pm = NUM_POS_RE.exec(docDesc)) !== null) {
             let itemType = productType;
             if (pm[2]) { const tk = pm[2].trim(); itemType = typeTranslations[tk] || typeTranslations[tk.replace(/\s+\d+$/,'')] || tk; }
-            posItems.push({ type: itemType, color: translateColorServer(pm[3].trim()), size: pm[4].replace(/\s+/g,'').toUpperCase() });
+            posItems.push({ type: itemType, color: translateColorServer(pm[3].trim()), size: pm[4].replace(/\s+/g,' ').trim().toUpperCase() });
         }
         if (posItems.length > 1) return posItems;
     }
@@ -4721,7 +4721,7 @@ function parseDocDesc(docDesc, productCode, productName) {
         
         // Pattern: "1 : Type: Color - Size" or "1 : Color - Size"
         // Also handles Greek + SHGIFTS (tip z vezajem T-Shirt, nogavicna velikost 43-46).
-        const regex = /(\d+)\s*:\s*(?:((?:(?!\s-\s)[^:_])+?)\s*:\s*)?((?:(?!\s-\s)[^:_])+?)\s*-\s*(\d{2,3}\s*-\s*\d{2,3}|\d*X*[SMLX]{1,3}L?)(?=\s+\d+\s*:|\s+_[a-zA-Z]|$)/g;
+        const regex = /(\d+)\s*:\s*(?:((?:(?!\s-\s)[^:_])+?)\s*:\s*)?((?:(?!\s-\s)[^:_])+?)\s*-\s*(\d{2,3}\s*-\s*\d{2,3}|\d*X*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?(?:\s+\d{2,3}\s*-\s*\d{2,3})?)(?=\s+\d+\s*:|\s+_[a-zA-Z]|$)/g;
         let match;
         
         while ((match = regex.exec(cleanDesc)) !== null) {
@@ -4733,7 +4733,7 @@ function parseDocDesc(docDesc, productCode, productName) {
             
             const rawColor = match[3].trim();
             const color = translateColorServer(rawColor);
-            const size = match[4].replace(/\s+/g,'').toUpperCase();
+            const size = match[4].replace(/\s+/g,' ').trim().toUpperCase();
             
             items.push({ type: itemType, color, size });
         }
@@ -4784,8 +4784,11 @@ function getProductTypeFromCode(code, name) {
     if (codeUpper.includes('STARTER')) {
         return 'Starter paket';
     }
-    if (codeUpper.includes('SOCKS') || nameLower.includes('nogavic') || nameLower.includes('ponožk')) {
+    if (codeUpper.includes('SOCKS') || codeUpper.includes('KOMZIPS') || nameLower.includes('nogavic') || nameLower.includes('ponožk') || nameLower.includes('čarap') || nameLower.includes('carap')) {
         return 'Nogavice';
+    }
+    if (codeUpper.includes('KOMPSFIT')) {
+        return 'Majica';
     }
     return '';
 }
