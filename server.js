@@ -4356,6 +4356,8 @@ const typeTranslations = {
     'Socken': 'Nogavice', 'Socken 1': 'Nogavice', 'Socken 2': 'Nogavice', 'Socken 3': 'Nogavice',
     // Manjkajoci lokalizirani tipi za SHGIFTS bundle (T-Shirt/Boxershorts + nogavice po jezikih)
     'T-Shirt': 'Majica', 'T-Shirt 1': 'Majica', 'T-Shirt 2': 'Majica',
+    // RO majica variante (SHGIFTS)
+    'Tricou': 'Majica', 'Tricou 1': 'Majica', 'Tricou 2': 'Majica', 'Tricouri': 'Majica',
     'Boxershorts': 'Boksarice', 'Boxershorts 1': 'Boksarice', 'Boxershorts 2': 'Boksarice',
     // Nogavice po jezikih
     'Skarpety': 'Nogavice', 'Ponozky': 'Nogavice', 'Ponožky': 'Nogavice',
