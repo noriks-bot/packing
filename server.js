@@ -4558,6 +4558,22 @@ function parseDocDesc(docDesc, productCode, productName) {
         }
     }
     
+    // UPSELL / NUMBERED-POSITION BUNDLE guard (npr NORIKS-BOXERS-BLUE-L z upsell 4-pack):
+    // doc_desc oblike "velikost : L ... _noriks_upsell_pieces : 4 1 : Modre Boksarice - L 2 : ... 4 : ..."
+    // Brez tega guarda bi singleProductColors (BOXERS-BLUE) vrnil SAMO 1 kos namesto 4.
+    // Ce doc_desc vsebuje ostevilcene pozicije (\d+ : <barva> - <velikost>), jih naStejemo VSE.
+    if (docDesc && /\b\d+\s*:\s*[^:]+?-\s*\d*X*[SMLX]{1,3}L?/i.test(docDesc)) {
+        const posRe = /(\d+)\s*:\s*(?:([^:\-]+?):\s*)?([^-\d]+?)\s*-\s*(\d*X*[SMLX]{1,3}L?)/gi;
+        const posItems = [];
+        let pm;
+        while ((pm = posRe.exec(docDesc)) !== null) {
+            let itemType = productType;
+            if (pm[2]) { const tk = pm[2].trim(); itemType = typeTranslations[tk] || tk; }
+            posItems.push({ type: itemType, color: translateColorServer(pm[3].trim()), size: pm[4].trim().toUpperCase() });
+        }
+        if (posItems.length > 1) return posItems;
+    }
+
     // Handle single product codes (e.g., NORIKS-ONE-DARKBLUE-4XL)
     const singleProductColors = {
         'ONE-DARKBLUE': 'Temno modra', 'ONE-BLACK': 'Črna', 'ONE-WHITE': 'Bela',
