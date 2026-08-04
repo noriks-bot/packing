@@ -4690,8 +4690,12 @@ function parseDocDesc(docDesc, productCode, productName) {
         const nameMatch = productName.match(/(\d+)\s*par/i);
         if (nameMatch) pairCount = parseInt(nameMatch[1]);
         
-        const sizeFromDesc = docDesc.match(/(?:velikost|velicina|rozmiar|size|méret|meret)\s*:\s*(\S+)/i);
-        const sockSize = sizeFromDesc ? sizeFromDesc[1] : bundleSize || '';
+        const sizeFromDesc = docDesc.match(/(?:velikost|velicina|rozmiar|size|méret|meret|groesse|grösse|grosse|nagysag)\s*:\s*(\S+)/i);
+        // Nogavicna numericna velikost iz kode: NORIKS-SOCKS-BW-10PC-39-42 -> 39-42
+        const sockCodeSize = code.match(/(\d{2,3}-\d{2,3})\s*$/);
+        // Nogavicna numericna velikost iz imena: "... - 39-42" -> 39-42
+        const sockNameSize = productName.match(/(\d{2,3}\s*-\s*\d{2,3})\s*$/);
+        const sockSize = (sizeFromDesc ? sizeFromDesc[1] : '') || bundleSize || (sockCodeSize ? sockCodeSize[1] : '') || (sockNameSize ? sockNameSize[1].replace(/\s+/g, '') : '');
         
         // Determine color from code
         let sockColor = 'Črna'; // default
