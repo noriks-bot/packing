@@ -4482,6 +4482,19 @@ function translateColorServer(color) {
         const keyNorm = key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (keyNorm === normalized) return value;
     }
+    // Fraza-match: barva je vgnezdena v daljsi niz (npr grski upsell
+    // "Ένα μαύρο μπλουζάκι" = "Ena crna majica" -> najdi barvno besedo znotraj).
+    // Iscemo kljuc-besedo kot celo besedo; daljsi kljuci (npr "σκούρο μπλε")
+    // imajo prednost pred krajsimi ("μπλε"), da ne zgresimo "temno modra".
+    const keysByLen = Object.keys(colorTranslationsServer)
+        .sort((a, b) => b.length - a.length);
+    for (const key of keysByLen) {
+        const kNorm = key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        if (kNorm.length < 3) continue; // preskoci prekratke (npr "l") -> lazni zadetki
+        // meja besede: kljuc obdan z ne-crkovnim znakom ali robom niza
+        const re = new RegExp('(^|[^\\p{L}])' + kNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\p{L}])', 'u');
+        if (re.test(normalized)) return colorTranslationsServer[key];
+    }
     return trimmed;
 }
 
