@@ -4427,6 +4427,17 @@ const colorTranslationsServer = {
     // Romanian
     'negru': 'Črna', 'neagră': 'Črna', 'neagra': 'Črna',
     'albastru': 'Modra', 'albastră': 'Modra', 'albastra': 'Modra',
+    // Modra - mnozina/skloni iz upsell fraz (4x modre bokserice, per-jezik)
+    'modré': 'Modra', 'modre': 'Modra',           // CZ/SK "Modré boxerky" / HR-SK "Modre Boksarice"
+    'plave': 'Modra', 'plavi': 'Modra',           // HR "Plave Bokserice"
+    'niebieskie': 'Modra', 'niebieskei': 'Modra', // PL "Niebieskie bokserki"
+    'albaștri': 'Modra', 'albastri': 'Modra', 'albaștrii': 'Modra', // RO "Boxeri Albaștri"
+    'blaue': 'Modra', 'blauen': 'Modra',          // DE "Blaue Boxershorts"
+    // Bela / ostale mnozinske oblike
+    'bijele': 'Bela', 'bijeli': 'Bela', 'białe': 'Bela', 'biele': 'Bela',
+    // CZ/SK majice "Jedno černé/šedé/čierne/sivé tričko"
+    'černé': 'Črna', 'cerne': 'Črna', 'čierne': 'Črna', 'cierne': 'Črna',
+    'šedé': 'Siva', 'sede': 'Siva', 'sivé': 'Siva', 'sive': 'Siva',
     'alb': 'Bela', 'albă': 'Bela', 'alba': 'Bela',
     'gri': 'Siva',
     'roșu': 'Rdeča', 'rosu': 'Rdeča', 'roșie': 'Rdeča', 'rosie': 'Rdeča',
