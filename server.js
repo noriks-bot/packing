@@ -4589,7 +4589,56 @@ function parseDocDesc(docDesc, productCode, productName) {
             if (pm[2]) { const tk = pm[2].trim(); itemType = typeTranslations[tk] || typeTranslations[tk.replace(/\s+\d+$/,'')] || tk; }
             posItems.push({ type: itemType, color: translateColorServer(pm[3].trim()), size: pm[4].replace(/\s+/g,' ').trim().toUpperCase() });
         }
-        if (posItems.length > 1) return posItems;
+        if (posItems.length >= 1) return posItems;
+    }
+
+    // SINGLE-ATTRIBUTE NUMBERED POSITIONS (npr NORIKS-ORTOPAS "1 : S/M (Opseg bokova 75-110 cm)",
+    // NORIKS-KIDSNEST "1 : 3-9 godina 2 : 9-18 godina", NORIKS-KNEEFIX "1 : Desno - M (61-75 kg)").
+    // Ti produkti so variacija SAMO po velikosti/starosti (brez "Barva - Velikost" para), zato
+    // dash-based regexi zgoraj NE ujamejo -> prej padlo v generic fallback ("Ni bilo mogoce parsati").
+    // Vsaka N-pozicija = 1 kos. STROGO: obdrzimo SAMO ce iz VSAKE pozicije zanesljivo izlusimo
+    // velikost/starost; sicer bail-out (return []) da messy call-center/ime-only primeri OBDRZIJO
+    // svoje rocno-preveri opozorilo. Teče SAMO ce dash-based NUM_POS_RE NI ujel.
+    if (docDesc && !(new RegExp(NUM_POS_RE.source).test(docDesc))) {
+        const singleClean = docDesc
+            .replace(/_bundle_pairs\s*:.*$/is, '')
+            .replace(/_offer_id\s*:.*$/is, '')
+            .replace(/_cc_source\s*:.*$/is, '')
+            .replace(/_noriks_upsell_pieces\s*:.*$/is, '')
+            .replace(/\s+Discount\s*:.*$/is, '')
+            .trim();
+        // "N : <value>" pozicije kjer value NE vsebuje _meta niti naslednje "N :" pozicije
+        const SINGLE_POS_RE = /(\d+)\s*:\s*((?:(?!\s+\d+\s*:)(?!\s+_[a-zA-Z])[^:_])+)/g;
+        const singleItems = [];
+        let sm, allSized = true; SINGLE_POS_RE.lastIndex = 0;
+        while ((sm = SINGLE_POS_RE.exec(singleClean)) !== null) {
+            const rawVal = sm[2].trim();
+            if (!rawVal) continue;
+            // Zanesljiva velikost: "S/M (Opseg...)" -> "S/M", "Desno - M (61-75 kg)" -> "M",
+            // cist size token ("S/M","2XL 44-48"), ali starost/obseg range ("3-9 godina").
+            let size = '';
+            const sizeParen = rawVal.match(/(?:^|\s)([\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?)\s*\(/i);
+            const plainSize = /^[\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?(?:\s+\d{2,3}-\d{2,3})?$/i;
+            const ageRange = /\d+\s*[\u2013-]\s*\d+/.test(rawVal) &&
+                /godin|godina|let|year|jahr|\u00e9v|lat|rok|χρον|χρόν|ani|anni|cm/i.test(rawVal);
+            if (sizeParen) {
+                size = sizeParen[1].toUpperCase().trim();
+            } else if (plainSize.test(rawVal)) {
+                size = rawVal.replace(/\s+/g, ' ').trim().toUpperCase();
+            } else if (ageRange) {
+                size = rawVal.replace(/\s+/g, ' ').trim();
+            } else {
+                allSized = false; // messy/ime-only pozicija -> ne prevzemi, pusti fallback opozorilo
+                break;
+            }
+            singleItems.push({
+                type: productType || getSlovenianName(code, productName) || 'Izdelek',
+                color: '',
+                size,
+                noWarning: true
+            });
+        }
+        if (allSized && singleItems.length > 0) return singleItems;
     }
 
     // Handle single product codes (e.g., NORIKS-ONE-DARKBLUE-4XL)
