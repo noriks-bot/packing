@@ -4073,6 +4073,13 @@ const bundleContents = {
         { type: 'Boksarice', color: 'Črna', size },
         { type: 'Boksarice', color: 'Črna', size },
     ],
+    // Mystery 2-pack majici — barva presenečenje (skrivnost), izbereš samo velikost.
+    // Variabilen WC produkt (parent NORIKS-MYSTERY-SHIRT-2X, variacije po velikosti),
+    // 2 majici v paketu. Brez tega vnosa bi parseDocDesc vrnil samo 1 kos + prazno barvo.
+    'NORIKS-MYSTERY-SHIRT-2X': (size) => [
+        { type: 'Majica', color: 'Presenečenje', size },
+        { type: 'Majica', color: 'Presenečenje', size },
+    ],
     // All black shirts
     'NORIKS-ALL-BLACK-3-PACK': (size) => [
         { type: 'Majica', color: 'Črna', size },
