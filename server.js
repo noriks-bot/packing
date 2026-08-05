@@ -4524,7 +4524,7 @@ function parseDocDesc(docDesc, productCode, productName) {
     // Extract size from doc_desc or product code
     let bundleSize = '';
     if (docDesc) {
-        const sizeMatch = docDesc.match(/(?:velicina|velkost|rozmiar|size|méret|velikost|megethos|velicina-majice|velicina-bokseric|velkost-tricka|velkost-boxerek|megethos-mployzakia|megethos-mpoxer|meret|rozmer)\s*:\s*(\S+)/i);
+        const sizeMatch = docDesc.match(/(?:velicina|velkost|rozmiar|size|méret|velikost|megethos|taglia|nagysag|nagyság|groesse|grösse|grosse|velicina-majice|velicina-bokseric|velkost-tricka|velkost-boxerek|megethos-mployzakia|megethos-mpoxer|meret|rozmer)\s*:\s*(\S+)/i);
         if (sizeMatch) bundleSize = sizeMatch[1].toUpperCase();
     }
     if (!bundleSize) {
@@ -4535,6 +4535,22 @@ function parseDocDesc(docDesc, productCode, productName) {
     
     // Check if this is a known bundle - match base code without size suffix
     const baseCode = code.replace(/-((?:\d*X*)?[SMLX]{1,3}L?)$/, '');
+
+    // NORIKS-BOXERS-GRAY-2X-UPSELL-* = sidecart upsell "2x sive bokserice".
+    // doc_desc nima ostevilcenih pozicij (samo "{jezik-size} _noriks_upsell : sidecart_upsell"),
+    // zato bi navadni parser vrnil SAMO 1 kos + vcasih napacno velikost (suffix -2/-3/-X ni cist
+    // -XL/-2XL). Eksplicitno: 2 sivi bokserici, velikost iz doc_desc ALI iz imena ("... - 3XL").
+    if (code.includes('BOXERS-GRAY-2X-UPSELL')) {
+        let gSize = bundleSize;
+        const nameSize = (productName || '').match(/-\s*((?:\d?X)?[SMLX]{1,2}L?)\s*$/i);
+        if ((!gSize || !/^(\d?X)?[SMLX]{1,2}L?$/i.test(gSize)) && nameSize) {
+            gSize = nameSize[1].toUpperCase();
+        }
+        return [
+            { type: 'Boksarice', color: 'Siva', size: gSize, noWarning: true },
+            { type: 'Boksarice', color: 'Siva', size: gSize, noWarning: true },
+        ];
+    }
     const bundleFn = bundleContents[baseCode] || bundleContents[code];
     if (bundleFn && bundleSize) {
         return bundleFn(bundleSize);
