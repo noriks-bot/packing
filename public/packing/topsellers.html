@@ -85,6 +85,7 @@
         .oname { color: #333; }
         .ovar { color: #777; }
         .onone { color: #bbb; font-size: 12px; font-style: italic; }
+        .vpill.plain { background: #eef7f1; color: #17603a; font-weight: 600; }
         .vpill.vwarn { background: #fef3c7; color: #92600a; font-weight: 600; }
         .vpill { background: #f1f5f9; border-radius: 6px; padding: 2px 8px; font-size: 12px; color: #334155; }
         .empty, .loading { text-align: center; padding: 56px 20px; color: #888; }
@@ -133,13 +134,13 @@
     <script>
         // Izdelki v podmeniju — vzorci pokrivajo vse jezike trgovin.
         const PRODUCTS = [
-            { key: 'KOMPSFIT',  name: 'KOMPSFIT',  icon: '🔥', re: /kompsfit|fit\s*kompres/i, not: /(čarap|carap|nogavic|socks|zokni|ponož|skarpet|ciorap)/i },
-            { key: 'ORTOPAS',   name: 'ORTOPAS',   icon: '🎗️', re: /ortopas|ortopedski pojas|pojas za le|derék|záda|plecy|spate|schiena|πλάτ|hrbet|opasek|pas za/i },
-            { key: 'KOMZIPS',   name: 'KOMZIPS',   icon: '🧦', re: /komzips|kompresijske čarape|zatvarač|kompres.*(zokni|ponož|ciorap|skarpet|calze|κάλτσ)/i },
-            { key: 'BUNION',    name: 'BUNION',    icon: '🦶', re: /bunion|čuklj|cuklj|halux|haluks|bütyök|butyok|alluce|ballen|monturi/i },
-            { key: 'FISIOREST', name: 'FISIOREST', icon: '💆', re: /fisiorest|uređaj za vrat|nyak|krk|szyj|cervical|collo|αυχέν/i },
-            { key: 'KNEEFIX',   name: 'KNEEFIX',   icon: '🦵', re: /kneefix|koleno|kolen|térd|genunchi|kolan|γόνατ|ginocchi|knie/i },
-            { key: 'KIDSNEST',  name: 'KIDSNEST',  icon: '🌙', re: /kidsnest|kidnest|ortopedski jastuk|vzglavnik|párna|polštář|poduszka|perna|cuscino|μαξιλάρ/i }
+            { key: 'KOMPSFIT',  name: 'KOMPSFIT',  hasVar: true,  icon: '🔥', re: /kompsfit|fit\s*kompres/i, not: /(čarap|carap|nogavic|socks|zokni|ponož|skarpet|ciorap)/i },
+            { key: 'ORTOPAS', hasVar: false,   name: 'ORTOPAS',   icon: '🎗️', re: /ortopas|ortopedski pojas|pojas za le|derék|záda|plecy|spate|schiena|πλάτ|hrbet|opasek|pas za/i },
+            { key: 'KOMZIPS',   name: 'KOMZIPS',   hasVar: true,  icon: '🧦', re: /komzips|kompresijske čarape|zatvarač|kompres.*(zokni|ponož|ciorap|skarpet|calze|κάλτσ)/i },
+            { key: 'BUNION', hasVar: false,    name: 'BUNION',    icon: '🦶', re: /bunion|čuklj|cuklj|halux|haluks|bütyök|butyok|alluce|ballen|monturi/i },
+            { key: 'FISIOREST', hasVar: false, name: 'FISIOREST', icon: '💆', re: /fisiorest|uređaj za vrat|nyak|krk|szyj|cervical|collo|αυχέν/i },
+            { key: 'KNEEFIX', hasVar: false,   name: 'KNEEFIX',   icon: '🦵', re: /kneefix|koleno|kolen|térd|genunchi|kolan|γόνατ|ginocchi|knie/i },
+            { key: 'KIDSNEST', hasVar: false,  name: 'KIDSNEST',  icon: '🌙', re: /kidsnest|kidnest|ortopedski jastuk|vzglavnik|párna|polštář|poduszka|perna|cuscino|μαξιλάρ/i }
         ];
         let CURRENT = PRODUCTS[0];
         const matchProduct = (label, p) => p.re.test(label || '') && !(p.not && p.not.test(label || ''));
@@ -200,8 +201,8 @@
                 let variants = [], qty = 0;
                 for (const p of lines) {
                     const items = p.items || [];
-                    if (items.length) { items.forEach(it => { const cs = [it.color, it.size].filter(Boolean).join(' · '); variants.push(cs ? { t: cs } : { t: 'ni velikosti/barve — preveri ročno', warn: true }); }); qty += items.length; }
-                    else { const m = (p.label||'').match(/\((\d+) kos\)/); const n = m ? parseInt(m[1],10) : 1; qty += n; variants.push({ t: 'ni velikosti/barve — preveri ročno', warn: true }); }
+                    if (items.length) { if (CURRENT.hasVar === false) { qty += items.length; } else { items.forEach(it => { const cs = [it.color, it.size].filter(Boolean).join(' · '); variants.push(cs ? { t: cs } : { t: 'ni velikosti/barve — preveri ročno', warn: true }); }); qty += items.length; } }
+                    else { const m = (p.label||'').match(/\((\d+) kos\)/); const n = m ? parseInt(m[1],10) : 1; qty += n; if (CURRENT.hasVar !== false) variants.push({ t: 'ni velikosti/barve — preveri ročno', warn: true }); }
                 }
                 // vse ostalo v istem paketu (ne izbrani izdelek)
                 const others = [];
@@ -212,6 +213,7 @@
                     const n = (p.items || []).length || 1;
                     others.push({ name: nm, n, its });
                 }
+                if (CURRENT.hasVar === false) variants = [{ t: qty + '× kos', plain: true }];
                 ROWS.push({ others, id: o.id, wcRef: o._wcRef || o.wcRef || '', date: o.orderDate || o.date || '', time: o.orderTime || o.time || '', customer: o.customer || '', country: o.country || '', status: o.status || '', total: o.total || '', currency: o.currency || '', qty, variants });
             }
             ROWS.sort((a,b) => (b.date||'').localeCompare(a.date||''));
@@ -252,8 +254,8 @@
                      '<td>'+r.customer+'</td>' +
                      '<td>'+(FLAGS[r.country]||'')+' '+r.country+'</td>' +
                      '<td><span class="badge '+stClass(r.status)+'">'+r.status+'</span></td>' +
-                     '<td><div class="variants">'+r.variants.map(v=>'<span class="vpill'+(v.warn?' vwarn':'')+'">'+(v.warn?'⚠ ':'')+v.t+'</span>').join('')+'</div></td>' +
-                     '<td>'+(r.others.length ? '<div class="others">'+r.others.map(o=>'<div class="oline"><span class="oqty">'+o.n+'×</span> <span class="oname">'+o.name+'</span>'+(o.its.length?' <span class="ovar">'+o.its.join(' · ')+'</span>':'')+'</div>').join('')+'</div>' : '<span class="onone">samo ta izdelek</span>')+'</td>' +
+                     '<td><div class="variants">'+r.variants.map(v=>'<span class="vpill'+(v.warn?' vwarn':'')+(v.plain?' plain':'')+'">'+(v.warn?'⚠ ':'')+v.t+'</span>').join('')+'</div></td>' +
+                     '<td>'+(r.others.length ? '<div class="others">'+r.others.map(o=>'<div class="oline"><span class="oqty">'+o.n+'×</span> <span class="oname">'+o.name+'</span>'+(o.its.length?' <span class="ovar">'+o.its.join(' · ')+'</span>':'')+'</div>').join('')+'</div>' : '&nbsp;')+'</td>' +
                      '<td class="num">'+r.qty+'</td>' +
                      '<td class="num">'+r.total+' '+r.currency+'</td></tr>';
             });
