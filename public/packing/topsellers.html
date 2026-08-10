@@ -43,6 +43,27 @@
         .toolbar input[type=search] { flex: 0 0 340px; width: 340px; min-width: 340px; }
         .toolbar select { flex: 0 0 200px; width: 200px; min-width: 200px; }
 
+
+        /* ── INPUTI premium ── */
+        .toolbar { align-items: center; }
+        .toolbar input[type=search] {
+            height: 42px; padding: 0 14px 0 38px; border: 1px solid #dcdcdc; border-radius: 10px;
+            font-size: 14px; background: #fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='M21 21l-4.3-4.3'/></svg>") no-repeat 13px center;
+            transition: border-color .16s ease, box-shadow .16s ease;
+        }
+        .toolbar input[type=search]:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.14); }
+        .toolbar select {
+            height: 42px; padding: 0 38px 0 14px; border: 1px solid #dcdcdc; border-radius: 10px;
+            font-size: 14px; font-weight: 500; color: #1a1a1a; background: #fff;
+            -webkit-appearance: none; appearance: none; cursor: pointer;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+            background-repeat: no-repeat; background-position: right 13px center;
+            transition: border-color .16s ease, box-shadow .16s ease;
+        }
+        .toolbar select:hover { border-color: #bdbdbd; }
+        .toolbar select:focus { outline: none; border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.14); }
+        .toolbar select option { color: #1a1a1a; background: #fff; padding: 8px; }
+
         .card { background: #fff; border: 1px solid #ececec; border-radius: 12px; overflow: hidden; }
         table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
         thead th { background: #fafafa; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #777; padding: 11px 14px; border-bottom: 1px solid #ececec; white-space: nowrap; }
@@ -50,6 +71,8 @@
         tbody tr:hover td { background: #f9fdfb; }
         td.num { text-align: right; font-variant-numeric: tabular-nums; }
         .oid { font-weight: 700; }
+        .wcid { color: #667; font-size: 12.5px; white-space: nowrap; }
+        .tm { color: #10b981; font-weight: 600; font-variant-numeric: tabular-nums; }
         .badge { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 600; }
         .st-novo { background: #fef3c7; color: #92600a; }
         .st-prip { background: #dbeafe; color: #1d4ed8; }
@@ -172,7 +195,7 @@
                     if (items.length) { items.forEach(it => variants.push([it.color, it.size].filter(Boolean).join(' · ') || it.type)); qty += items.length; }
                     else { const m = (p.label||'').match(/\((\d+) kos\)/); const n = m ? parseInt(m[1],10) : 1; qty += n; variants.push(p.label.replace(/\s*\(\d+ kos\)/,'')); }
                 }
-                ROWS.push({ id: o.id, date: o.orderDate || o.date || '', customer: o.customer || '', country: o.country || '', status: o.status || '', total: o.total || '', currency: o.currency || '', qty, variants });
+                ROWS.push({ id: o.id, wcRef: o._wcRef || o.wcRef || '', date: o.orderDate || o.date || '', time: o.orderTime || o.time || '', customer: o.customer || '', country: o.country || '', status: o.status || '', total: o.total || '', currency: o.currency || '', qty, variants });
             }
             ROWS.sort((a,b) => (b.date||'').localeCompare(a.date||''));
 
@@ -201,11 +224,12 @@
             document.getElementById('sumOrders').innerHTML = 'Naročil: <b>' + rows.length + '</b>';
             document.getElementById('sumItems').innerHTML = 'Kosov: <b>' + rows.reduce((s,r)=>s+r.qty,0) + '</b>';
             if (!rows.length) { document.getElementById('body').innerHTML = '<div class="empty">Ni naročil z ' + CURRENT.name + ' za izbrane pogoje.</div>'; return; }
-            let h = '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Naročilo</th><th>Datum</th><th>Kupec</th><th>Država</th><th>Status</th><th>Velikosti / barve</th><th class="num">Kosov</th><th class="num">Znesek</th></tr></thead><tbody>';
+            let h = '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Naročilo</th><th>WC ID</th><th>Datum in ura</th><th>Kupec</th><th>Država</th><th>Status</th><th>Velikosti / barve</th><th class="num">Kosov</th><th class="num">Znesek</th></tr></thead><tbody>';
             rows.forEach((r,i) => {
                 h += '<tr><td class="num">'+(i+1)+'</td>' +
                      '<td class="oid">'+r.id+'</td>' +
-                     '<td>'+r.date+'</td>' +
+                     '<td class="wcid">'+(r.wcRef||'–')+'</td>' +
+                     '<td>'+r.date+(r.time?' <span class="tm">'+r.time+'</span>':'')+'</td>' +
                      '<td>'+r.customer+'</td>' +
                      '<td>'+(FLAGS[r.country]||'')+' '+r.country+'</td>' +
                      '<td><span class="badge '+stClass(r.status)+'">'+r.status+'</span></td>' +
@@ -218,9 +242,9 @@
 
         function exportCsv() {
             const rows = filtered();
-            const head = ['Narocilo','Datum','Kupec','Drzava','Status','Velikosti','Kosov','Znesek','Valuta'];
+            const head = ['Narocilo','WC ID','Datum','Ura','Kupec','Drzava','Status','Velikosti','Kosov','Znesek','Valuta'];
             const lines = [head.join(',')].concat(rows.map(r => [
-                r.id, r.date, '"'+(r.customer||'').replace(/"/g,'""')+'"', r.country, r.status,
+                r.id, r.wcRef, r.date, r.time, '"'+(r.customer||'').replace(/"/g,'""')+'"', r.country, r.status,
                 '"'+r.variants.join('; ')+'"', r.qty, r.total, r.currency
             ].join(',')));
             const a = document.createElement('a');
