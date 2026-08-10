@@ -208,7 +208,7 @@
                 const others = [];
                 for (const p of (o.products || [])) {
                     if (matchProduct(p.label, CURRENT)) continue;
-                    const nm = (p.label || '').replace(/\s*\(\d+[^)]*\)/g, '').trim();
+                    const nm = (p.label || '').replace(/\s*\(\d+[^)]*\)/g, '').replace(/^\s*\d+\s*[x×]\s*/i, '').trim();
                     const its = (p.items || []).map(it => [it.color, it.size].filter(Boolean).join(' · ')).filter(Boolean);
                     const n = (p.items || []).length || 1;
                     others.push({ name: nm, n, its });
