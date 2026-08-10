@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topsellers | NORIKS</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            color: #1a1a1a;
+        }
+        :root { --topnav-h: 46px; }
+        .topnav {
+            background: #0f0f0f;
+            border-bottom: 1px solid #262626;
+            height: var(--topnav-h);
+            display: flex;
+            align-items: stretch;
+            gap: 2px;
+            padding: 0 14px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+        }
+        .topnav .brand {
+            display: flex; align-items: center; gap: 8px;
+            color: #fff; font-weight: 700; font-size: 14px; letter-spacing: .3px;
+            padding-right: 18px; margin-right: 6px;
+        }
+        .topnav a {
+            display: flex; align-items: center;
+            padding: 0 18px;
+            color: rgba(255,255,255,.62);
+            text-decoration: none;
+            font-size: 13.5px; font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: color .15s ease, border-color .15s ease;
+        }
+        .topnav a:hover { color: #fff; }
+        .topnav a.active { color: #fff; border-bottom-color: #10b981; }
+
+        .header {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .header h1 span { color: #10b981; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+
+        /* prazno stanje — pripravljeno za vsebino */
+        .placeholder {
+            background: #fff;
+            border: 1px solid #e6e6e6;
+            border-radius: 14px;
+            padding: 64px 40px;
+            text-align: center;
+        }
+        .placeholder .emoji { font-size: 44px; }
+        .placeholder h2 { font-size: 22px; font-weight: 600; margin-top: 16px; }
+        .placeholder p { color: #6b7280; margin-top: 10px; font-size: 15px; line-height: 1.5; max-width: 44ch; margin-left: auto; margin-right: auto; }
+        .placeholder .chip {
+            display: inline-block; margin-top: 22px;
+            background: rgba(16,185,129,.12); color: #059669;
+            padding: 6px 14px; border-radius: 9999px; font-size: 13px; font-weight: 600;
+        }
+        /* mesto, kamor pride vsebina */
+        #content { margin-top: 28px; }
+    </style>
+</head>
+<body>
+    <nav class="topnav">
+        <div class="brand">📦 NORIKS</div>
+        <a href="/">Majice &amp; Bokserice</a>
+        <a href="/topsellers.html" class="active">Topsellers</a>
+    </nav>
+
+    <div class="header">
+        <h1>🔥 <span>Topsellers</span> | NORIKS</h1>
+    </div>
+
+    <div class="container">
+        <div class="placeholder">
+            <div class="emoji">🔥</div>
+            <h2>Topsellers — v pripravi</h2>
+            <p>Ta stran je pripravljena in prazna. Povej, kaj naj bo tukaj, in jo napolnim.</p>
+            <span class="chip">Pripravljeno za vsebino</span>
+        </div>
+
+        <!-- Vsebino dodam sem, ko poveš, kaj potrebuješ -->
+        <div id="content"></div>
+    </div>
+</body>
+</html>

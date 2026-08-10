@@ -13,6 +13,41 @@
             min-height: 100vh;
         }
         
+
+        /* ── TOP MENI (Majice&Bokserice / Topsellers) ── */
+        :root { --topnav-h: 46px; }
+        .topnav {
+            background: #0f0f0f;
+            border-bottom: 1px solid #262626;
+            height: var(--topnav-h);
+            display: flex;
+            align-items: stretch;
+            gap: 2px;
+            padding: 0 14px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+        }
+        .topnav .brand {
+            display: flex; align-items: center; gap: 8px;
+            color: #fff; font-weight: 700; font-size: 14px; letter-spacing: .3px;
+            padding-right: 18px; margin-right: 6px;
+        }
+        .topnav a {
+            display: flex; align-items: center;
+            padding: 0 18px;
+            color: rgba(255,255,255,.62);
+            text-decoration: none;
+            font-size: 13.5px; font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: color .15s ease, border-color .15s ease;
+        }
+        .topnav a:hover { color: #fff; }
+        .topnav a.active { color: #fff; border-bottom-color: #10b981; }
+        .topnav a .sub { color: rgba(255,255,255,.4); font-weight: 500; font-size: 11px; margin-left: 6px; }
+        .header { top: var(--topnav-h); }
+        @media print { .topnav { display: none; } }
+
         .header {
             background: #1a1a1a;
             color: #fff;
@@ -233,6 +268,11 @@
     </style>
 </head>
 <body>
+    <nav class="topnav no-print">
+        <div class="brand">📦 NORIKS</div>
+        <a href="/" class="active">Majice &amp; Bokserice</a>
+        <a href="/topsellers.html">Topsellers</a>
+    </nav>
     <div class="header">
         <h1>📦 <span>Pakiranje</span> | NORIKS</h1>
         <div class="header-actions">
