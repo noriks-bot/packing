@@ -80,6 +80,28 @@
     </div>
 
     <script>
+        // Izdelki BREZ variacij — en sam artikel, zato "brez variacije" ni napaka.
+        const NOVAR_GROUPS = ['BUNION','ORTOPAS','FISIOREST','KIDSNEST','KNEEFIX'];
+        // Barva je pogosto v imenu izdelka ("Zelene boksarice", "Sive Bokserice - 2XL").
+        const NAME_COLORS = [
+            [/zelen|green|zöld|zielon|zelen[áé]|verde|πράσιν/i, 'Zelena'],
+            [/\bsiv|šedé|šedá|szürke|szary|gri\b|grigio|grau|γκρι|gray|grey/i, 'Siva'],
+            [/\bcrn|črn|čiern|černá|fekete|czarn|negru|nero|schwarz|μαύρ|black/i, 'Črna'],
+            [/\bbel|bijel|biel|bílá|fehér|biał|alb\b|bianco|weiss|weiß|λευκ|white/i, 'Bela'],
+            [/modr|plav|blue|kék|niebiesk|albastru|blu\b|μπλε|darkblue|temno modr/i, 'Modra'],
+            [/\bbež|bez\b|beige|bézs|beżow|béžová|bej\b|μπεζ/i, 'Bež'],
+            [/rjav|brown|barna|brąz|hnědá|maro|marrone|καφέ/i, 'Rjava']
+        ];
+        const SIZE_RE = /(?:^|[\s\-–])((?:\d?X)?[SML]{1,2}L?|\d?XL|[SML]\/[SML]|\d{2,3}-\d{2,3})(?=$|[\s,)])/i;
+        const isMystery = l => /mystery|iznenađenje|prekvapeni|prekvapenie|překvapení|meglepetés|niespodziank|surpriz|surpris|έκπληξη|sorpresa/i.test(l || '');
+        function deriveFromLabel(label) {
+            const l = label || '';
+            let color = '', size = '';
+            for (const [re, name] of NAME_COLORS) if (re.test(l)) { color = name; break; }
+            const m = l.match(SIZE_RE);
+            if (m) size = m[1].toUpperCase();
+            return { color, size };
+        }
         const STATUSES = ['Novo', 'Pripravljen za odpremo', 'Odpremljen'];
         let AGG = null, TOTALS = null;
 
@@ -158,11 +180,25 @@
                     const g = groupOf('', p.label);
                     for (const it of (p.items || [])) {
                         const grp = g === 'OSTALO' ? groupOf(it.type, p.label) : g;
-                        const key = [it.color || '', it.size || ''].filter(Boolean).join(' · ') || 'brez variacije';
+                        let col = it.color || '', siz = it.size || '';
+                        // 1) izdelki brez variacij -> to NI napaka
+                        const noVar = NOVAR_GROUPS.includes(grp);
+                        // 2) barvo/velikost poskusi izlusciti iz imena ("Zelene boksarice", "Sive Bokserice - 2XL")
+                        if (!noVar && (!col || !siz)) {
+                            const d = deriveFromLabel(p.label);
+                            if (!col && d.color) col = d.color;
+                            if (!siz && d.size) siz = d.size;
+                        }
+                        // 3) Mystery majica: barva je NAMENOMA neznana
+                        const myst = isMystery(p.label);
+                        let key;
+                        if (noVar) key = 'brez variacije';
+                        else if (myst) key = 'Mystery (barva presenečenje)' + (siz ? ' · ' + siz : '');
+                        else key = [col, siz].filter(Boolean).join(' · ') || 'brez variacije';
                         AGG[grp] = AGG[grp] || {};
                         AGG[grp][key] = (AGG[grp][key] || 0) + 1;
                         pieces++;
-                        if ((it.warnings || []).length || (!it.color && !it.size)) {
+                        if (!noVar && !myst && !col && !siz) {
                             unparsed++;
                             UNPARSED.push({ id: o.id, wc: o._wcRef || '', date: (o.orderDate || o.date || '').slice(0,10),
                                             country: o.country || '', label: (p.label || '').replace(/\s*\(\d+[^)]*\)/g,'').trim(), grp: grp });
