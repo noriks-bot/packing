@@ -6,73 +6,48 @@
     <title>Topsellers | NORIKS</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            min-height: 100vh;
-            color: #1a1a1a;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; color: #1a1a1a; }
         :root { --topnav-h: 46px; }
-        .topnav {
-            background: #0f0f0f;
-            border-bottom: 1px solid #262626;
-            height: var(--topnav-h);
-            display: flex;
-            align-items: stretch;
-            gap: 2px;
-            padding: 0 14px;
-            position: sticky;
-            top: 0;
-            z-index: 200;
-        }
-        .topnav .brand {
-            display: flex; align-items: center; gap: 8px;
-            color: #fff; font-weight: 700; font-size: 14px; letter-spacing: .3px;
-            padding-right: 18px; margin-right: 6px;
-        }
-        .topnav a {
-            display: flex; align-items: center;
-            padding: 0 18px;
-            color: rgba(255,255,255,.62);
-            text-decoration: none;
-            font-size: 13.5px; font-weight: 600;
-            border-bottom: 2px solid transparent;
-            transition: color .15s ease, border-color .15s ease;
-        }
+        .topnav { background: #0f0f0f; border-bottom: 1px solid #262626; height: var(--topnav-h); display: flex; align-items: stretch; gap: 2px; padding: 0 14px; position: sticky; top: 0; z-index: 200; }
+        .topnav .brand { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 700; font-size: 14px; letter-spacing: .3px; padding-right: 18px; margin-right: 6px; }
+        .topnav a { display: flex; align-items: center; padding: 0 18px; color: rgba(255,255,255,.62); text-decoration: none; font-size: 13.5px; font-weight: 600; border-bottom: 2px solid transparent; transition: color .15s ease, border-color .15s ease; }
         .topnav a:hover { color: #fff; }
         .topnav a.active { color: #fff; border-bottom-color: #10b981; }
 
-        .header {
-            background: #1a1a1a;
-            color: #fff;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .header h1 { font-size: 20px; font-weight: 600; }
+        .header { background: #1a1a1a; color: #fff; padding: 13px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; position: sticky; top: var(--topnav-h); z-index: 100; }
+        .header h1 { font-size: 19px; font-weight: 600; }
         .header h1 span { color: #10b981; }
+        .header .right { display: flex; gap: 14px; align-items: center; font-size: 13px; color: rgba(255,255,255,.75); flex-wrap: wrap; }
+        .header .right b { color: #fff; }
+        .btn { border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-sec { background: #333; color: #fff; } .btn-sec:hover { background: #444; }
+        .btn-green { background: #10b981; color: #fff; } .btn-green:hover { background: #059669; }
 
-        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+        .container { max-width: 1240px; margin: 0 auto; padding: 18px 20px 40px; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+        .toolbar input[type=search] { flex: 1; min-width: 220px; padding: 9px 12px; border: 1px solid #d8d8d8; border-radius: 8px; font-size: 14px; }
+        .toolbar select { padding: 9px 12px; border: 1px solid #d8d8d8; border-radius: 8px; font-size: 14px; background: #fff; }
+        .sумmary { display: flex; gap: 8px; flex-wrap: wrap; }
+        .chip { background: #fff; border: 1px solid #e6e6e6; border-radius: 9999px; padding: 5px 13px; font-size: 12.5px; font-weight: 600; color: #444; }
+        .chip b { color: #10b981; }
 
-        /* prazno stanje — pripravljeno za vsebino */
-        .placeholder {
-            background: #fff;
-            border: 1px solid #e6e6e6;
-            border-radius: 14px;
-            padding: 64px 40px;
-            text-align: center;
-        }
-        .placeholder .emoji { font-size: 44px; }
-        .placeholder h2 { font-size: 22px; font-weight: 600; margin-top: 16px; }
-        .placeholder p { color: #6b7280; margin-top: 10px; font-size: 15px; line-height: 1.5; max-width: 44ch; margin-left: auto; margin-right: auto; }
-        .placeholder .chip {
-            display: inline-block; margin-top: 22px;
-            background: rgba(16,185,129,.12); color: #059669;
-            padding: 6px 14px; border-radius: 9999px; font-size: 13px; font-weight: 600;
-        }
-        /* mesto, kamor pride vsebina */
-        #content { margin-top: 28px; }
+        .card { background: #fff; border: 1px solid #ececec; border-radius: 12px; overflow: hidden; }
+        table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+        thead th { background: #fafafa; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #777; padding: 11px 14px; border-bottom: 1px solid #ececec; white-space: nowrap; }
+        tbody td { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tbody tr:hover td { background: #f9fdfb; }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .oid { font-weight: 700; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 600; }
+        .st-novo { background: #fef3c7; color: #92600a; }
+        .st-prip { background: #dbeafe; color: #1d4ed8; }
+        .st-odpr { background: #d1fae5; color: #047857; }
+        .st-other { background: #eee; color: #555; }
+        .variants { display: flex; flex-wrap: wrap; gap: 5px; }
+        .vpill { background: #f1f5f9; border-radius: 6px; padding: 2px 8px; font-size: 12px; color: #334155; }
+        .empty, .loading { text-align: center; padding: 56px 20px; color: #888; }
+        .spin { display: inline-block; width: 18px; height: 18px; border: 3px solid #ddd; border-top-color: #10b981; border-radius: 50%; animation: sp .8s linear infinite; vertical-align: middle; margin-right: 8px; }
+        @keyframes sp { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -83,19 +58,130 @@
     </nav>
 
     <div class="header">
-        <h1>🔥 <span>Topsellers</span> | NORIKS</h1>
+        <h1>🔥 <span>KOMPSFIT</span> — naročila za pakiranje</h1>
+        <div class="right">
+            <div id="sumOrders">Naročil: <b>–</b></div>
+            <div id="sumItems">Kosov: <b>–</b></div>
+            <button class="btn btn-sec" onclick="load()">🔄 Osveži</button>
+            <button class="btn btn-green" onclick="exportCsv()">⬇ CSV</button>
+        </div>
     </div>
 
     <div class="container">
-        <div class="placeholder">
-            <div class="emoji">🔥</div>
-            <h2>Topsellers — v pripravi</h2>
-            <p>Ta stran je pripravljena in prazna. Povej, kaj naj bo tukaj, in jo napolnim.</p>
-            <span class="chip">Pripravljeno za vsebino</span>
+        <div class="toolbar">
+            <input type="search" id="q" placeholder="Iskanje: naročilo, kupec, država, velikost…" oninput="render()">
+            <select id="fStatus" onchange="load()">
+                <option value="Novo">Novo</option>
+                <option value="Pripravljen za odpremo">Pripravljen za odpremo</option>
+                <option value="Odpremljen">Odpremljen</option>
+                <option value="__ALL__" selected>Vsi statusi</option>
+            </select>
+            <select id="fCountry" onchange="render()"><option value="">Vse države</option></select>
+            <div class="summary" id="chips"></div>
         </div>
 
-        <!-- Vsebino dodam sem, ko poveš, kaj potrebuješ -->
-        <div id="content"></div>
+        <div class="card">
+            <div id="body"><div class="loading"><span class="spin"></span>Nalagam…</div></div>
+        </div>
     </div>
+
+    <script>
+        // KOMPSFIT = "FIT Kompresijska majica". POZOR: "Kompresijske čarape" so KOMZIPS (nogavice) — ne sodijo sem.
+        const IS_KOMPSFIT = (label) => /kompsfit|fit\s*kompres/i.test(label || '') && !/(čarap|carap|nogavic|socks|zokni|ponož)/i.test(label || '');
+        const STATUSES = ['Novo', 'Pripravljen za odpremo', 'Odpremljen'];
+        const FLAGS = { 'Croatia':'🇭🇷','Slovenia':'🇸🇮','Czech Republic':'🇨🇿','Czechia':'🇨🇿','Poland':'🇵🇱','Greece':'🇬🇷','Italy':'🇮🇹','Hungary':'🇭🇺','Slovakia':'🇸🇰','Romania':'🇷🇴','Germany':'🇩🇪','Bulgaria':'🇧🇬','English':'🌐' };
+        let ROWS = [];
+
+        function stClass(s){ s=(s||'').toLowerCase(); if(s.includes('novo'))return 'st-novo'; if(s.includes('priprav'))return 'st-prip'; if(s.includes('odprem'))return 'st-odpr'; return 'st-other'; }
+
+        async function fetchStatus(status) {
+            // ISTI vir kot glavna stran (keširano na strežniku) — brez dodatne obremenitve Metakocke
+            const r = await fetch('/api/packing/orders?status=' + encodeURIComponent(status));
+            if (!r.ok) return [];
+            const j = await r.json();
+            return (j.orders || j || []);
+        }
+
+        async function load() {
+            document.getElementById('body').innerHTML = '<div class="loading"><span class="spin"></span>Nalagam…</div>';
+            const sel = document.getElementById('fStatus').value;
+            const list = sel === '__ALL__' ? STATUSES : [sel];
+            let orders = [];
+            for (const st of list) {
+                try { orders = orders.concat(await fetchStatus(st)); } catch (e) {}
+            }
+            // odstrani dvojnike po ID
+            const seen = new Set();
+            orders = orders.filter(o => { const k = o.id || o._wcRef; if (!k || seen.has(k)) return false; seen.add(k); return true; });
+
+            ROWS = [];
+            for (const o of orders) {
+                const lines = (o.products || []).filter(p => IS_KOMPSFIT(p.label));
+                if (!lines.length) continue;
+                let variants = [], qty = 0;
+                for (const p of lines) {
+                    const items = p.items || [];
+                    if (items.length) { items.forEach(it => variants.push([it.color, it.size].filter(Boolean).join(' · ') || it.type)); qty += items.length; }
+                    else { const m = (p.label||'').match(/\((\d+) kos\)/); const n = m ? parseInt(m[1],10) : 1; qty += n; variants.push(p.label.replace(/\s*\(\d+ kos\)/,'')); }
+                }
+                ROWS.push({ id: o.id, date: o.orderDate || o.date || '', customer: o.customer || '', country: o.country || '', status: o.status || '', total: o.total || '', currency: o.currency || '', qty, variants });
+            }
+            ROWS.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+            // filtri drzav + povzetek
+            const cs = [...new Set(ROWS.map(r => r.country).filter(Boolean))].sort();
+            const fc = document.getElementById('fCountry'); const cur = fc.value;
+            fc.innerHTML = '<option value="">Vse države</option>' + cs.map(c => '<option value="'+c+'">'+(FLAGS[c]||'')+' '+c+'</option>').join('');
+            fc.value = cur;
+            const byStatus = ROWS.reduce((m,r) => { m[r.status]=(m[r.status]||0)+1; return m; }, {});
+            document.getElementById('chips').innerHTML = Object.entries(byStatus).map(([s,n]) => '<span class="chip">'+s+' <b>'+n+'</b></span>').join('');
+            render();
+        }
+
+        function filtered() {
+            const q = document.getElementById('q').value.toLowerCase().trim();
+            const c = document.getElementById('fCountry').value;
+            return ROWS.filter(r => {
+                if (c && r.country !== c) return false;
+                if (!q) return true;
+                return (r.id+' '+r.customer+' '+r.country+' '+r.status+' '+r.variants.join(' ')).toLowerCase().includes(q);
+            });
+        }
+
+        function render() {
+            const rows = filtered();
+            document.getElementById('sumOrders').innerHTML = 'Naročil: <b>' + rows.length + '</b>';
+            document.getElementById('sumItems').innerHTML = 'Kosov: <b>' + rows.reduce((s,r)=>s+r.qty,0) + '</b>';
+            if (!rows.length) { document.getElementById('body').innerHTML = '<div class="empty">Ni naročil s KOMPSFIT za izbrane pogoje.</div>'; return; }
+            let h = '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Naročilo</th><th>Datum</th><th>Kupec</th><th>Država</th><th>Status</th><th>Velikosti / barve</th><th class="num">Kosov</th><th class="num">Znesek</th></tr></thead><tbody>';
+            rows.forEach((r,i) => {
+                h += '<tr><td class="num">'+(i+1)+'</td>' +
+                     '<td class="oid">'+r.id+'</td>' +
+                     '<td>'+r.date+'</td>' +
+                     '<td>'+r.customer+'</td>' +
+                     '<td>'+(FLAGS[r.country]||'')+' '+r.country+'</td>' +
+                     '<td><span class="badge '+stClass(r.status)+'">'+r.status+'</span></td>' +
+                     '<td><div class="variants">'+r.variants.map(v=>'<span class="vpill">'+v+'</span>').join('')+'</div></td>' +
+                     '<td class="num">'+r.qty+'</td>' +
+                     '<td class="num">'+r.total+' '+r.currency+'</td></tr>';
+            });
+            document.getElementById('body').innerHTML = h + '</tbody></table></div>';
+        }
+
+        function exportCsv() {
+            const rows = filtered();
+            const head = ['Narocilo','Datum','Kupec','Drzava','Status','Velikosti','Kosov','Znesek','Valuta'];
+            const lines = [head.join(',')].concat(rows.map(r => [
+                r.id, r.date, '"'+(r.customer||'').replace(/"/g,'""')+'"', r.country, r.status,
+                '"'+r.variants.join('; ')+'"', r.qty, r.total, r.currency
+            ].join(',')));
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
+            a.download = 'kompsfit-narocila.csv';
+            a.click();
+        }
+
+        load();
+    </script>
 </body>
 </html>
