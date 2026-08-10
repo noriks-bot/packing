@@ -31,6 +31,18 @@
         .chip { background: #fff; border: 1px solid #e6e6e6; border-radius: 9999px; padding: 5px 13px; font-size: 12.5px; font-weight: 600; color: #444; }
         .chip b { color: #10b981; }
 
+
+        /* ── PODMENI izdelkov ── */
+        .submenu { background: #fff; border-bottom: 1px solid #e6e6e6; padding: 0 20px; display: flex; gap: 4px; overflow-x: auto; position: sticky; top: calc(var(--topnav-h) + 52px); z-index: 90; }
+        .submenu button { background: none; border: none; border-bottom: 2px solid transparent; padding: 12px 16px; font-size: 13.5px; font-weight: 600; color: #777; cursor: pointer; white-space: nowrap; border-radius: 0; }
+        .submenu button:hover { color: #111; }
+        .submenu button.active { color: #0f0f0f; border-bottom-color: #10b981; }
+        .submenu button .cnt { display: inline-block; margin-left: 6px; background: #f1f5f9; color: #555; border-radius: 9999px; padding: 1px 8px; font-size: 11.5px; }
+        .submenu button.active .cnt { background: #d1fae5; color: #047857; }
+        /* fiksne sirine, da se polja ne premikajo */
+        .toolbar input[type=search] { flex: 0 0 340px; width: 340px; min-width: 340px; }
+        .toolbar select { flex: 0 0 200px; width: 200px; min-width: 200px; }
+
         .card { background: #fff; border: 1px solid #ececec; border-radius: 12px; overflow: hidden; }
         table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
         thead th { background: #fafafa; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #777; padding: 11px 14px; border-bottom: 1px solid #ececec; white-space: nowrap; }
@@ -58,7 +70,7 @@
     </nav>
 
     <div class="header">
-        <h1>🔥 <span>KOMPSFIT</span> — naročila za pakiranje</h1>
+        <h1>📦 <span id="title">KOMPSFIT</span> — naročila za pakiranje</h1>
         <div class="right">
             <div id="sumOrders">Naročil: <b>–</b></div>
             <div id="sumItems">Kosov: <b>–</b></div>
@@ -66,6 +78,8 @@
             <button class="btn btn-green" onclick="exportCsv()">⬇ CSV</button>
         </div>
     </div>
+
+    <div class="submenu" id="submenu"></div>
 
     <div class="container">
         <div class="toolbar">
@@ -86,8 +100,19 @@
     </div>
 
     <script>
-        // KOMPSFIT = "FIT Kompresijska majica". POZOR: "Kompresijske čarape" so KOMZIPS (nogavice) — ne sodijo sem.
-        const IS_KOMPSFIT = (label) => /kompsfit|fit\s*kompres/i.test(label || '') && !/(čarap|carap|nogavic|socks|zokni|ponož)/i.test(label || '');
+        // Izdelki v podmeniju — vzorci pokrivajo vse jezike trgovin.
+        const PRODUCTS = [
+            { key: 'KOMPSFIT',  name: 'KOMPSFIT',  icon: '🔥', re: /kompsfit|fit\s*kompres/i, not: /(čarap|carap|nogavic|socks|zokni|ponož|skarpet|ciorap)/i },
+            { key: 'ORTOPAS',   name: 'ORTOPAS',   icon: '🎗️', re: /ortopas|ortopedski pojas|pojas za le|derék|záda|plecy|spate|schiena|πλάτ|hrbet|opasek|pas za/i },
+            { key: 'KOMZIPS',   name: 'KOMZIPS',   icon: '🧦', re: /komzips|kompresijske čarape|zatvarač|kompres.*(zokni|ponož|ciorap|skarpet|calze|κάλτσ)/i },
+            { key: 'BUNION',    name: 'BUNION',    icon: '🦶', re: /bunion|čuklj|cuklj|halux|haluks|bütyök|butyok|alluce|ballen|monturi/i },
+            { key: 'FISIOREST', name: 'FISIOREST', icon: '💆', re: /fisiorest|uređaj za vrat|nyak|krk|szyj|cervical|collo|αυχέν/i },
+            { key: 'KNEEFIX',   name: 'KNEEFIX',   icon: '🦵', re: /kneefix|koleno|kolen|térd|genunchi|kolan|γόνατ|ginocchi|knie/i },
+            { key: 'KIDSNEST',  name: 'KIDSNEST',  icon: '🌙', re: /kidsnest|kidnest|ortopedski jastuk|vzglavnik|párna|polštář|poduszka|perna|cuscino|μαξιλάρ/i }
+        ];
+        let CURRENT = PRODUCTS[0];
+        const matchProduct = (label, p) => p.re.test(label || '') && !(p.not && p.not.test(label || ''));
+        const IS_KOMPSFIT = (label) => matchProduct(label, CURRENT);
         const STATUSES = ['Novo', 'Pripravljen za odpremo', 'Odpremljen'];
         const FLAGS = { 'Croatia':'🇭🇷','Slovenia':'🇸🇮','Czech Republic':'🇨🇿','Czechia':'🇨🇿','Poland':'🇵🇱','Greece':'🇬🇷','Italy':'🇮🇹','Hungary':'🇭🇺','Slovakia':'🇸🇰','Romania':'🇷🇴','Germany':'🇩🇪','Bulgaria':'🇧🇬','English':'🌐' };
         let ROWS = [];
@@ -114,6 +139,29 @@
             const seen = new Set();
             orders = orders.filter(o => { const k = o.id || o._wcRef; if (!k || seen.has(k)) return false; seen.add(k); return true; });
 
+            RAW = orders;
+            buildSubmenu();
+            computeRows();
+        }
+
+        let RAW = [];
+        function buildSubmenu() {
+            const counts = {};
+            PRODUCTS.forEach(p => { counts[p.key] = RAW.filter(o => (o.products || []).some(x => matchProduct(x.label, p))).length; });
+            document.getElementById('submenu').innerHTML = PRODUCTS.map(p =>
+                '<button class="' + (p.key === CURRENT.key ? 'active' : '') + '" onclick="selectProduct(\'' + p.key + '\')">' +
+                p.icon + ' ' + p.name + '<span class="cnt">' + (counts[p.key] || 0) + '</span></button>').join('');
+        }
+        function selectProduct(key) {
+            CURRENT = PRODUCTS.find(p => p.key === key) || PRODUCTS[0];
+            document.getElementById('title').textContent = CURRENT.name;
+            document.getElementById('q').value = '';
+            buildSubmenu();
+            computeRows();
+        }
+
+        function computeRows() {
+            const orders = RAW;
             ROWS = [];
             for (const o of orders) {
                 const lines = (o.products || []).filter(p => IS_KOMPSFIT(p.label));
@@ -152,7 +200,7 @@
             const rows = filtered();
             document.getElementById('sumOrders').innerHTML = 'Naročil: <b>' + rows.length + '</b>';
             document.getElementById('sumItems').innerHTML = 'Kosov: <b>' + rows.reduce((s,r)=>s+r.qty,0) + '</b>';
-            if (!rows.length) { document.getElementById('body').innerHTML = '<div class="empty">Ni naročil s KOMPSFIT za izbrane pogoje.</div>'; return; }
+            if (!rows.length) { document.getElementById('body').innerHTML = '<div class="empty">Ni naročil z ' + CURRENT.name + ' za izbrane pogoje.</div>'; return; }
             let h = '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Naročilo</th><th>Datum</th><th>Kupec</th><th>Država</th><th>Status</th><th>Velikosti / barve</th><th class="num">Kosov</th><th class="num">Znesek</th></tr></thead><tbody>';
             rows.forEach((r,i) => {
                 h += '<tr><td class="num">'+(i+1)+'</td>' +
@@ -177,7 +225,7 @@
             ].join(',')));
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
-            a.download = 'kompsfit-narocila.csv';
+            a.download = CURRENT.key.toLowerCase() + '-narocila.csv';
             a.click();
         }
 
