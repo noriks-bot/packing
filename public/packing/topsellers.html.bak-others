@@ -79,13 +79,6 @@
         .st-odpr { background: #d1fae5; color: #047857; }
         .st-other { background: #eee; color: #555; }
         .variants { display: flex; flex-wrap: wrap; gap: 5px; }
-        .others { display: flex; flex-direction: column; gap: 4px; }
-        .oline { font-size: 12.5px; color: #444; line-height: 1.35; }
-        .oqty { display: inline-block; min-width: 22px; font-weight: 700; color: #0f766e; font-variant-numeric: tabular-nums; }
-        .oname { color: #333; }
-        .ovar { color: #777; }
-        .onone { color: #bbb; font-size: 12px; font-style: italic; }
-        .vpill.plain { background: #eef7f1; color: #17603a; font-weight: 600; }
         .vpill.vwarn { background: #fef3c7; color: #92600a; font-weight: 600; }
         .vpill { background: #f1f5f9; border-radius: 6px; padding: 2px 8px; font-size: 12px; color: #334155; }
         .empty, .loading { text-align: center; padding: 56px 20px; color: #888; }
@@ -98,7 +91,6 @@
         <div class="brand">📦 NORIKS</div>
         <a href="/">Majice &amp; Bokserice</a>
         <a href="/topsellers.html" class="active">Topsellers</a>
-        <a href="/predpriprava.html">Predpriprava</a>
     </nav>
 
     <div class="header">
@@ -135,13 +127,13 @@
     <script>
         // Izdelki v podmeniju — vzorci pokrivajo vse jezike trgovin.
         const PRODUCTS = [
-            { key: 'KOMPSFIT',  name: 'KOMPSFIT',  hasVar: true,  icon: '🔥', re: /kompsfit|fit\s*kompres/i, not: /(čarap|carap|nogavic|socks|zokni|ponož|skarpet|ciorap)/i },
-            { key: 'ORTOPAS', hasVar: false,   name: 'ORTOPAS',   icon: '🎗️', re: /ortopas|ortopedski pojas|pojas za le|derék|záda|plecy|spate|schiena|πλάτ|hrbet|opasek|pas za/i },
-            { key: 'KOMZIPS',   name: 'KOMZIPS',   hasVar: true,  icon: '🧦', re: /komzips|kompresijske čarape|zatvarač|kompres.*(zokni|ponož|ciorap|skarpet|calze|κάλτσ)/i },
-            { key: 'BUNION', hasVar: false,    name: 'BUNION',    icon: '🦶', re: /bunion|čuklj|cuklj|halux|haluks|bütyök|butyok|alluce|ballen|monturi/i },
-            { key: 'FISIOREST', hasVar: false, name: 'FISIOREST', icon: '💆', re: /fisiorest|uređaj za vrat|nyak|krk|szyj|cervical|collo|αυχέν/i },
-            { key: 'KNEEFIX', hasVar: false,   name: 'KNEEFIX',   icon: '🦵', re: /kneefix|koleno|kolen|térd|genunchi|kolan|γόνατ|ginocchi|knie/i },
-            { key: 'KIDSNEST', hasVar: false,  name: 'KIDSNEST',  icon: '🌙', re: /kidsnest|kidnest|ortopedski jastuk|vzglavnik|párna|polštář|poduszka|perna|cuscino|μαξιλάρ/i }
+            { key: 'KOMPSFIT',  name: 'KOMPSFIT',  icon: '🔥', re: /kompsfit|fit\s*kompres/i, not: /(čarap|carap|nogavic|socks|zokni|ponož|skarpet|ciorap)/i },
+            { key: 'ORTOPAS',   name: 'ORTOPAS',   icon: '🎗️', re: /ortopas|ortopedski pojas|pojas za le|derék|záda|plecy|spate|schiena|πλάτ|hrbet|opasek|pas za/i },
+            { key: 'KOMZIPS',   name: 'KOMZIPS',   icon: '🧦', re: /komzips|kompresijske čarape|zatvarač|kompres.*(zokni|ponož|ciorap|skarpet|calze|κάλτσ)/i },
+            { key: 'BUNION',    name: 'BUNION',    icon: '🦶', re: /bunion|čuklj|cuklj|halux|haluks|bütyök|butyok|alluce|ballen|monturi/i },
+            { key: 'FISIOREST', name: 'FISIOREST', icon: '💆', re: /fisiorest|uređaj za vrat|nyak|krk|szyj|cervical|collo|αυχέν/i },
+            { key: 'KNEEFIX',   name: 'KNEEFIX',   icon: '🦵', re: /kneefix|koleno|kolen|térd|genunchi|kolan|γόνατ|ginocchi|knie/i },
+            { key: 'KIDSNEST',  name: 'KIDSNEST',  icon: '🌙', re: /kidsnest|kidnest|ortopedski jastuk|vzglavnik|párna|polštář|poduszka|perna|cuscino|μαξιλάρ/i }
         ];
         let CURRENT = PRODUCTS[0];
         const matchProduct = (label, p) => p.re.test(label || '') && !(p.not && p.not.test(label || ''));
@@ -202,20 +194,10 @@
                 let variants = [], qty = 0;
                 for (const p of lines) {
                     const items = p.items || [];
-                    if (items.length) { if (CURRENT.hasVar === false) { qty += items.length; } else { items.forEach(it => { const cs = [it.color, it.size].filter(Boolean).join(' · '); variants.push(cs ? { t: cs } : { t: 'ni velikosti/barve — preveri ročno', warn: true }); }); qty += items.length; } }
-                    else { const m = (p.label||'').match(/\((\d+) kos\)/); const n = m ? parseInt(m[1],10) : 1; qty += n; if (CURRENT.hasVar !== false) variants.push({ t: 'ni velikosti/barve — preveri ročno', warn: true }); }
+                    if (items.length) { items.forEach(it => { const cs = [it.color, it.size].filter(Boolean).join(' · '); variants.push(cs ? { t: cs } : { t: 'ni velikosti/barve — preveri ročno', warn: true }); }); qty += items.length; }
+                    else { const m = (p.label||'').match(/\((\d+) kos\)/); const n = m ? parseInt(m[1],10) : 1; qty += n; variants.push({ t: 'ni velikosti/barve — preveri ročno', warn: true }); }
                 }
-                // vse ostalo v istem paketu (ne izbrani izdelek)
-                const others = [];
-                for (const p of (o.products || [])) {
-                    if (matchProduct(p.label, CURRENT)) continue;
-                    const nm = (p.label || '').replace(/\s*\(\d+[^)]*\)/g, '').replace(/^\s*\d+\s*[x×]\s*/i, '').trim();
-                    const its = (p.items || []).map(it => [it.color, it.size].filter(Boolean).join(' · ')).filter(Boolean);
-                    const n = (p.items || []).length || 1;
-                    others.push({ name: nm, n, its });
-                }
-                if (CURRENT.hasVar === false) variants = [{ t: qty + '× kos', plain: true }];
-                ROWS.push({ others, id: o.id, wcRef: o._wcRef || o.wcRef || '', date: o.orderDate || o.date || '', time: o.orderTime || o.time || '', customer: o.customer || '', country: o.country || '', status: o.status || '', total: o.total || '', currency: o.currency || '', qty, variants });
+                ROWS.push({ id: o.id, wcRef: o._wcRef || o.wcRef || '', date: o.orderDate || o.date || '', time: o.orderTime || o.time || '', customer: o.customer || '', country: o.country || '', status: o.status || '', total: o.total || '', currency: o.currency || '', qty, variants });
             }
             ROWS.sort((a,b) => (b.date||'').localeCompare(a.date||''));
 
@@ -246,7 +228,7 @@
             const nw = rows.reduce((s,r)=>s+r.variants.filter(v=>v.warn).length,0);
             document.getElementById('sumWarn').innerHTML = nw ? '⚠️ Brez velikosti: <b>' + nw + '</b>' : '';
             if (!rows.length) { document.getElementById('body').innerHTML = '<div class="empty">Ni naročil z ' + CURRENT.name + ' za izbrane pogoje.</div>'; return; }
-            let h = '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Naročilo</th><th>WC ID</th><th>Datum in ura</th><th>Kupec</th><th>Država</th><th>Status</th><th>Izbrani izdelek</th><th>Ostalo v paketu</th><th class="num">Kosov</th><th class="num">Znesek</th></tr></thead><tbody>';
+            let h = '<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Naročilo</th><th>WC ID</th><th>Datum in ura</th><th>Kupec</th><th>Država</th><th>Status</th><th>Velikosti / barve</th><th class="num">Kosov</th><th class="num">Znesek</th></tr></thead><tbody>';
             rows.forEach((r,i) => {
                 h += '<tr><td class="num">'+(i+1)+'</td>' +
                      '<td class="oid">'+r.id+'</td>' +
@@ -255,8 +237,7 @@
                      '<td>'+r.customer+'</td>' +
                      '<td>'+(FLAGS[r.country]||'')+' '+r.country+'</td>' +
                      '<td><span class="badge '+stClass(r.status)+'">'+r.status+'</span></td>' +
-                     '<td><div class="variants">'+r.variants.map(v=>'<span class="vpill'+(v.warn?' vwarn':'')+(v.plain?' plain':'')+'">'+(v.warn?'⚠ ':'')+v.t+'</span>').join('')+'</div></td>' +
-                     '<td>'+(r.others.length ? '<div class="others">'+r.others.map(o=>'<div class="oline"><span class="oqty">'+o.n+'×</span> <span class="oname">'+o.name+'</span>'+(o.its.length?' <span class="ovar">'+o.its.join(' · ')+'</span>':'')+'</div>').join('')+'</div>' : '&nbsp;')+'</td>' +
+                     '<td><div class="variants">'+r.variants.map(v=>'<span class="vpill'+(v.warn?' vwarn':'')+'">'+(v.warn?'⚠ ':'')+v.t+'</span>').join('')+'</div></td>' +
                      '<td class="num">'+r.qty+'</td>' +
                      '<td class="num">'+r.total+' '+r.currency+'</td></tr>';
             });
@@ -265,10 +246,10 @@
 
         function exportCsv() {
             const rows = filtered();
-            const head = ['Narocilo','WC ID','Datum','Ura','Kupec','Drzava','Status','Velikosti','Ostalo v paketu','Kosov','Znesek','Valuta'];
+            const head = ['Narocilo','WC ID','Datum','Ura','Kupec','Drzava','Status','Velikosti','Kosov','Znesek','Valuta'];
             const lines = [head.join(',')].concat(rows.map(r => [
                 r.id, r.wcRef, r.date, r.time, '"'+(r.customer||'').replace(/"/g,'""')+'"', r.country, r.status,
-                '"'+r.variants.map(v=>v.t).join('; ')+'"', '"'+r.others.map(o=>o.n+'x '+o.name+(o.its.length?' ('+o.its.join(' · ')+')':'')).join('; ')+'"', r.qty, r.total, r.currency
+                '"'+r.variants.map(v=>v.t).join('; ')+'"', r.qty, r.total, r.currency
             ].join(',')));
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' }));

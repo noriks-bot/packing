@@ -13,41 +13,6 @@
             min-height: 100vh;
         }
         
-
-        /* ── TOP MENI (Majice&Bokserice / Topsellers) ── */
-        :root { --topnav-h: 46px; }
-        .topnav {
-            background: #0f0f0f;
-            border-bottom: 1px solid #262626;
-            height: var(--topnav-h);
-            display: flex;
-            align-items: stretch;
-            gap: 2px;
-            padding: 0 14px;
-            position: sticky;
-            top: 0;
-            z-index: 200;
-        }
-        .topnav .brand {
-            display: flex; align-items: center; gap: 8px;
-            color: #fff; font-weight: 700; font-size: 14px; letter-spacing: .3px;
-            padding-right: 18px; margin-right: 6px;
-        }
-        .topnav a {
-            display: flex; align-items: center;
-            padding: 0 18px;
-            color: rgba(255,255,255,.62);
-            text-decoration: none;
-            font-size: 13.5px; font-weight: 600;
-            border-bottom: 2px solid transparent;
-            transition: color .15s ease, border-color .15s ease;
-        }
-        .topnav a:hover { color: #fff; }
-        .topnav a.active { color: #fff; border-bottom-color: #10b981; }
-        .topnav a .sub { color: rgba(255,255,255,.4); font-weight: 500; font-size: 11px; margin-left: 6px; }
-        .header { top: var(--topnav-h); }
-        @media print { .topnav { display: none; } }
-
         .header {
             background: #1a1a1a;
             color: #fff;
@@ -268,12 +233,6 @@
     </style>
 </head>
 <body>
-    <nav class="topnav no-print">
-        <div class="brand">📦 NORIKS</div>
-        <a href="/" class="active">Majice &amp; Bokserice</a>
-        <a href="/topsellers.html">Topsellers</a>
-        <a href="/predpriprava.html">Predpriprava</a>
-    </nav>
     <div class="header">
         <h1>📦 <span>Pakiranje</span> | NORIKS</h1>
         <div class="header-actions">
@@ -508,63 +467,17 @@
         
         let knownOrderIds = JSON.parse(localStorage.getItem('packing-known-ids') || '[]');
         let newOrderIds = new Set();
-        // Baseline timestamp: orderji starejsi od te oznake niso "NOV" — fix za primer
-        // ko cache vrne starejsi snapshot (npr. circuit breaker stale) ali ko se localStorage
-        // resetira (browser cache flush, inkognito). Default: ob prvem ogledu = zdaj.
-        let packingBaselineTs = parseInt(localStorage.getItem('packing-baseline-ts') || '0', 10);
-        if (!packingBaselineTs) {
-            packingBaselineTs = Date.now();
-            localStorage.setItem('packing-baseline-ts', String(packingBaselineTs));
-        }
-
-        function parseOrderTimestamp(order) {
-            // order.orderDate format: "9.6.2026" / "09.06.2026" (sl-SI), orderTime: "06:35"
-            try {
-                const d = order.orderDate || '';
-                const t = order.orderTime || '00:00';
-                const m = d.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-                if (!m) return 0;
-                const [, dd, mm, yyyy] = m;
-                const [hh, mi] = t.split(':');
-                return new Date(parseInt(yyyy), parseInt(mm)-1, parseInt(dd), parseInt(hh||0), parseInt(mi||0)).getTime();
-            } catch (_) { return 0; }
-        }
-
+        
         function markOrdersSeen(orders) {
             const currentIds = orders.map(o => o.id);
             if (knownOrderIds.length === 0) {
-                // Prvi obisk ali reset: VSE obstojece order-je tretiramo kot "ze videne",
-                // baseline timestamp postavi na zdaj. Tako jutri ne bo vse staro flagirano NOV.
                 knownOrderIds = currentIds;
-                newOrderIds = new Set();
-                packingBaselineTs = Date.now();
-                localStorage.setItem('packing-baseline-ts', String(packingBaselineTs));
             } else {
-                // Novi = ni v knownOrderIds AND je novejsi od baseline
-                newOrderIds = new Set(orders
-                    .filter(o => !knownOrderIds.includes(o.id))
-                    .filter(o => {
-                        const ts = parseOrderTimestamp(o);
-                        return ts === 0 || ts >= packingBaselineTs; // ts=0 (ne moremo parsirati) → fallback na "nov"
-                    })
-                    .map(o => o.id)
-                );
+                newOrderIds = new Set(currentIds.filter(id => !knownOrderIds.includes(id)));
                 knownOrderIds = [...new Set([...knownOrderIds, ...currentIds])];
             }
             localStorage.setItem('packing-known-ids', JSON.stringify(knownOrderIds));
         }
-
-        // Manual reset za primer "vse to je staro, zacni stetje od zdaj"
-        function resetNewOrderTracking() {
-            if (!confirm('Resetiram zaznavo novih narocil. Vsi trenutni order-ji bodo oznaceni kot "videni". Nadaljujem?')) return;
-            knownOrderIds = (window.allOrders || []).map(o => o.id);
-            packingBaselineTs = Date.now();
-            newOrderIds = new Set();
-            localStorage.setItem('packing-known-ids', JSON.stringify(knownOrderIds));
-            localStorage.setItem('packing-baseline-ts', String(packingBaselineTs));
-            if (typeof filterByCountry === 'function') filterByCountry();
-        }
-        window.resetNewOrderTracking = resetNewOrderTracking;
         
         function selectCountry(btn) {
             document.querySelectorAll('.country-btn[data-country]').forEach(b => b.classList.remove('active'));
@@ -716,44 +629,20 @@
                 }
                 
                 window.allOrders = data.orders || [];
-                // Ce je response stale (cache fallback), NE updejtaj seen tracking-a.
-                // Drugace bi stale cache lahko "izgubil" nove order-je ki so v knownOrderIds-u.
-                if (!data.stale) {
-                    markOrdersSeen(window.allOrders);
-                }
+                markOrdersSeen(window.allOrders);
                 logRefresh(newOrderIds.size);
                 filterByCountry();
 
-                // Stale cache banner z severity + live age timer
+                // Stale cache banner
                 const banner = document.getElementById('stale-banner');
                 if (banner) banner.remove();
-                if (window._staleBannerTimer) { clearInterval(window._staleBannerTimer); window._staleBannerTimer = null; }
                 if (data.stale) {
                     const div = document.createElement('div');
                     div.id = 'stale-banner';
-                    const cachedAtMs = data.cachedAt ? new Date(data.cachedAt).getTime() : Date.now();
-                    const renderBanner = () => {
-                        const ageSec = Math.round((Date.now() - cachedAtMs) / 1000);
-                        const ageMin = Math.floor(ageSec / 60);
-                        // < 30 min stale = poslovno irelevantno, ne kazi nicesar (sistem se osvezuje v ozadju)
-                        if (ageMin < 30) { div.style.display = 'none'; return; }
-                        div.style.display = '';
-                        const cachedFull = data.cachedAt ? new Date(data.cachedAt).toLocaleString('sl-SI') : 'neznano';
-                        const resetLink = ' <a href="#" onclick="resetNewOrderTracking();return false;" style="color:inherit;text-decoration:underline;font-weight:600;">[Resetiraj NOV oznake]</a>';
-                        if (ageSec <= 12 * 3600) {
-                            // Normalno nocno/dnevno MK okno: podatki so veljavni do cachedAt - MIREN info, ne alarm.
-                            div.style.cssText = 'background:#eef2f7;color:#1f2937;border:1px solid #cbd5e1;padding:10px 14px;margin:10px;border-radius:6px;font-weight:500;text-align:center;';
-                            div.innerHTML = 'ℹ️ Prikazana so vsa naročila, prejeta do <b>' + cachedFull + '</b>. Pakirajte normalno — novejša naročila se prikažejo samodejno.<small style="opacity:0.75;font-weight:400;">' + resetLink + '</small>';
-                        } else {
-                            // > 12h = res nekaj narobe (vec kot nocno okno) - sele zdaj rdece
-                            const ageStr = Math.floor(ageMin/60) + 'h ' + (ageMin%60) + 'min';
-                            div.style.cssText = 'background:#dc2626;color:#fff;padding:10px 14px;margin:10px;border-radius:6px;font-weight:600;text-align:center;';
-                            div.innerHTML = '🔴 Podatki so stari ' + ageStr + ' (zadnja osvežitev ' + cachedFull + '). Pakirajte po prikazanem seznamu in obvestite Dejana.<br><small style="opacity:0.85;font-weight:400;">Sistem se samodejno osveži, ko bo Metakocka spet dosegljiva.' + resetLink + '</small>';
-                        }
-                    };
-                    renderBanner();
+                    div.style.cssText = 'background:#ffd60a;color:#000;padding:10px 14px;margin:10px;border-radius:6px;font-weight:600;text-align:center;';
+                    const cachedTime = data.cachedAt ? new Date(data.cachedAt).toLocaleString('sl-SI') : 'neznano';
+                    div.textContent = '⚠️ Metakocka ne odgovarja — prikazani so podatki iz cacha (zadnji uspesen fetch: ' + cachedTime + ')';
                     container.parentNode.insertBefore(div, container);
-                    window._staleBannerTimer = setInterval(renderBanner, 30000); // refresh vsakih 30s
                 }
                 
             } catch (e) {
