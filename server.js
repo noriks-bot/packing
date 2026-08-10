@@ -4664,6 +4664,10 @@ function parseDocDesc(docDesc, productCode, productName) {
             // Zanesljiva velikost: "S/M (Opseg...)" -> "S/M", "Desno - M (61-75 kg)" -> "M",
             // cist size token ("S/M","2XL 44-48"), ali starost/obseg range ("3-9 godina").
             let size = '';
+            let color = '';
+            // [2026-08-10] Orto izdelki imajo lahko pozicijo SAMO z barvo (npr. KOMZIPS "1 : Crna").
+            // Prej je tak zapis padel v bail-out -> "Ni bilo mogoce parsati" cetudi je podatek OBSTAJAL.
+            const COLOR_ONLY_RE = /^(crna|črna|black|nero|schwarz|fekete|czarny|černá|čierna|negru|μαύρο|bijela|bela|biela|white|weiss|weiß|fehér|biały|bílá|alb|λευκό|siva|sivá|szürke|szary|šedá|gri|grigio|grau|γκρι|bež|bez|beige|bézs|beżowy|béžová|bej|μπεζ|zelena|green|zöld|zielony|zelená|verde|πράσιν|plava|modra|blue|kék|niebieski|modrá|albastru|blu|μπλε)$/i;
             const sizeParen = rawVal.match(/(?:^|\s)([\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?)\s*\(/i);
             const plainSize = /^[\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?(?:\s+\d{2,3}-\d{2,3})?$/i;
             const ageRange = /\d+\s*[\u2013-]\s*\d+/.test(rawVal) &&
@@ -4674,13 +4678,16 @@ function parseDocDesc(docDesc, productCode, productName) {
                 size = rawVal.replace(/\s+/g, ' ').trim().toUpperCase();
             } else if (ageRange) {
                 size = rawVal.replace(/\s+/g, ' ').trim();
+            } else if (COLOR_ONLY_RE.test(rawVal.replace(/\s+/g, ' ').trim())) {
+                const c = rawVal.replace(/\s+/g, ' ').trim();
+                color = c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
             } else {
                 allSized = false; // messy/ime-only pozicija -> ne prevzemi, pusti fallback opozorilo
                 break;
             }
             singleItems.push({
                 type: productType || getSlovenianName(code, productName) || 'Izdelek',
-                color: '',
+                color,
                 size,
                 noWarning: true
             });
