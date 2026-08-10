@@ -126,7 +126,7 @@
             aggregate();
         }
 
-        let ORDERS = [], SELDAY = 'ALL';
+        let ORDERS = [], SELDAY = 'ALL', UNPARSED = [];
         function dayList() {
             const out = [];
             for (let i = 3; i >= 0; i--) out.push(new Date(Date.now() - i * 86400000).toISOString().slice(0, 10));
@@ -152,7 +152,7 @@
 
         function aggregate() {
             const orders = SELDAY === 'ALL' ? ORDERS : ORDERS.filter(o => (o.orderDate || o.date || '').slice(0, 10) === SELDAY);
-            AGG = {}; let pieces = 0, unparsed = 0;
+            AGG = {}; UNPARSED = []; let pieces = 0, unparsed = 0;
             for (const o of orders) {
                 for (const p of (o.products || [])) {
                     const g = groupOf('', p.label);
@@ -162,7 +162,11 @@
                         AGG[grp] = AGG[grp] || {};
                         AGG[grp][key] = (AGG[grp][key] || 0) + 1;
                         pieces++;
-                        if ((it.warnings || []).length) unparsed++;
+                        if ((it.warnings || []).length || (!it.color && !it.size)) {
+                            unparsed++;
+                            UNPARSED.push({ id: o.id, wc: o._wcRef || '', date: (o.orderDate || o.date || '').slice(0,10),
+                                            country: o.country || '', label: (p.label || '').replace(/\s*\(\d+[^)]*\)/g,'').trim(), grp: grp });
+                        }
                     }
                 }
             }
@@ -170,7 +174,7 @@
             document.getElementById('sumOrders').innerHTML = 'Naročil: <b>' + orders.length + '</b>';
             document.getElementById('sumPieces').innerHTML = 'Kosov skupaj: <b>' + pieces + '</b>';
             document.getElementById('warn').innerHTML = unparsed
-                ? '<div class="warn">⚠️ ' + unparsed + ' kosov brez razčlenjene variacije — preveri ročno.</div>' : '';
+                ? '<div class="warn">⚠️ ' + unparsed + ' kosov brez razčlenjene variacije — seznam je na dnu strani.</div>' : '';
             render();
         }
 
@@ -194,6 +198,27 @@
                 html += '</tbody></table></div>';
             }
             html += '</div>';
+            if (UNPARSED.length) {
+                const byKey = {};
+                UNPARSED.forEach(u => {
+                    const k = u.id + '|' + u.label;
+                    if (!byKey[k]) byKey[k] = { ...u, n: 0 };
+                    byKey[k].n++;
+                });
+                const list = Object.values(byKey).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+                html += '<div class="card" style="margin-top:18px"><h2>⚠️ Kosi brez razčlenjene variacije' +
+                        '<span class="tot" style="background:#fef3c7;color:#92600a">' + UNPARSED.length + ' kos</span></h2>' +
+                        '<div style="overflow-x:auto"><table><thead><tr>' +
+                        '<th>Naročilo</th><th>Datum</th><th>Država</th><th>Skupina</th><th>Izdelek</th><th class="num">Kosov</th>' +
+                        '</tr></thead><tbody>';
+                list.forEach(u => {
+                    html += '<tr><td class="oid">' + u.id + (u.wc ? '<div style="color:#999;font-size:11.5px">' + u.wc + '</div>' : '') + '</td>' +
+                            '<td>' + u.date + '</td><td>' + u.country + '</td>' +
+                            '<td><span class="sz">' + u.grp + '</span></td>' +
+                            '<td class="cl">' + u.label + '</td><td class="num">' + u.n + '</td></tr>';
+                });
+                html += '</tbody></table></div></div>';
+            }
             document.getElementById('body').innerHTML = html;
         }
 
