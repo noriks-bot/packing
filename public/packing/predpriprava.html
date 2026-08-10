@@ -27,6 +27,14 @@
         .note { color: #666; font-size: 13px; margin-bottom: 16px; }
         .note b { color: #111; }
 
+        .daytabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .daytab { background: #fff; border: 1px solid #e2e2e2; border-radius: 10px; padding: 9px 16px; cursor: pointer;
+                  font-size: 13px; font-weight: 600; color: #555; display: flex; flex-direction: column; gap: 2px; min-width: 108px; }
+        .daytab:hover { border-color: #10b981; color: #111; }
+        .daytab.active { background: #0f0f0f; border-color: #0f0f0f; color: #fff; }
+        .daytab .d { font-size: 11px; font-weight: 500; opacity: .7; }
+        .daytab .n { font-size: 12.5px; }
+        .daytab.active .n { color: #10b981; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; }
         .card { background: #fff; border: 1px solid #ececec; border-radius: 14px; overflow: hidden; }
         .card h2 { font-size: 15px; font-weight: 700; padding: 14px 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
@@ -66,6 +74,7 @@
 
     <div class="container">
         <div class="note">Obdobje: <b id="period">zadnji 3 dnevi + danes</b> · vsi statusi (Novo, Pripravljen za odpremo, Odpremljen) · šteto po <b>kosih</b>.</div>
+        <div class="daytabs" id="daytabs"></div>
         <div id="warn"></div>
         <div id="body"><div class="loading"><span class="spin"></span>Nalagam…</div></div>
     </div>
@@ -112,6 +121,37 @@
             document.getElementById('period').textContent = fromS + ' → ' + toS + ' (4 dni)';
             orders = orders.filter(o => { const d = (o.orderDate || o.date || '').slice(0, 10); return d && d >= fromS && d <= toS; });
 
+            ORDERS = orders;
+            buildDayTabs();
+            aggregate();
+        }
+
+        let ORDERS = [], SELDAY = 'ALL';
+        function dayList() {
+            const out = [];
+            for (let i = 3; i >= 0; i--) out.push(new Date(Date.now() - i * 86400000).toISOString().slice(0, 10));
+            return out;
+        }
+        function buildDayTabs() {
+            const days = dayList();
+            const cnt = {};
+            ORDERS.forEach(o => { const d = (o.orderDate || o.date || '').slice(0, 10); cnt[d] = (cnt[d] || 0) + 1; });
+            const names = ['Ned','Pon','Tor','Sre','Čet','Pet','Sob'];
+            const today = new Date().toISOString().slice(0, 10);
+            let html = '<div class="daytab' + (SELDAY === 'ALL' ? ' active' : '') + '" onclick="selectDay(\'ALL\')">' +
+                       '<span class="d">Vsi 4 dnevi</span><span class="n">' + ORDERS.length + ' naročil</span></div>';
+            days.forEach(d => {
+                const dt = new Date(d + 'T12:00:00');
+                const lbl = (d === today ? 'DANES' : names[dt.getDay()] + ' ' + dt.getDate() + '.' + (dt.getMonth() + 1) + '.');
+                html += '<div class="daytab' + (SELDAY === d ? ' active' : '') + '" onclick="selectDay(\'' + d + '\')">' +
+                        '<span class="d">' + lbl + '</span><span class="n">' + (cnt[d] || 0) + ' naročil</span></div>';
+            });
+            document.getElementById('daytabs').innerHTML = html;
+        }
+        function selectDay(d) { SELDAY = d; buildDayTabs(); aggregate(); }
+
+        function aggregate() {
+            const orders = SELDAY === 'ALL' ? ORDERS : ORDERS.filter(o => (o.orderDate || o.date || '').slice(0, 10) === SELDAY);
             AGG = {}; let pieces = 0, unparsed = 0;
             for (const o of orders) {
                 for (const p of (o.products || [])) {
@@ -166,7 +206,7 @@
             const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'predpriprava-kosovnik.csv';
+            a.download = 'predpriprava-' + (SELDAY === 'ALL' ? 'vsi-dnevi' : SELDAY) + '.csv';
             a.click();
         }
 
