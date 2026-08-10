@@ -3630,7 +3630,7 @@ app.get('/api/packing/orders', async (req, res) => {
         // ce obstaja KAKRSENKOLI cache. Svez (<5 min) -> cached, starejsi -> stale takoj
         // + sproZi background warmup. Edino background warmup (_bg=1) gre naprej do fetcha.
         try {
-            const fastKey = `orders_${status || 'all'}_${date || 'last3d'}`;
+            const fastKey = `orders_${status || 'all'}_${date || ('d' + (Math.min(parseInt(req.query.days,10)||5,14)) + (req.query.allshops === '1' ? '_all' : ''))}`;
             const fastAll = readPackingCache();
             const entry = fastAll[fastKey];
             if (entry && entry.orders && entry.cachedAt) {
@@ -3658,7 +3658,7 @@ app.get('/api/packing/orders', async (req, res) => {
 
         // IN-FLIGHT DEDUP: ce fetch za ta key ze tece (Metakocka pocasna), vrni stale cache takoj - prepreci pile-up
         // 30 min okno: background fetch z dolgimi timeouti lahko tece dlje od 10 min
-        const _ifKey = `orders_${status || 'all'}_${date || 'last3d'}`;
+        const _ifKey = `orders_${status || 'all'}_${date || ('d' + (Math.min(parseInt(req.query.days,10)||5,14)) + (req.query.allshops === '1' ? '_all' : ''))}`;
         const _ifTs = _packingInflight.get(_ifKey);
         if (_ifTs && Date.now() - _ifTs < 30 * 60 * 1000) {
             try {
@@ -3681,9 +3681,11 @@ app.get('/api/packing/orders', async (req, res) => {
             queryAdvance.push({ type: 'doc_date_from', value: `${date}+02:00` });
             queryAdvance.push({ type: 'doc_date_to', value: `${date}+02:00` });
         } else {
-            // Default: last 3 days
-            const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            queryAdvance.push({ type: 'doc_date_from', value: `${threeDaysAgo}+02:00` });
+            // [2026-08-10] Privzeto 5 dni (prej 3) — najstarejsi dan je bil nepopoln.
+            // Nastavljivo prek ?days=N (max 14), da se ne pretirava z Metakocko.
+            const PACKING_DAYS = Math.min(parseInt(req.query.days, 10) || 5, 14);
+            const fromDay = new Date(Date.now() - PACKING_DAYS * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            queryAdvance.push({ type: 'doc_date_from', value: `${fromDay}+02:00` });
         }
         
         const requestBody = {
@@ -3695,9 +3697,12 @@ app.get('/api/packing/orders', async (req, res) => {
             order_direction: 'desc'
         };
         
-        // Filter by Noriks shops only at API level (eshop_name_list)
+        // Filter by Noriks shops only at API level (eshop_name_list).
+        // [2026-08-10] ?allshops=1 -> BREZ filtra (zajame tudi narocila izven seznama trgovin,
+        // npr. klicni center z drugim virom). Dejan: stevilke se morajo ujemati z dash.
+        const ALL_SHOPS = req.query.allshops === '1';
         const NORIKS_SHOPS = 'noriks.com/hr,noriks.com/hu,noriks.com/cz,noriks.com/gr,noriks.com/it,noriks.com/sk,noriks.com/pl,noriks.com/si,noriks.com/ro,noriks.com/de,noriks.com';
-        queryAdvance.push({ type: 'eshop_name_list', value: NORIKS_SHOPS });
+        if (!ALL_SHOPS) queryAdvance.push({ type: 'eshop_name_list', value: NORIKS_SHOPS });
         
         requestBody.query_advance = queryAdvance;
         
