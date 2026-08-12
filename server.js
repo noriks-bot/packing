@@ -3630,7 +3630,7 @@ app.get('/api/packing/orders', async (req, res) => {
         // ce obstaja KAKRSENKOLI cache. Svez (<5 min) -> cached, starejsi -> stale takoj
         // + sproZi background warmup. Edino background warmup (_bg=1) gre naprej do fetcha.
         try {
-            const fastKey = `orders_${status || 'all'}_${date || ('d' + (Math.min(parseInt(req.query.days,10)||5,14)) + (req.query.allshops === '1' ? '_all' : ''))}`;
+            const fastKey = `orders_${status || 'all'}_${date || 'last3d'}`;
             const fastAll = readPackingCache();
             const entry = fastAll[fastKey];
             if (entry && entry.orders && entry.cachedAt) {
@@ -3658,7 +3658,7 @@ app.get('/api/packing/orders', async (req, res) => {
 
         // IN-FLIGHT DEDUP: ce fetch za ta key ze tece (Metakocka pocasna), vrni stale cache takoj - prepreci pile-up
         // 30 min okno: background fetch z dolgimi timeouti lahko tece dlje od 10 min
-        const _ifKey = `orders_${status || 'all'}_${date || ('d' + (Math.min(parseInt(req.query.days,10)||5,14)) + (req.query.allshops === '1' ? '_all' : ''))}`;
+        const _ifKey = `orders_${status || 'all'}_${date || 'last3d'}`;
         const _ifTs = _packingInflight.get(_ifKey);
         if (_ifTs && Date.now() - _ifTs < 30 * 60 * 1000) {
             try {
