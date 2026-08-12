@@ -3890,6 +3890,21 @@ app.get('/api/packing/orders', async (req, res) => {
                         return { label: productLabel, items: allItems };
                     }
                     
+                    // [2026-08-12] Izdelki BREZ variacij (BUNION, ORTOPAS, FISIOREST, KIDSNEST, KNEEFIX,
+                    // NORIKSHERS-*): nimajo barve/velikosti, zato "Ni bilo mogoce parsati" ni napaka.
+                    // Kolicina = amount x _bundle_pairs (ce je v doc_desc), sicer amount.
+                    const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KIDSNEST|KIDNEST|KNEEFIX|CONTROLPRO|NORIKSHERS/;
+                    if (NOVAR_CODES.test(code)) {
+                        const bp = (docDesc || '').match(/_bundle_pairs\s*:\s*(\d+)/i);
+                        const per = bp ? (parseInt(bp[1], 10) || 1) : 1;
+                        const cleanName = getSlovenianName(code, nameOriginal) || productType || nameOriginal;
+                        const novarItems = [];
+                        for (let a = 0; a < amount * per; a++) {
+                            novarItems.push({ type: cleanName, color: '', size: '', noWarning: true });
+                        }
+                        return { label: productLabel, items: novarItems };
+                    }
+
                     // Fallback — flag as warning (no parsed data!)
                     const fallbackItems = [];
                     for (let a = 0; a < amount; a++) {
