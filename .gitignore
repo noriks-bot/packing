@@ -1,10 +1,10 @@
 node_modules/
-.DS_Store
+data/
+*.bak*
+*.prev
 *.log
-uploads/
-*.bak
-
-# runtime data (warehouse writes these — never track)
-data/packed-orders.json
-data/localizer-jobs.json
-data/orders-cache.json
+.env
+data.json.bak.en
+packing-notes.json
+notifications.json
+queue.json

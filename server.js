@@ -43,14 +43,43 @@ function loadQueue() {
     return [];
 }
 
+// ========== [2026-08-16 FAZA1] ZANESLJIVOST ==========
+// 1) ATOMARNI ZAPIS: temp + rename (rename na istem FS je atomaren) + .prev kopija
+//    zadnje dobre verzije. Crash/OOM sredi zapisa NE more vec uniciti datoteke
+//    (9.6. se je: packed-orders.json.bak-broken-063629).
+function writeFileAtomic(file, data) {
+    const dir = path.dirname(file);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const tmp = file + '.tmp-' + process.pid;
+    fs.writeFileSync(tmp, data);
+    try { if (fs.existsSync(file)) fs.copyFileSync(file, file + '.prev'); } catch (_) {}
+    fs.renameSync(tmp, file);
+}
+// 2) CRASH HANDLERJA: en neujet throw v intervalih ne sme sesuti procesa
+//    (prej: pm2 respawn -> vse skladisce odjavljeno). Glasno logiramo za watchdog.
+process.on('uncaughtException', err => {
+    console.error('[FATAL] uncaughtException:', (err && err.stack) || err);
+});
+process.on('unhandledRejection', reason => {
+    console.error('[FATAL] unhandledRejection:', (reason && reason.stack) || reason);
+});
+
 function saveQueue(queue) {
-    fs.writeFileSync(QUEUE_FILE, JSON.stringify(queue, null, 2));
+    writeFileAtomic(QUEUE_FILE, JSON.stringify(queue, null, 2));
 }
 
 
 // ========== AUTH ==========
 const PACKED_FILE = path.join(__dirname, 'data', 'packed-orders.json');
-const SESSIONS = {};
+// [2026-08-16 FAZA1] 3) TRAJNE SEJE: prezivijo restart (291 restartov doslej = 291x
+// odjavljeno celo skladisce). Nalozimo ob zagonu, shranimo ob vsaki spremembi.
+const SESSIONS_FILE = path.join(__dirname, 'data', 'sessions.json');
+let SESSIONS = {};
+try { SESSIONS = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')) || {}; } catch (_) {}
+function saveSessions() {
+    try { writeFileAtomic(SESSIONS_FILE, JSON.stringify(SESSIONS)); }
+    catch (e) { console.error('[Sessions] save failed:', e.message); }
+}
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function loadPackedOrders() {
@@ -63,9 +92,7 @@ function loadPackedOrders() {
 }
 
 function savePackedOrders(data) {
-    const dir = path.dirname(PACKED_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(PACKED_FILE, JSON.stringify(data, null, 2));
+    writeFileAtomic(PACKED_FILE, JSON.stringify(data, null, 2));
 }
 
 let packedOrdersData = loadPackedOrders();
@@ -87,6 +114,7 @@ function getSession(req) {
     if (!token || !SESSIONS[token]) return null;
     if (Date.now() - SESSIONS[token].created > SESSION_MAX_AGE) {
         delete SESSIONS[token];
+        saveSessions();
         return null;
     }
     return SESSIONS[token];
@@ -94,6 +122,7 @@ function getSession(req) {
 
 function requireAuth(req, res, next) {
     if (req.path === '/api/login' || req.path === '/login.html' || req.path === '/packing/login.html') return next();
+    if (req.path === '/api/health') return next();   // [FAZA1] health za watchdog/monitoring — brez občutljivih podatkov
     // [2026-08-16] Vzdrzevalna endpointa za topsellers bazo: dostopna SAMO z localhosta
     // (rocni polni uvoz / stanje). Zunanji promet gre skozi nginx in ima drug IP -> 403.
     if (req.path === '/api/packing/topsellers-resync' || req.path === '/api/packing/topsellers-status') {
@@ -122,6 +151,7 @@ app.post('/api/login', (req, res) => {
     if (username === 'noriks' && password === 'noriks') {
         const token = crypto.randomBytes(32).toString('hex');
         SESSIONS[token] = { username, created: Date.now() };
+        saveSessions();
         res.cookie('packing_session', token, { httpOnly: true, sameSite: 'strict', maxAge: 7*24*60*60*1000 });
         return res.json({ ok: true });
     }
@@ -132,7 +162,7 @@ app.post('/api/login', (req, res) => {
 app.post('/api/logout', (req, res) => {
     const cookies = parseCookies(req.headers.cookie);
     const token = cookies['packing_session'];
-    if (token) delete SESSIONS[token];
+    if (token) { delete SESSIONS[token]; saveSessions(); }
     res.clearCookie('packing_session');
     res.json({ ok: true });
 });
@@ -177,7 +207,7 @@ app.post("/api/packing/notes", (req, res) => {
     } else {
         delete packingNotes[orderId];
     }
-    try { fs.writeFileSync(PACKING_NOTES_FILE, JSON.stringify(packingNotes, null, 2)); } catch(e) {}
+    try { writeFileAtomic(PACKING_NOTES_FILE, JSON.stringify(packingNotes, null, 2)); } catch(e) { console.error('[Notes] save failed:', e.message); }
     res.json({ ok: true });
 });
 
@@ -220,7 +250,7 @@ function loadData() {
 
 // Save data
 function saveData(data) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+    writeFileAtomic(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
 // Initialize country data if missing
@@ -548,7 +578,7 @@ function loadNotifications() {
 }
 
 function saveNotifications(data) {
-    fs.writeFileSync(NOTIFICATIONS_FILE, JSON.stringify(data, null, 2));
+    writeFileAtomic(NOTIFICATIONS_FILE, JSON.stringify(data, null, 2));
 }
 
 // Slack user IDs
@@ -1366,7 +1396,7 @@ function loadJobs() {
 function saveJobs(jobs) {
     try {
         fs.mkdirSync(path.dirname(JOBS_FILE), { recursive: true });
-        fs.writeFileSync(JOBS_FILE, JSON.stringify(jobs, null, 2));
+        writeFileAtomic(JOBS_FILE, JSON.stringify(jobs, null, 2));
     } catch (e) {
         console.error('Error saving jobs:', e);
     }
@@ -3437,7 +3467,7 @@ app.post('/api/finance/fixed-costs', (req, res) => {
         const dataDir = path.join(__dirname, 'data');
         if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
         
-        fs.writeFileSync(FIXED_COSTS_FILE, JSON.stringify(req.body, null, 2));
+        writeFileAtomic(FIXED_COSTS_FILE, JSON.stringify(req.body, null, 2));
         res.json({ success: true });
     } catch (err) {
         res.json({ error: err.message });
@@ -5090,7 +5120,7 @@ app.post('/api/packing/save-bundle', async (req, res) => {
         let overrides = {};
         try { overrides = JSON.parse(fs.readFileSync(overridesPath, 'utf8')); } catch(e) {}
         overrides[sku] = items;
-        fs.writeFileSync(overridesPath, JSON.stringify(overrides, null, 2));
+        writeFileAtomic(overridesPath, JSON.stringify(overrides, null, 2));
         res.json({ ok: true, sku });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -5247,7 +5277,7 @@ function writePackingCacheEntry(cacheKey, orders) {
             const sorted = keys.sort((a, b) => (all[a].cachedAt || '').localeCompare(all[b].cachedAt || ''));
             for (const k of sorted.slice(0, keys.length - 30)) delete all[k];
         }
-        fs.writeFileSync(PACKING_CACHE_FILE, JSON.stringify(all));
+        writeFileAtomic(PACKING_CACHE_FILE, JSON.stringify(all));
     } catch (e) { console.error('[Packing] Cache write failed:', e.message); }
 }
 
@@ -5443,6 +5473,39 @@ async function maintainRolling() {
         tsdb.setMeta('lastDayRefresh', best.day + ' (zivih ' + best.p + ') @ ' + new Date().toISOString());
     }
 }
+// [2026-08-16 FAZA1] HEALTH CHECK za watchdog in monitoring.
+// Vrne ok:false, ce katerakoli kriticna komponenta ne dela. BREZ obcutljivih podatkov.
+app.get('/api/health', (req, res) => {
+    const checks = {};
+    let ok = true;
+    // 1) topsellers baza berljiva in pokrita
+    try {
+        const cov = tsdb.coverage(ROLLING_DAYS);
+        checks.db = { ok: cov.total > 100 && cov.missing.length <= 2, orders: cov.total, missingDays: cov.missing.length };
+    } catch (e) { checks.db = { ok: false, error: e.message }; }
+    // 2) packing cache svezina (redni sync tece?)
+    try {
+        const all = readPackingCache();
+        const e = all['orders_Odpremljen_last3d'];
+        const ageMin = e && e.cachedAt ? Math.round((Date.now() - new Date(e.cachedAt).getTime()) / 60000) : null;
+        checks.cache = { ok: ageMin !== null && ageMin < 30, ageMin };
+    } catch (e) { checks.cache = { ok: false, error: e.message }; }
+    // 3) packed-orders datoteka berljiva (kriticni podatek skladisca)
+    try {
+        const n = Object.keys(JSON.parse(fs.readFileSync(PACKED_FILE, 'utf8'))).length;
+        checks.packed = { ok: n > 0, entries: n };
+    } catch (e) { checks.packed = { ok: false, error: e.message }; }
+    // 4) disk zapisljiv (atomicni zapisi ga rabijo)
+    try {
+        const t = path.join(__dirname, 'data', '.health-probe');
+        fs.writeFileSync(t, String(Date.now())); fs.unlinkSync(t);
+        checks.disk = { ok: true };
+    } catch (e) { checks.disk = { ok: false, error: e.message }; }
+    checks.metakockaCircuit = { ok: !isMetakockaCircuitOpen() };   // info: odprt breaker ni fatalen (cache streze)
+    ok = checks.db.ok && checks.cache.ok && checks.packed.ok && checks.disk.ok;
+    res.status(ok ? 200 : 503).json({ ok, uptimeMin: Math.round(process.uptime() / 60), rssMb: Math.round(process.memoryUsage().rss / 1048576), checks });
+});
+
 // [2026-08-16] Rocni sprozilec polnega 14-dnevnega uvoza — SAMO z lokalnega streznika
 // (vzdrzevanje/diagnostika). Zunaj ni dosegljiv, zato ga nihce ne more zloradno sprozati.
 app.get('/api/packing/topsellers-resync', (req, res) => {
