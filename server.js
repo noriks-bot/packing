@@ -1,3 +1,7 @@
+// [2026-08-16 FAZA2] Skrivnosti iz .env (Node 22 vgrajen loader, brez odvisnosti).
+// .env je v .gitignore in chmod 600. Ne prepise ze nastavljenih env spremenljivk.
+try { process.loadEnvFile(__dirname + '/.env'); } catch (_) { /* .env je opcijski */ }
+
 const express = require('express');
 const compression = require('compression');
 const fs = require('fs');
@@ -148,7 +152,11 @@ app.get('/packing/login.html', (req, res) => {
 // Login API
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
-    if (username === 'noriks' && password === 'noriks') {
+    // [FAZA2] Poverilnice iz .env (PACKING_USER/PACKING_PASS); fallback na stare vrednosti,
+    // da skladisce NIKOLI ne ostane zaklenjeno, ce .env manjka. Geslo se zamenja v .env.
+    const AUTH_USER = process.env.PACKING_USER || 'noriks';
+    const AUTH_PASS = process.env.PACKING_PASS || 'noriks';
+    if (username === AUTH_USER && password === AUTH_PASS) {
         const token = crypto.randomBytes(32).toString('hex');
         SESSIONS[token] = { username, created: Date.now() };
         saveSessions();
@@ -982,7 +990,7 @@ app.post('/api/analyze-video', async (req, res) => {
         const framesDir = path.join(__dirname, 'uploads', 'frames-' + Date.now());
         fs.mkdirSync(framesDir, { recursive: true });
         
-        await execPromise(`ffmpeg -i "${videoPath}" -vf "fps=1" -t 30 -q:v 2 "${framesDir}/frame-%03d.jpg" 2>/dev/null`);
+        await execPromise(`nice -n 15 ffmpeg -i "${videoPath}" -vf "fps=1" -t 30 -q:v 2 "${framesDir}/frame-%03d.jpg" 2>/dev/null`);
         
         const frames = fs.readdirSync(framesDir).filter(f => f.endsWith('.jpg')).sort();
         console.log(`Extracted ${frames.length} frames from ${filename}`);
@@ -1226,7 +1234,7 @@ async function processLocalizationJob(job) {
     fs.mkdirSync(framesDir, { recursive: true });
     
     // Extract frames
-    await execPromise(`ffmpeg -y -i "${videoWithTextPath}" -vf "fps=2" -t 30 -q:v 2 "${framesDir}/frame-%03d.jpg" 2>/dev/null`);
+    await execPromise(`nice -n 15 ffmpeg -y -i "${videoWithTextPath}" -vf "fps=2" -t 30 -q:v 2 "${framesDir}/frame-%03d.jpg" 2>/dev/null`);
     
     const frames = fs.readdirSync(framesDir).filter(f => f.endsWith('.jpg')).sort();
     const segments = [];
@@ -1354,7 +1362,7 @@ async function processLocalizationJob(job) {
         
         // Generate video
         const outVideo = path.join(outputDir, `${job.name}-${lang}.mp4`);
-        await execPromise(`ffmpeg -y -i "${videoCleanPath}" -vf "ass='${assPath}':fontsdir=/usr/share/fonts" -c:a copy "${outVideo}" 2>/dev/null`);
+        await execPromise(`nice -n 15 ffmpeg -y -i "${videoCleanPath}" -vf "ass='${assPath}':fontsdir=/usr/share/fonts" -c:a copy "${outVideo}" 2>/dev/null`);
         
         job.outputs[lang] = outVideo;
         job.completed = langIdx + 1;
@@ -3095,8 +3103,12 @@ async function processQueue() {
 
 // ============ FINANCE API ============
 
-const METAKOCKA_COMPANY_ID = 6371;
-const METAKOCKA_SECRET = 'ee759602-961d-4431-ac64-0725ae8d9665';
+// [FAZA2] Metakocka poverilnici iz .env. Ce manjkata, GLASNO opozori (sync ne bo delal).
+const METAKOCKA_COMPANY_ID = parseInt(process.env.METAKOCKA_COMPANY_ID || '0', 10);
+const METAKOCKA_SECRET = process.env.METAKOCKA_SECRET || '';
+if (!METAKOCKA_SECRET || !METAKOCKA_COMPANY_ID) {
+    console.error('[FATAL-CONFIG] METAKOCKA_SECRET/COMPANY_ID manjka v .env — Metakocka sync NE BO deloval!');
+}
 
 // Meta Ads API
 const META_ACCESS_TOKEN = 'EAAR1d7hDpEkBQs1YPhRZBgu4UZA8DLZBWzXXTItG3NL8LdpRmdhQ3nh1DHW0ZCfpOz25qT0n5Ca0PzrTcRtw1tHYZBATVMZCqn0rjrnUgZCYk6U57ZBisv0vpLLL9lIIn51bk7n5ISZBXdPTIDovAFHghGOsInJoqhvqQaWmey3qJByEiRTfcrWF3EsXYNZAm5yaRYL4y94n9H';
