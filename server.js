@@ -13,18 +13,9 @@ app.use(compression());
 const PORT = 3006;
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-// ========== [2026-08-16 FAZA1] ZANESLJIVOST ==========
-// 1) ATOMARNI ZAPIS: temp + rename (rename na istem FS je atomaren) + .prev kopija
-//    zadnje dobre verzije. Crash/OOM sredi zapisa NE more vec uniciti datoteke
-//    (9.6. se je: packed-orders.json.bak-broken-063629).
-function writeFileAtomic(file, data) {
-    const dir = path.dirname(file);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const tmp = file + '.tmp-' + process.pid;
-    fs.writeFileSync(tmp, data);
-    try { if (fs.existsSync(file)) fs.copyFileSync(file, file + '.prev'); } catch (_) {}
-    fs.renameSync(tmp, file);
-}
+// [FAZA3.4] Atomarni zapisi -> lib/fs-utils.js
+const { writeFileAtomic } = require('./lib/fs-utils');
+
 // 2) CRASH HANDLERJA: en neujet throw v intervalih ne sme sesuti procesa
 //    (prej: pm2 respawn -> vse skladisce odjavljeno). Glasno logiramo za watchdog.
 process.on('uncaughtException', err => {
@@ -36,185 +27,20 @@ process.on('unhandledRejection', reason => {
 
 
 
-// ========== AUTH ==========
-const PACKED_FILE = path.join(__dirname, 'data', 'packed-orders.json');
-// [2026-08-16 FAZA1] 3) TRAJNE SEJE: prezivijo restart (291 restartov doslej = 291x
-// odjavljeno celo skladisce). Nalozimo ob zagonu, shranimo ob vsaki spremembi.
-const SESSIONS_FILE = path.join(__dirname, 'data', 'sessions.json');
-let SESSIONS = {};
-try { SESSIONS = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8')) || {}; } catch (_) {}
-function saveSessions() {
-    try { writeFileAtomic(SESSIONS_FILE, JSON.stringify(SESSIONS)); }
-    catch (e) { console.error('[Sessions] save failed:', e.message); }
-}
-const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-function loadPackedOrders() {
-    try {
-        const dir = path.dirname(PACKED_FILE);
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        if (fs.existsSync(PACKED_FILE)) return JSON.parse(fs.readFileSync(PACKED_FILE, 'utf8'));
-    } catch(e) { console.error('Packed load error:', e); }
-    return {};
-}
 
-function savePackedOrders(data) {
-    writeFileAtomic(PACKED_FILE, JSON.stringify(data, null, 2));
-}
 
-// [2026-08-16 FAZA3] ARHIVIRANJE packed-orders: zapisi starejsi od 60 dni gredo v
-// data/packed-archive.json (nic se NE izgubi), aktivna datoteka ostane majhna in hitra
-// (raste od 13.4., bere+pise se ob vsakem "Oznaci kot spakirano").
-// Vrstni red je varen: najprej USPESEN zapis arhiva, sele nato odstranitev iz aktivne.
-const PACKED_ARCHIVE_FILE = path.join(__dirname, 'data', 'packed-archive.json');
-const PACKED_KEEP_DAYS = 60;
-function archiveOldPacked() {
-    try {
-        const cutoff = Date.now() - PACKED_KEEP_DAYS * 24 * 60 * 60 * 1000;
-        const toArchive = {};
-        let n = 0;
-        for (const [id, v] of Object.entries(packedOrdersData)) {
-            const t = v && v.packedAt ? new Date(v.packedAt).getTime() : 0;
-            if (t && t < cutoff) { toArchive[id] = v; n++; }
-        }
-        if (!n) return;
-        let archive = {};
-        try { archive = JSON.parse(fs.readFileSync(PACKED_ARCHIVE_FILE, 'utf8')) || {}; } catch (_) {}
-        Object.assign(archive, toArchive);
-        writeFileAtomic(PACKED_ARCHIVE_FILE, JSON.stringify(archive));   // 1) arhiv
-        for (const id of Object.keys(toArchive)) delete packedOrdersData[id];
-        savePackedOrders(packedOrdersData);                              // 2) aktivna
-        console.log(`[Packed/Archive] ${n} zapisov (>${PACKED_KEEP_DAYS} dni) -> arhiv (${Object.keys(archive).length} skupaj), aktivnih ${Object.keys(packedOrdersData).length}`);
-    } catch (e) {
-        console.error('[Packed/Archive] failed (aktivna datoteka NEDOTAKNJENA):', e.message);
-    }
-}
-// Ob zagonu (30 s zamika) + 1x na dan.
-setTimeout(archiveOldPacked, 30 * 1000);
-setInterval(archiveOldPacked, 24 * 60 * 60 * 1000);
-
-let packedOrdersData = loadPackedOrders();
-
-function parseCookies(cookieHeader) {
-    const cookies = {};
-    if (cookieHeader) {
-        cookieHeader.split(';').forEach(c => {
-            const [name, value] = c.split('=').map(s => s.trim());
-            if (name && value) cookies[name] = value;
-        });
-    }
-    return cookies;
-}
-
-function getSession(req) {
-    const cookies = parseCookies(req.headers.cookie);
-    const token = cookies['packing_session'];
-    if (!token || !SESSIONS[token]) return null;
-    if (Date.now() - SESSIONS[token].created > SESSION_MAX_AGE) {
-        delete SESSIONS[token];
-        saveSessions();
-        return null;
-    }
-    return SESSIONS[token];
-}
-
-function requireAuth(req, res, next) {
-    if (req.path === '/api/login' || req.path === '/login.html' || req.path === '/packing/login.html') return next();
-    if (req.path === '/api/health') return next();   // [FAZA1] health za watchdog/monitoring — brez občutljivih podatkov
-    // [2026-08-16] Vzdrzevalna endpointa za topsellers bazo: dostopna SAMO z localhosta.
-    // POZOR (varnostni popravek): nginx proxyja z 127.0.0.1, zato sam IP NI dovolj —
-    // proxy VEDNO doda X-Forwarded-For, pravi lokalni curl pa je nima. Zahtevamo oboje.
-    if (req.path === '/api/packing/topsellers-resync' || req.path === '/api/packing/topsellers-status') {
-        const ip = String(req.socket && req.socket.remoteAddress || '');
-        const isProxied = !!(req.headers['x-forwarded-for'] || req.headers['x-real-ip']);
-        if ((ip.includes('127.0.0.1') || ip.includes('::1')) && !isProxied) return next();
-    }
-    if (!getSession(req)) {
-        if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
-        return res.redirect('/login.html');
-    }
-    next();
-}
 
 app.use(express.json({ limit: '2mb' }));   // [FAZA3] dovolj za batch mark-packed, premalo za zlorabo RAM
-// Login page served before auth
-app.get('/login.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-app.get('/packing/login.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'packing', 'login.html'));
-});
 
-// Login API
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body;
-    // [FAZA2] Poverilnice iz .env (PACKING_USER/PACKING_PASS); fallback na stare vrednosti,
-    // da skladisce NIKOLI ne ostane zaklenjeno, ce .env manjka. Geslo se zamenja v .env.
-    const AUTH_USER = process.env.PACKING_USER || 'noriks';
-    const AUTH_PASS = process.env.PACKING_PASS || 'noriks';
-    if (username === AUTH_USER && password === AUTH_PASS) {
-        const token = crypto.randomBytes(32).toString('hex');
-        SESSIONS[token] = { username, created: Date.now() };
-        saveSessions();
-        res.cookie('packing_session', token, { httpOnly: true, sameSite: 'strict', maxAge: 7*24*60*60*1000 });
-        return res.json({ ok: true });
-    }
-    res.status(401).json({ error: 'Invalid credentials' });
-});
-
-// Logout
-app.post('/api/logout', (req, res) => {
-    const cookies = parseCookies(req.headers.cookie);
-    const token = cookies['packing_session'];
-    if (token) { delete SESSIONS[token]; saveSessions(); }
-    res.clearCookie('packing_session');
-    res.json({ ok: true });
-});
-
-// Auth middleware - everything below requires login
-app.use(requireAuth);
+// [FAZA3.4] Avtentikacija (seje, login/logout, requireAuth) -> lib/auth.js
+require('./lib/auth').install(app);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Packed orders API
-app.get('/api/packing/packed-orders', (req, res) => {
-    res.json(packedOrdersData);
-});
-
-app.post('/api/packing/mark-packed', (req, res) => {
-    const { orders } = req.body; // { orderId: { packedAt, customer } }
-    if (!orders || typeof orders !== 'object') return res.status(400).json({ error: 'Missing orders' });
-    Object.assign(packedOrdersData, orders);
-    savePackedOrders(packedOrdersData);
-    res.json({ ok: true });
-});
-
-app.post('/api/packing/unpack', (req, res) => {
-    const { orderId } = req.body;
-    if (!orderId) return res.status(400).json({ error: 'Missing orderId' });
-    delete packedOrdersData[orderId];
-    savePackedOrders(packedOrdersData);
-    res.json({ ok: true });
-});
-// === ORDER NOTES ===
-const PACKING_NOTES_FILE = path.join(__dirname, "packing-notes.json");
-let packingNotes = {};
-try { packingNotes = JSON.parse(fs.readFileSync(PACKING_NOTES_FILE, "utf8")); } catch(e) {}
-app.get("/api/packing/notes", (req, res) => {
-    res.json(packingNotes);
-});
-app.post("/api/packing/notes", (req, res) => {
-    const { orderId, note } = req.body;
-    if (!orderId) return res.status(400).json({ error: "Missing orderId" });
-    if (note) {
-        packingNotes[orderId] = { note, updatedAt: new Date().toISOString() };
-    } else {
-        delete packingNotes[orderId];
-    }
-    try { writeFileAtomic(PACKING_NOTES_FILE, JSON.stringify(packingNotes, null, 2)); } catch(e) { console.error('[Notes] save failed:', e.message); }
-    res.json({ ok: true });
-});
-
+// [FAZA3.4] Spakirano + opombe + arhiv -> lib/packed.js
+const packedMod = require('./lib/packed');
+packedMod.install(app);
 
 // Image proxy for CORS - fetch external images and serve with proper headers
 app.get('/api/image-proxy', async (req, res) => {
@@ -3320,7 +3146,7 @@ app.get('/api/health', (req, res) => {
     } catch (e) { checks.cache = { ok: false, error: e.message }; }
     // 3) packed-orders datoteka berljiva (kriticni podatek skladisca)
     try {
-        const n = Object.keys(JSON.parse(fs.readFileSync(PACKED_FILE, 'utf8'))).length;
+        const n = packedMod.count();
         checks.packed = { ok: n > 0, entries: n };
     } catch (e) { checks.packed = { ok: false, error: e.message }; }
     // 4) disk zapisljiv (atomicni zapisi ga rabijo)
