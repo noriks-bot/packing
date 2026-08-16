@@ -158,11 +158,13 @@ function getSession(req) {
 function requireAuth(req, res, next) {
     if (req.path === '/api/login' || req.path === '/login.html' || req.path === '/packing/login.html') return next();
     if (req.path === '/api/health') return next();   // [FAZA1] health za watchdog/monitoring — brez občutljivih podatkov
-    // [2026-08-16] Vzdrzevalna endpointa za topsellers bazo: dostopna SAMO z localhosta
-    // (rocni polni uvoz / stanje). Zunanji promet gre skozi nginx in ima drug IP -> 403.
+    // [2026-08-16] Vzdrzevalna endpointa za topsellers bazo: dostopna SAMO z localhosta.
+    // POZOR (varnostni popravek): nginx proxyja z 127.0.0.1, zato sam IP NI dovolj —
+    // proxy VEDNO doda X-Forwarded-For, pravi lokalni curl pa je nima. Zahtevamo oboje.
     if (req.path === '/api/packing/topsellers-resync' || req.path === '/api/packing/topsellers-status') {
         const ip = String(req.socket && req.socket.remoteAddress || '');
-        if (ip.includes('127.0.0.1') || ip.includes('::1')) return next();
+        const isProxied = !!(req.headers['x-forwarded-for'] || req.headers['x-real-ip']);
+        if ((ip.includes('127.0.0.1') || ip.includes('::1')) && !isProxied) return next();
     }
     if (!getSession(req)) {
         if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
@@ -171,7 +173,7 @@ function requireAuth(req, res, next) {
     next();
 }
 
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));   // [FAZA3] dovolj za batch mark-packed, premalo za zlorabo RAM
 // Login page served before auth
 app.get('/login.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
@@ -3738,8 +3740,7 @@ app.get('/api/packing/orders', async (req, res) => {
         // + sproZi background warmup. Edino background warmup (_bg=1) gre naprej do fetcha.
         try {
             const fastKey = `orders_${status || 'all'}_${_datePart}`;
-            const fastAll = readPackingCache();
-            const entry = fastAll[fastKey];
+            const entry = tsdb.cacheGet(fastKey);   // [FAZA3.2] en kljuc, ne cel 4MB cache
             // [2026-08-14] force=1 (samo background backfill): preskoci cache-short-circuit,
             // sicer se backfill vrne iz svezega cache-a in skladisce se NIKOLI ne napolni.
             const forceFetch = isBg && req.query.force === '1';
@@ -3867,10 +3868,8 @@ app.get('/api/packing/orders', async (req, res) => {
                 // Cache fallback - vrni zadnji uspesen snapshot za to (status,date) kombinacijo
                 try {
                     const cacheKey = `orders_${status || 'all'}_${_datePart}`;
-                    const cacheFile = path.join(__dirname, 'data', 'orders-cache.json');
-                    if (fs.existsSync(cacheFile)) {
-                        const cacheAll = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
-                        const entry = cacheAll[cacheKey];
+                    {
+                        const entry = tsdb.cacheGet(cacheKey);   // [FAZA3.2] iz SQLite
                         if (entry && entry.orders) {
                             const ageMs = Date.now() - new Date(entry.cachedAt).getTime();
                             console.warn('[Packing] Returning STALE cache for ' + cacheKey + ' (cached ' + entry.cachedAt + ', age=' + Math.round(ageMs/1000) + 's, ' + entry.orders.length + ' orders)');
@@ -5303,25 +5302,15 @@ function mergeIntoRolling(orders) {
     }
 }
 
+// [FAZA3.2] Cache zdaj zivi v SQLite (tsdb.cache*) — odpravljene read-modify-write
+// dirke in 4MB JSON.parse na zahtevek. Podpisa funkcij NESPREMENJENA (6+ klicnih mest).
 function readPackingCache() {
-    try {
-        if (!fs.existsSync(PACKING_CACHE_FILE)) return {};
-        return JSON.parse(fs.readFileSync(PACKING_CACHE_FILE, 'utf8'));
-    } catch (e) { return {}; }
+    try { return tsdb.cacheGetAll(); } catch (e) { return {}; }
 }
 
 function writePackingCacheEntry(cacheKey, orders) {
-    try {
-        if (!fs.existsSync(PACKING_CACHE_DIR)) fs.mkdirSync(PACKING_CACHE_DIR, { recursive: true });
-        const all = readPackingCache();
-        all[cacheKey] = { orders, cachedAt: new Date().toISOString() };
-        const keys = Object.keys(all);
-        if (keys.length > 30) {
-            const sorted = keys.sort((a, b) => (all[a].cachedAt || '').localeCompare(all[b].cachedAt || ''));
-            for (const k of sorted.slice(0, keys.length - 30)) delete all[k];
-        }
-        writeFileAtomic(PACKING_CACHE_FILE, JSON.stringify(all));
-    } catch (e) { console.error('[Packing] Cache write failed:', e.message); }
+    try { tsdb.cacheSet(cacheKey, orders); }
+    catch (e) { console.error('[Cache] set failed:', e.message); }
 }
 
 let BACKGROUND_WARMUP_RUNNING = false;
@@ -5553,7 +5542,7 @@ app.get('/api/health', (req, res) => {
 // (vzdrzevanje/diagnostika). Zunaj ni dosegljiv, zato ga nihce ne more zloradno sprozati.
 app.get('/api/packing/topsellers-resync', (req, res) => {
     const ip = String(req.socket && req.socket.remoteAddress || '');
-    if (!(ip.includes('127.0.0.1') || ip.includes('::1'))) return res.status(403).json({ error: 'localhost only' });
+    if (!(ip.includes('127.0.0.1') || ip.includes('::1')) || req.headers['x-forwarded-for'] || req.headers['x-real-ip']) return res.status(403).json({ error: 'localhost only' });
     if (LONG_WARMUP_RUNNING) return res.json({ running: true, note: 'uvoz ze tece' });
     tsdb.setMeta('lastFullSyncTs', String(Date.now()));
     backfillRolling(ROLLING_DAYS).then(() => tsdb.setMeta('lastFullSync', new Date().toISOString())).catch(() => {});
@@ -5581,7 +5570,7 @@ app.get('/api/packing/topsellers-sync-status', (req, res) => {
 // Stanje baze (za nadzor) — prav tako samo lokalno.
 app.get('/api/packing/topsellers-status', (req, res) => {
     const ip = String(req.socket && req.socket.remoteAddress || '');
-    if (!(ip.includes('127.0.0.1') || ip.includes('::1'))) return res.status(403).json({ error: 'localhost only' });
+    if (!(ip.includes('127.0.0.1') || ip.includes('::1')) || req.headers['x-forwarded-for'] || req.headers['x-real-ip']) return res.status(403).json({ error: 'localhost only' });
     const cov = tsdb.coverage(ROLLING_DAYS);
     res.json({ ...cov, running: LONG_WARMUP_RUNNING, lastFullSync: tsdb.getMeta('lastFullSync'), lastDayRefresh: tsdb.getMeta('lastDayRefresh') });
 });
@@ -5589,6 +5578,7 @@ app.get('/api/packing/topsellers-status', (req, res) => {
 // Ob zagonu: enkratna selitev starega JSON skladisca v bazo (ce je baza se prazna).
 try {
     tsdb.importFromJson(ROLLING_FILE);
+    tsdb.cacheImportFromJson(path.join(__dirname, 'data', 'orders-cache.json'));
     const c0 = tsdb.coverage(ROLLING_DAYS);
     console.log('[TopsellersDB] pripravljena: ' + c0.total + ' narocil, ' + Object.keys(c0.byDay).length + ' dni, najstarejsi ' + (c0.oldest || '-'));
 } catch (e) { console.error('[TopsellersDB] init:', e.message); }
@@ -5607,6 +5597,14 @@ setTimeout(() => {
     }, 90 * 1000);  // 5min -> 90s: bolj svez cache, manjsa luknja ob outage-u
 }, 3 * 1000);  // 10s -> 3s: hitrejsi cold-start cache fill
 // =====================================================
+
+// [FAZA3] Globalni Express error handler: napaka v handlerju vrne cist 500 JSON
+// (prej: obvisel zahtevek ali padec), vse pa se zabelezi za watchdog.
+app.use((err, req, res, next) => {
+    console.error('[HTTP-ERR]', req.method, req.path, (err && err.stack) || err);
+    if (res.headersSent) return next(err);
+    res.status(500).json({ error: 'Internal error' });
+});
 
 app.listen(PORT, () => {
     console.log(`🚀 Launches server running on port ${PORT}`);

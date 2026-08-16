@@ -44,6 +44,11 @@ function db() {
         CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date);
         CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
         CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
+        CREATE TABLE IF NOT EXISTS cache (
+            k         TEXT PRIMARY KEY,
+            cached_at TEXT NOT NULL,
+            orders    TEXT NOT NULL
+        );
     `);
     try { _db.exec('PRAGMA journal_mode = WAL'); } catch (_) {}
     return _db;
@@ -152,6 +157,48 @@ function prune(days = KEEP_DAYS) {
     return r.changes || 0;
 }
 
+// === [2026-08-16 FAZA3.2] CACHE NAROCIL v SQLite (nadomesti orders-cache.json) ===
+// Odpravi read-modify-write dirke (6 mest je bralo 4MB JSON in ga pisalo celega nazaj)
+// in 4MB JSON.parse na VSAK zahtevek — zdaj indeksiran dostop do enega kljuca.
+function cacheGet(k) {
+    const r = db().prepare('SELECT cached_at, orders FROM cache WHERE k = ?').get(String(k));
+    if (!r) return null;
+    try { return { cachedAt: r.cached_at, orders: JSON.parse(r.orders) }; }
+    catch (_) { return null; }
+}
+function cacheGetAll() {
+    const out = {};
+    for (const r of db().prepare('SELECT k, cached_at, orders FROM cache').all()) {
+        try { out[r.k] = { cachedAt: r.cached_at, orders: JSON.parse(r.orders) }; } catch (_) {}
+    }
+    return out;
+}
+function cacheSet(k, orders) {
+    const d = db();
+    d.prepare(`INSERT INTO cache (k, cached_at, orders) VALUES (?, ?, ?)
+               ON CONFLICT(k) DO UPDATE SET cached_at = excluded.cached_at, orders = excluded.orders`)
+     .run(String(k), new Date().toISOString(), JSON.stringify(orders || []));
+    // pokrov na 30 kljucev (kot prej)
+    d.prepare('DELETE FROM cache WHERE k NOT IN (SELECT k FROM cache ORDER BY cached_at DESC LIMIT 30)').run();
+}
+// Enkratna selitev iz orders-cache.json (samo ce je cache tabela prazna).
+function cacheImportFromJson(jsonPath) {
+    try {
+        if (db().prepare('SELECT COUNT(*) n FROM cache').get().n > 0) return 0;
+        if (!fs.existsSync(jsonPath)) return 0;
+        const all = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+        let n = 0;
+        for (const [k, v] of Object.entries(all)) {
+            if (!v || !Array.isArray(v.orders)) continue;
+            db().prepare('INSERT OR REPLACE INTO cache (k, cached_at, orders) VALUES (?, ?, ?)')
+                .run(k, v.cachedAt || new Date(0).toISOString(), JSON.stringify(v.orders));
+            n++;
+        }
+        if (n) console.log(`[TopsellersDB] cache uvozen iz JSON: ${n} kljucev`);
+        return n;
+    } catch (e) { console.error('[TopsellersDB] cache uvoz:', e.message); return 0; }
+}
+
 function setMeta(k, v) {
     db().prepare('INSERT INTO meta (k, v) VALUES (?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v').run(String(k), String(v));
 }
@@ -179,4 +226,5 @@ function importFromJson(jsonPath) {
     }
 }
 
-module.exports = { upsertMany, getOrders, coverage, prune, setMeta, getMeta, importFromJson, dayStr, pendingByDay, KEEP_DAYS, DB_FILE };
+module.exports = { upsertMany, getOrders, coverage, prune, setMeta, getMeta, importFromJson, dayStr, pendingByDay,
+                   cacheGet, cacheGetAll, cacheSet, cacheImportFromJson, KEEP_DAYS, DB_FILE };
