@@ -14,7 +14,7 @@ TMP="$BAKDIR/tmp-$TS"
 mkdir -p "$TMP"
 
 # 1) JSON datoteke (kopija je dovolj — atomicni zapisi jamcijo konsistenten fajl)
-for f in data/packed-orders.json data/packing-notes.json data/sessions.json \
+for f in data/packed-orders.json data/packed-archive.json data/packing-notes.json data/sessions.json \
          packing-notes.json notifications.json queue.json data.json; do
   [ -f "$APP/$f" ] && cp "$APP/$f" "$TMP/$(basename $f)" || true
 done

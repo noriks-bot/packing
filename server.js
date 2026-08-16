@@ -99,6 +99,37 @@ function savePackedOrders(data) {
     writeFileAtomic(PACKED_FILE, JSON.stringify(data, null, 2));
 }
 
+// [2026-08-16 FAZA3] ARHIVIRANJE packed-orders: zapisi starejsi od 60 dni gredo v
+// data/packed-archive.json (nic se NE izgubi), aktivna datoteka ostane majhna in hitra
+// (raste od 13.4., bere+pise se ob vsakem "Oznaci kot spakirano").
+// Vrstni red je varen: najprej USPESEN zapis arhiva, sele nato odstranitev iz aktivne.
+const PACKED_ARCHIVE_FILE = path.join(__dirname, 'data', 'packed-archive.json');
+const PACKED_KEEP_DAYS = 60;
+function archiveOldPacked() {
+    try {
+        const cutoff = Date.now() - PACKED_KEEP_DAYS * 24 * 60 * 60 * 1000;
+        const toArchive = {};
+        let n = 0;
+        for (const [id, v] of Object.entries(packedOrdersData)) {
+            const t = v && v.packedAt ? new Date(v.packedAt).getTime() : 0;
+            if (t && t < cutoff) { toArchive[id] = v; n++; }
+        }
+        if (!n) return;
+        let archive = {};
+        try { archive = JSON.parse(fs.readFileSync(PACKED_ARCHIVE_FILE, 'utf8')) || {}; } catch (_) {}
+        Object.assign(archive, toArchive);
+        writeFileAtomic(PACKED_ARCHIVE_FILE, JSON.stringify(archive));   // 1) arhiv
+        for (const id of Object.keys(toArchive)) delete packedOrdersData[id];
+        savePackedOrders(packedOrdersData);                              // 2) aktivna
+        console.log(`[Packed/Archive] ${n} zapisov (>${PACKED_KEEP_DAYS} dni) -> arhiv (${Object.keys(archive).length} skupaj), aktivnih ${Object.keys(packedOrdersData).length}`);
+    } catch (e) {
+        console.error('[Packed/Archive] failed (aktivna datoteka NEDOTAKNJENA):', e.message);
+    }
+}
+// Ob zagonu (30 s zamika) + 1x na dan.
+setTimeout(archiveOldPacked, 30 * 1000);
+setInterval(archiveOldPacked, 24 * 60 * 60 * 1000);
+
 let packedOrdersData = loadPackedOrders();
 
 function parseCookies(cookieHeader) {
