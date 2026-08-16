@@ -94,6 +94,12 @@ function getSession(req) {
 
 function requireAuth(req, res, next) {
     if (req.path === '/api/login' || req.path === '/login.html' || req.path === '/packing/login.html') return next();
+    // [2026-08-16] Vzdrzevalna endpointa za topsellers bazo: dostopna SAMO z localhosta
+    // (rocni polni uvoz / stanje). Zunanji promet gre skozi nginx in ima drug IP -> 403.
+    if (req.path === '/api/packing/topsellers-resync' || req.path === '/api/packing/topsellers-status') {
+        const ip = String(req.socket && req.socket.remoteAddress || '');
+        if (ip.includes('127.0.0.1') || ip.includes('::1')) return next();
+    }
     if (!getSession(req)) {
         if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
         return res.redirect('/login.html');
@@ -3625,17 +3631,48 @@ app.get('/api/packing/orders', async (req, res) => {
     // _bg=1 oznaci background warmup klic: edini sme cakati dolgo na Metakocko.
     const isBg = req.query._bg === '1';
 
+    // [2026-08-14 Dejan] TOPSELLERS rabi 14-dnevno okno, packing zavihek pa OSTANE na 5 dneh.
+    // KLJUCNO: cache key MORA vsebovati dolzino okna, sicer bi si strani povozili podatke
+    // (packing bi dobil 14d podatke ali obratno). Privzeta pot ('last3d' key) ostane NESPREMENJENA.
+    const _daysReq = parseInt(req.query.days, 10);
+    const _days = Math.min(_daysReq > 0 ? _daysReq : PACKING_DAYS_DEFAULT, PACKING_DAYS_MAX);
+    const isLongWindow = !date && _days !== PACKING_DAYS_DEFAULT;
+    const _datePart = date || (isLongWindow ? `last${_days}d` : 'last3d');
+    // Daljse okno se osvezuje redkeje (manjsa obremenitev Metakocke) — uporabnik dobi
+    // takoj cache, osvezitev pa stece v ozadju (stale-while-revalidate).
+    const _freshMs = isLongWindow ? PACKING_CACHE_FRESH_LONG_MS : PACKING_CACHE_FRESH_MS;
+
     try {
+        // [2026-08-14 Dejan] DOLGO OKNO (topsellers) se postreze IZ KOTALECEGA SKLADISCA —
+        // uporabnik NIKOLI ne caka na Metakocko. Skladisce se polni iz rednih 5-dnevnih
+        // sync-ov (vsakih ~5 min) + nocnega polnega 14-dnevnega fetcha ob 04:00.
+        if (isLongWindow && !isBg) {
+            const out = tsdb.getOrders({ days: _days, status: status || null, limit: parseInt(limit) || 20000 });
+            const cov = tsdb.coverage(_days);
+            // Uporabnikov obisk NE sproza polnega 14-dnevnega fetcha — samo redno vzdrzevanje
+            // (doplacilo manjkajocih dni oz. polni backfill z 24h varovalko).
+            if (cov.missing.length) setImmediate(() => { try { maintainRolling().catch(() => {}); } catch (_) {} });
+            return res.json({
+                orders: out, count: out.length, db: true,
+                coverageFrom: cov.oldest, days: Object.keys(cov.byDay).length,
+                missingDays: cov.missing, totalInDb: cov.total,
+                lastFullSync: tsdb.getMeta('lastFullSync'), lastDayRefresh: tsdb.getMeta('lastDayRefresh')
+            });
+        }
+
         // STALE-WHILE-REVALIDATE: uporabniski request NIKOLI ne caka na Metakocko,
         // ce obstaja KAKRSENKOLI cache. Svez (<5 min) -> cached, starejsi -> stale takoj
         // + sproZi background warmup. Edino background warmup (_bg=1) gre naprej do fetcha.
         try {
-            const fastKey = `orders_${status || 'all'}_${date || 'last3d'}`;
+            const fastKey = `orders_${status || 'all'}_${_datePart}`;
             const fastAll = readPackingCache();
             const entry = fastAll[fastKey];
-            if (entry && entry.orders && entry.cachedAt) {
+            // [2026-08-14] force=1 (samo background backfill): preskoci cache-short-circuit,
+            // sicer se backfill vrne iz svezega cache-a in skladisce se NIKOLI ne napolni.
+            const forceFetch = isBg && req.query.force === '1';
+            if (entry && entry.orders && entry.cachedAt && !forceFetch) {
                 const ageMs = Date.now() - new Date(entry.cachedAt).getTime();
-                if (ageMs < PACKING_CACHE_FRESH_MS) {
+                if (ageMs < _freshMs) {
                     return res.json({
                         orders: entry.orders, count: entry.orders.length,
                         cached: true, cachedAt: entry.cachedAt,
@@ -3644,7 +3681,12 @@ app.get('/api/packing/orders', async (req, res) => {
                 }
                 if (!isBg) {
                     // Uporabnik: vrni stale TAKOJ, osvezitev prepusti background warmupu
-                    setImmediate(() => { try { warmupPackingCache().catch(() => {}); } catch (_) {} });
+                    setImmediate(() => {
+                        try {
+                            if (isLongWindow) warmupLongWindow(_days).catch(() => {});
+                            else warmupPackingCache().catch(() => {});
+                        } catch (_) {}
+                    });
                     return res.json({
                         orders: entry.orders, count: entry.orders.length,
                         stale: true, refreshing: true, cachedAt: entry.cachedAt,
@@ -3658,9 +3700,9 @@ app.get('/api/packing/orders', async (req, res) => {
 
         // IN-FLIGHT DEDUP: ce fetch za ta key ze tece (Metakocka pocasna), vrni stale cache takoj - prepreci pile-up
         // 30 min okno: background fetch z dolgimi timeouti lahko tece dlje od 10 min
-        const _ifKey = `orders_${status || 'all'}_${date || 'last3d'}`;
+        const _ifKey = `orders_${status || 'all'}_${_datePart}`;
         const _ifTs = _packingInflight.get(_ifKey);
-        if (_ifTs && Date.now() - _ifTs < 30 * 60 * 1000) {
+        if (_ifTs && Date.now() - _ifTs < 30 * 60 * 1000 && !(isBg && req.query.force === '1')) {
             try {
                 const _all = readPackingCache();
                 const _e = _all[_ifKey];
@@ -3683,7 +3725,8 @@ app.get('/api/packing/orders', async (req, res) => {
         } else {
             // [2026-08-10] Privzeto 5 dni (prej 3) — najstarejsi dan je bil nepopoln.
             // Nastavljivo prek ?days=N (max 14), da se ne pretirava z Metakocko.
-            const PACKING_DAYS = Math.min(parseInt(req.query.days, 10) || 5, 14);
+            // [2026-08-14] Vrednost je izracunana zgoraj (_days) — cache key jo mora upostevati.
+            const PACKING_DAYS = _days;
             const fromDay = new Date(Date.now() - PACKING_DAYS * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
             queryAdvance.push({ type: 'doc_date_from', value: `${fromDay}+02:00` });
         }
@@ -3708,7 +3751,9 @@ app.get('/api/packing/orders', async (req, res) => {
         
         // Paginate Metakocka API (only Noriks orders returned)
         let results = [];
-        const MAX_PAGES = 20;
+        // [2026-08-14] 20 strani = 2000 najnovejsih narocil -> pri 14-dnevnem oknu je to pokrilo
+        // samo ~3 dni (zato je topsellers kazal le 11.-14.). Za DOLGO okno v OZADJU dvignemo mejo.
+        const MAX_PAGES = (isBg && isLongWindow) ? 120 : 20;
         let offset = 0;
         let pageNum = 0;
         // Background warmup tolerira pocasno Metakocko (nocna degradacija 02-07h: query rabi
@@ -3748,7 +3793,7 @@ app.get('/api/packing/orders', async (req, res) => {
                 markMetakockaFail();
                 // Cache fallback - vrni zadnji uspesen snapshot za to (status,date) kombinacijo
                 try {
-                    const cacheKey = `orders_${status || 'all'}_${date || 'last3d'}`;
+                    const cacheKey = `orders_${status || 'all'}_${_datePart}`;
                     const cacheFile = path.join(__dirname, 'data', 'orders-cache.json');
                     if (fs.existsSync(cacheFile)) {
                         const cacheAll = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
@@ -3969,7 +4014,9 @@ app.get('/api/packing/orders', async (req, res) => {
         // Write cache za VSE 3 statuse iz ENEGA fetcha (+ zahtevani status, ce je drugacen).
         // En MK fetch -> warmup rabi samo 1 klic namesto 3.
         try {
-            const datePart = date || 'last3d';
+            // [2026-08-14] Vsak uspesen fetch (5- ali 14-dnevni) dopolni kotalece se skladisce.
+            mergeIntoRolling(allOrders);
+            const datePart = _datePart;
             const cacheStatuses = [...new Set(['Odpremljen', 'Novo', 'Pripravljen za odpremo', status].filter(Boolean))];
             for (const s of cacheStatuses) {
                 writePackingCacheEntry(`orders_${s}_${datePart}`, allOrders.filter(o => (o.status || '').startsWith(s)));
@@ -5092,6 +5139,13 @@ app.get('/', (req, res) => {
 const PACKING_CACHE_DIR = path.join(__dirname, 'data');
 const PACKING_CACHE_FILE = path.join(PACKING_CACHE_DIR, 'orders-cache.json');
 const PACKING_CACHE_FRESH_MS = 5 * 60 * 1000; // 5 min - hitrejsa sveza narocila (Dejan 11.6.2026); circuit breaker se vedno scuva Metakocko
+// [2026-08-14 Dejan] Dolgo okno (topsellers, 14 dni): svez 1 URO in warmup 1x na uro.
+// (Dejan: "lahko je se ful pocasnejsi, na uro" — 14-dnevna slika se cez dan skoraj ne spremeni.)
+// Packing zavihek OSTANE na 5 dneh / 5 min — njegova odzivnost se NE spremeni.
+const PACKING_DAYS_DEFAULT = 5;
+const PACKING_DAYS_MAX = 14;
+const PACKING_LONG_DAYS = 14;
+const PACKING_CACHE_FRESH_LONG_MS = 60 * 60 * 1000;
 const PACKING_CACHE_STALE_CRITICAL_MS = 60 * 60 * 1000; // 60 min - nad to mejo banner=rdec
 
 // Circuit breaker: ce Metakocka pada, NE klici je 2 min - vrni cache takoj.
@@ -5114,6 +5168,66 @@ function markMetakockaFail() {
     metakockaConsecFails++;
     metakockaDownUntil = Date.now() + PACKING_CIRCUIT_OPEN_MS;
     console.warn('[Packing/Circuit] OPEN za ' + (PACKING_CIRCUIT_OPEN_MS/1000) + 's (consec_fails=' + metakockaConsecFails + ')');
+}
+
+// === [2026-08-14 Dejan] KOTALECE SE 14-DNEVNO OKNO (za topsellers) ===
+// Ideja: namesto da bi vsakic znova vlekli 14 dni iz Metakocke (pocasi, obremenjujoce),
+// hranimo naracila v enem skladiscu po ID-ju in ga DOPOLNJUJEMO iz vsakega ze obstojecega
+// 5-dnevnega sync-a (packing warmup vsakih ~5 min). Starejsa od 14 dni sproti brisemo.
+// Rezultat: topsellers dobi odgovor TAKOJ iz datoteke, brez cakanja in brez dodatnih MK klicev.
+// Enkrat na dan (04:00) se naredi polni 14-dnevni fetch — da se poberejo tudi spremembe
+// statusov starejsih narocil in morebitna manjkajoca naracila.
+// [2026-08-16 Dejan] Vir resnice za topsellers je zdaj SQLITE BAZA (topsellers-db.js).
+// JSON ostane le kot enkratni uvoz ob prehodu.
+const tsdb = require('./topsellers-db');
+const ROLLING_FILE = path.join(__dirname, 'data', 'orders-rolling.json');
+const ROLLING_DAYS = 14;
+function _dayStr(offsetDays) {
+    const d = new Date(Date.now() + (offsetDays || 0) * 24 * 60 * 60 * 1000);
+    return d.toISOString().split('T')[0];
+}
+function readRolling() {
+    try {
+        if (!fs.existsSync(ROLLING_FILE)) return { orders: {}, updatedAt: null };
+        return JSON.parse(fs.readFileSync(ROLLING_FILE, 'utf8'));
+    } catch (e) { return { orders: {}, updatedAt: null }; }
+}
+// VAROVALKE (2026-08-14): eno samo pokvarjeno narocilo (40886/2026: kolicina 1.110.111 kosov,
+// total 33 mio EUR, status "Problem") je razpihnilo skladisce na 108 MB in upocasnilo vse.
+// Zato: (1) naracila z absurdnim zneskom (>800 EUR, isto pravilo kot dash2) NE gredo v skladisce,
+// (2) trdi pokrov na stevilo postavk, (3) shranimo samo polja, ki jih topsellers dejansko rabi.
+const ROLL_MAX_EUR = 800;
+const ROLL_MAX_ITEMS = 300;
+const ROLL_RATES = { EUR: 1, CZK: 0.04112, PLN: 0.23565, HUF: 0.00278, HRK: 0.133, RON: 0.19111, BGN: 0.51 };
+function _tooBigOrder(o) {
+    const rate = ROLL_RATES[o.currency || 'EUR'] || 1;
+    if ((parseFloat(o.total || 0) * rate) > ROLL_MAX_EUR) return true;
+    let n = 0;
+    for (const p of (o.products || [])) n += (p.items || []).length;
+    return n > ROLL_MAX_ITEMS;
+}
+function slimForRolling(o) {
+    return {
+        id: o.id, customer: o.customer || '', country: o.country || '', status: o.status || '',
+        date: o.date || '', time: o.time || '', orderDate: o.orderDate || '', orderTime: o.orderTime || '',
+        shippedDate: o.shippedDate || '', total: o.total || '', currency: o.currency || 'EUR',
+        products: (o.products || []).map(p => ({
+            label: p.label || '',
+            items: (p.items || []).slice(0, ROLL_MAX_ITEMS).map(it => ({ type: it.type || '', color: it.color || '', size: it.size || '' }))
+        }))
+        // opomba: polje `items` (podvojen ravni seznam) NE gre v skladisce — kartice ga ne rabijo
+    };
+}
+// Vsak uspesen MK fetch (5- ali 14-dnevni, tudi enodnevni) gre v BAZO — brez dodatnih klicev.
+function mergeIntoRolling(orders) {
+    if (!Array.isArray(orders) || !orders.length) return;
+    try {
+        const res = tsdb.upsertMany(orders);
+        tsdb.prune();
+        if (res.skipped) console.log(`[TopsellersDB] preskocenih ${res.skipped} absurdnih narocil (>${ROLL_MAX_EUR} EUR ali >${ROLL_MAX_ITEMS} postavk)`);
+    } catch (e) {
+        console.error('[TopsellersDB] upsert failed:', e.message);
+    }
 }
 
 function readPackingCache() {
@@ -5203,6 +5317,181 @@ async function warmupPackingCache() {
         BACKGROUND_WARMUP_RUNNING = false;
     }
 }
+
+// [2026-08-14 Dejan] WARMUP ZA DOLGO OKNO (topsellers, 14 dni) — LOCEN od packing warmupa.
+// Pravila, da se odzivnost packinga NE poslabsa:
+//   - nikoli ne tece hkrati s packing warmupom (ta ima prednost),
+//   - preskoci, ce je circuit breaker odprt ali je cache se svez (12 min),
+//   - en sam MK fetch napolni vse 3 statusne kljuce (orders_<status>_last14d).
+let LONG_WARMUP_RUNNING = false;
+// BACKFILL: en poln 14-dnevni fetch (do 120 strani) -> napolni kotalece se skladisce.
+// Tece SAMO: (a) ob zagonu, ce skladisce ne pokriva celega okna, (b) vsak dan ob 04:00,
+// (c) na zahtevo, ce uporabnik odpre topsellers in okno se ni pokrito.
+// Med dnevom skladisce sproti dopolnjujejo redni 5-dnevni packing sync-i (brez dodatnih MK klicev).
+async function backfillRolling(days) {
+    const d = Math.min(days || PACKING_LONG_DAYS, PACKING_DAYS_MAX);
+    if (LONG_WARMUP_RUNNING || BACKGROUND_WARMUP_RUNNING) return;      // packing ima prednost
+    if (isMetakockaCircuitOpen()) return;
+    // Cooldown: tudi ce vec uporabnikov odpre topsellers, backfill ne stece veckrat kot na 10 min.
+    if (global._lastBackfillAt && Date.now() - global._lastBackfillAt < 10 * 60 * 1000) return;
+    global._lastBackfillAt = Date.now();
+    LONG_WARMUP_RUNNING = true;
+    const t0 = Date.now();
+    try {
+        const status = 'Odpremljen';   // en fetch pokrije vse statuse (handler jih razdeli)
+        const mockReq = { query: { status, limit: '20000', days: String(d), _bg: '1', force: '1' }, method: 'GET',
+                          url: `/api/packing/orders?status=${encodeURIComponent(status)}&days=${d}&_bg=1&force=1` };
+        await new Promise((resolve) => {
+            let resolved = false;
+            const mockRes = {
+                setHeader: () => {},
+                status: function (code) { this._status = code; return this; },
+                json: function (dd) { if (!resolved) { resolved = true; resolve({ status: this._status || 200, data: dd }); } }
+            };
+            const stack = (app._router && app._router.stack) || [];
+            const route = stack.find(l => l.route && l.route.path === '/api/packing/orders');
+            if (!route) { resolve({ status: 500 }); return; }
+            Promise.resolve(route.route.stack[0].handle(mockReq, mockRes, () => {}))
+                .catch(e => { if (!resolved) { resolved = true; resolve({ status: 500, data: { error: e.message } }); } });
+            setTimeout(() => { if (!resolved) { resolved = true; resolve({ status: 504 }); } }, 30 * 60 * 1000);
+        });
+        const cov = tsdb.coverage(d);
+        console.log(`[TopsellersDB] Polni uvoz koncan v ${Date.now() - t0}ms — v bazi ${cov.total} narocil, ${Object.keys(cov.byDay).length} dni, od ${cov.oldest || '-'}`);
+    } catch (e) {
+        console.error(`[Packing/Backfill${d}d] Failed:`, e.message);
+    } finally {
+        LONG_WARMUP_RUNNING = false;
+    }
+}
+// Nazaj-zdruzljiv alias (starejsi klici v kodi).
+const warmupLongWindow = backfillRolling;
+
+// === PAMETNO POLNJENJE SKLADISCA (varcno do Metakocke) ===
+// 1) POLNI 14-dnevni fetch se izvede SAMO, ce skladisce ni pokrito (prvi zagon / dolg izpad).
+//    Zascita: najvec 1x na 24 h (_lastFullBackfillTs).
+// 2) Nato se skladisce vzdrzuje INKREMENTALNO — brez enega samega dodatnega MK klica:
+//    redni 5-dnevni packing sync (vsakih ~5 min) ob vsakem uspehu dopolni skladisce.
+// 3) Ce v oknu vseeno manjka kaksen dan (npr. app je bil ugasnjen), ga doplacamo POSAMICNO
+//    (fetch samo za tisti datum = par strani), najvec 2 dneva na uro. Nikoli cel 14-dnevni fetch.
+async function fetchOneDayIntoRolling(day) {
+    if (LONG_WARMUP_RUNNING || BACKGROUND_WARMUP_RUNNING || isMetakockaCircuitOpen()) return false;
+    LONG_WARMUP_RUNNING = true;
+    try {
+        const mockReq = { query: { status: 'Odpremljen', limit: '5000', date: day, _bg: '1', force: '1' }, method: 'GET',
+                          url: `/api/packing/orders?date=${day}&_bg=1&force=1` };
+        await new Promise((resolve) => {
+            let done = false;
+            const mockRes = { setHeader: () => {}, status: function (c) { this._s = c; return this; },
+                              json: function () { if (!done) { done = true; resolve(); } } };
+            const stack = (app._router && app._router.stack) || [];
+            const route = stack.find(l => l.route && l.route.path === '/api/packing/orders');
+            if (!route) { resolve(); return; }
+            Promise.resolve(route.route.stack[0].handle(mockReq, mockRes, () => {})).catch(() => { if (!done) { done = true; resolve(); } });
+            setTimeout(() => { if (!done) { done = true; resolve(); } }, 10 * 60 * 1000);
+        });
+        console.log('[Packing/Rolling] doplacan dan ' + day);
+        return true;
+    } catch (e) {
+        console.error('[Packing/Rolling] dan ' + day + ' ni uspel:', e.message);
+        return false;
+    } finally { LONG_WARMUP_RUNNING = false; }
+}
+async function maintainRolling() {
+    const cov = tsdb.coverage(ROLLING_DAYS);
+    // 1) POLNI 14-dnevni uvoz: samo ce je baza prazna / manjka vec kot pol okna. Max 1x/24h.
+    if (cov.total < 200 || cov.missing.length > 7) {
+        const lastTs = parseInt(tsdb.getMeta('lastFullSyncTs') || '0', 10);
+        if (Date.now() - lastTs > 24 * 60 * 60 * 1000) {
+            console.log('[TopsellersDB] POLNI 14-dnevni uvoz (v bazi=' + cov.total + ', manjka dni=' + cov.missing.length + ')');
+            tsdb.setMeta('lastFullSyncTs', String(Date.now()));
+            await backfillRolling(ROLLING_DAYS).catch(() => {});
+            tsdb.setMeta('lastFullSync', new Date().toISOString());
+        } else {
+            console.log('[TopsellersDB] polni uvoz preskocen (opravljen v zadnjih 24 h)');
+        }
+        return;
+    }
+    // 2) Manjkajoci dnevi imajo prednost — doplacamo POSAMICNO (poceni, par strani).
+    if (cov.missing.length) {
+        for (const day of cov.missing.slice(0, 2)) {
+            await fetchOneDayIntoRolling(day);
+            await new Promise(r => setTimeout(r, 3000));
+        }
+        return;
+    }
+    // 3) SLEDENJE SPREMEMBAM STATUSOV pri starejsih narocilih (DELAY -> Odpremljen ipd.).
+    //    Dneve 0-4 pokriva redni 5-dnevni sync (vsakih ~5 min). Za dneve 5..13 tu izberemo
+    //    EN dan na tek — tistega, ki ima najvec se "zivih" narocil in ni bil najdlje osvezen.
+    //    Tek je vsakih 10 min => cel rep (9 dni) se osvezi v ~1,5 ure, strosek ~6 poceni klicev/h
+    //    (za primerjavo: redni packing warmup naredi ~275 strani/h — to je ~9 % dodatka).
+    const pending = tsdb.pendingByDay(ROLLING_DAYS);
+    let best = null, bestScore = -1;
+    for (let i = 5; i < ROLLING_DAYS; i++) {
+        const day = tsdb.dayStr(-i);
+        const p = pending[day] || 0;
+        const lastTs = parseInt(tsdb.getMeta('dayRef:' + day) || '0', 10);
+        const ageMin = (Date.now() - lastTs) / 60000;
+        if (ageMin < 20) continue;                       // ta dan smo pravkar osvezili
+        // Prioriteta: koliko zivih narocil ima * kako dolgo ni bil osvezen.
+        const score = (p + 1) * Math.min(ageMin, 24 * 60);
+        if (score > bestScore) { bestScore = score; best = { day, p }; }
+    }
+    if (!best) return;
+    const ok = await fetchOneDayIntoRolling(best.day);
+    if (ok) {
+        tsdb.setMeta('dayRef:' + best.day, String(Date.now()));
+        tsdb.setMeta('lastDayRefresh', best.day + ' (zivih ' + best.p + ') @ ' + new Date().toISOString());
+    }
+}
+// [2026-08-16] Rocni sprozilec polnega 14-dnevnega uvoza — SAMO z lokalnega streznika
+// (vzdrzevanje/diagnostika). Zunaj ni dosegljiv, zato ga nihce ne more zloradno sprozati.
+app.get('/api/packing/topsellers-resync', (req, res) => {
+    const ip = String(req.socket && req.socket.remoteAddress || '');
+    if (!(ip.includes('127.0.0.1') || ip.includes('::1'))) return res.status(403).json({ error: 'localhost only' });
+    if (LONG_WARMUP_RUNNING) return res.json({ running: true, note: 'uvoz ze tece' });
+    tsdb.setMeta('lastFullSyncTs', String(Date.now()));
+    backfillRolling(ROLLING_DAYS).then(() => tsdb.setMeta('lastFullSync', new Date().toISOString())).catch(() => {});
+    res.json({ started: true });
+});
+
+// [2026-08-16 Dejan] Gumb "⚡ Poln sync" na topsellers: rocno potegne vseh 14 dni v bazo.
+// Zahteva prijavo (gre skozi requireAuth). Varovalka: ce je bil poln sync pred manj kot
+// 2 min, ga ne ponovimo (da klikanje ne kuri Metakocke).
+app.get('/api/packing/topsellers-sync', (req, res) => {
+    if (LONG_WARMUP_RUNNING) return res.json({ running: true });
+    const lastTs = parseInt(tsdb.getMeta('lastFullSyncTs') || '0', 10);
+    const agoMin = Math.round((Date.now() - lastTs) / 60000);
+    if (lastTs && agoMin < 2) return res.json({ skipped: true, agoMin });
+    tsdb.setMeta('lastFullSyncTs', String(Date.now()));
+    backfillRolling(ROLLING_DAYS).then(() => tsdb.setMeta('lastFullSync', new Date().toISOString())).catch(() => {});
+    res.json({ started: true });
+});
+app.get('/api/packing/topsellers-sync-status', (req, res) => {
+    const cov = tsdb.coverage(ROLLING_DAYS);
+    res.json({ running: LONG_WARMUP_RUNNING, total: cov.total, days: Object.keys(cov.byDay).length,
+               oldest: cov.oldest, missing: cov.missing, lastFullSync: tsdb.getMeta('lastFullSync') });
+});
+
+// Stanje baze (za nadzor) — prav tako samo lokalno.
+app.get('/api/packing/topsellers-status', (req, res) => {
+    const ip = String(req.socket && req.socket.remoteAddress || '');
+    if (!(ip.includes('127.0.0.1') || ip.includes('::1'))) return res.status(403).json({ error: 'localhost only' });
+    const cov = tsdb.coverage(ROLLING_DAYS);
+    res.json({ ...cov, running: LONG_WARMUP_RUNNING, lastFullSync: tsdb.getMeta('lastFullSync'), lastDayRefresh: tsdb.getMeta('lastDayRefresh') });
+});
+
+// Ob zagonu: enkratna selitev starega JSON skladisca v bazo (ce je baza se prazna).
+try {
+    tsdb.importFromJson(ROLLING_FILE);
+    const c0 = tsdb.coverage(ROLLING_DAYS);
+    console.log('[TopsellersDB] pripravljena: ' + c0.total + ' narocil, ' + Object.keys(c0.byDay).length + ' dni, najstarejsi ' + (c0.oldest || '-'));
+} catch (e) { console.error('[TopsellersDB] init:', e.message); }
+
+// Prvi pregled 3 min po zagonu, nato vsakih 10 min (en poceni enodnevni klic ali nic).
+setTimeout(() => {
+    maintainRolling().catch(e => console.error('[TopsellersDB]', e.message));
+    setInterval(() => { maintainRolling().catch(e => console.error('[TopsellersDB]', e.message)); }, 10 * 60 * 1000);
+}, 3 * 60 * 1000);
 
 // Zazeni warmup TAKOJ po startu (3s zaradi express init) + vsakih 90s
 setTimeout(() => {
