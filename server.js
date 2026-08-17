@@ -2836,8 +2836,8 @@ const PACKING_CACHE_FRESH_MS = 5 * 60 * 1000; // 5 min - hitrejsa sveza narocila
 // [2026-08-14 Dejan] Dolgo okno (topsellers, 14 dni): svez 1 URO in warmup 1x na uro.
 // (Dejan: "lahko je se ful pocasnejsi, na uro" — 14-dnevna slika se cez dan skoraj ne spremeni.)
 // Packing zavihek OSTANE na 5 dneh / 5 min — njegova odzivnost se NE spremeni.
-const PACKING_DAYS_DEFAULT = 5;
-const PACKING_DAYS_MAX = 14;
+const PACKING_DAYS_DEFAULT = 10;
+const PACKING_DAYS_MAX = 21;
 const PACKING_LONG_DAYS = 14;
 const PACKING_CACHE_FRESH_LONG_MS = 60 * 60 * 1000;
 const PACKING_CACHE_STALE_CRITICAL_MS = 60 * 60 * 1000; // 60 min - nad to mejo banner=rdec
