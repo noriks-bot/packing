@@ -15,7 +15,7 @@ const path = require('path');
 const fs = require('fs');
 
 const DB_FILE = path.join(__dirname, 'data', 'topsellers.db');
-const KEEP_DAYS = 14;
+const KEEP_DAYS = 30; // [2026-08-18 Dejan] izjema: hranimo 21 dni, polnjenje ostane 14-dnevno
 
 // Varovalke proti smetem (isto pravilo kot dash2): absurdni zneski / količine ne gredo v bazo.
 const MAX_EUR = 800;

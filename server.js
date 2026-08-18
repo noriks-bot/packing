@@ -2837,7 +2837,7 @@ const PACKING_CACHE_FRESH_MS = 5 * 60 * 1000; // 5 min - hitrejsa sveza narocila
 // (Dejan: "lahko je se ful pocasnejsi, na uro" — 14-dnevna slika se cez dan skoraj ne spremeni.)
 // Packing zavihek OSTANE na 5 dneh / 5 min — njegova odzivnost se NE spremeni.
 const PACKING_DAYS_DEFAULT = 10;
-const PACKING_DAYS_MAX = 21;
+const PACKING_DAYS_MAX = 30; // [2026-08-18 Dejan] topsellers 30-dnevno okno (polnjenje ostane 14-dnevno)
 const PACKING_LONG_DAYS = 14;
 const PACKING_CACHE_FRESH_LONG_MS = 60 * 60 * 1000;
 const PACKING_CACHE_STALE_CRITICAL_MS = 60 * 60 * 1000; // 60 min - nad to mejo banner=rdec

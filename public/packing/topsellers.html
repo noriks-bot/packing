@@ -245,7 +245,7 @@
         // [2026-08-14 Dejan] TOPSELLERS dela na 14-dnevnem oknu (packing zavihek ostane 5-dnevni).
         // Strežnik ima za to okno LOČEN cache (orders_<status>_last14d) + lasten počasnejši warmup,
         // zato daljše okno ne upočasni packinga in ne obremenjuje Metakocke po nepotrebnem.
-        const DAYS = 14;
+        const DAYS = 30;
         // [2026-08-16 Dejan] SAMO TRIJE STATUSI — natanko kot na glavni packing strani.
         // Nic drugega se ne prikazuje (brez DELAY, Zakljuceno, Problem... ).
         const ALLOWED_STATUSES = ['Novo', 'Pripravljen za odpremo', 'Odpremljen'];
@@ -257,7 +257,7 @@
             document.getElementById('body').innerHTML = '<div class="loading"><span class="spin"></span>Nalagam…</div>';
             let orders = [];
             try {
-                const r = await fetch('/api/packing/orders?status=&days=' + DAYS + '&limit=20000&days=14');
+                const r = await fetch('/api/packing/orders?status=&days=' + DAYS + '&limit=20000');
                 if (r.status === 401) { window.location.href = '/packing/login.html'; return; }
                 const j = await r.json();
                 orders = (j.orders || []);
