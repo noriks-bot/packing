@@ -154,7 +154,7 @@
     </nav>
 
     <div class="header">
-        <h1>📦 <span id="title">KOMPSFIT</span> — naročila za pakiranje</h1>
+        <h1>📦 <span id="title">VSE</span> — naročila za pakiranje</h1>
         <div class="right">
             <div id="sumOrders">Naročil: <b>–</b></div>
             <div id="sumItems">Kosov: <b>–</b></div>
@@ -228,7 +228,7 @@
             { key: 'KNEEFIX', hasVar: false,   name: 'KNEEFIX',   icon: '🦵', re: /kneefix|koleno|kolen|térd|genunchi|kolan|γόνατ|ginocchi|knie/i },
             { key: 'KIDSNEST', hasVar: false,  name: 'KIDSNEST',  icon: '🌙', re: /kidsnest|kidnest|ortopedski jastuk|vzglavnik|párna|polštář|poduszka|perna|cuscino|μαξιλάρ/i }
         ];
-        let CURRENT = PRODUCTS.find(p => p.key === 'KOMPSFIT') || PRODUCTS[0];
+        let CURRENT = PRODUCTS.find(p => p.key === 'VSE') || PRODUCTS[0]; // [2026-08-18 Dejan] privzeto VSE
         // Zavihek VSE se ujema z izdelkom, ki ustreza KATERIKOLI drugi definiciji.
         const matchProduct = (label, p) => p.all
             ? PRODUCTS.some(x => !x.all && matchProduct(label, x))
