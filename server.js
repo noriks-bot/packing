@@ -2278,6 +2278,18 @@ function translateColorServer(color) {
 }
 
 // Helper: Parse doc_desc field to extract items
+// [2026-08-19 Dejan] KNEEFIX (in podobni parni izdelki) imajo v doc_desc STRAN:
+// "1 : Αριστερά - L (76-90 kg)" / "1 : Lijeva - M" / "1 : Desno - XL".
+// Stran je za skladisce OBVEZEN podatek — brez nje ne morejo pakirati.
+// Prepoznamo jo v vseh jezikih trgov in normaliziramo v "Leva" / "Desna".
+const SIDE_LEFT_RE  = /(^|[^\p{L}])(lijev\p{L}*|ljev\p{L}*|lev\p{L}*|ľav\p{L}*|lav\p{L}*|left|links?|linke\p{L}*|bal|lew\p{L}*|st[âa]ng\p{L}*|αριστερ\p{L}*|sinistr\p{L}*)([^\p{L}]|$)/iu;
+const SIDE_RIGHT_RE = /(^|[^\p{L}])(desn\p{L}*|prav\p{L}*|right|recht\p{L}*|jobb|praw\p{L}*|dreapt\p{L}*|δεξι\p{L}*|destr\p{L}*)([^\p{L}]|$)/iu;
+function detectSide(raw) {
+    const v = String(raw || '');
+    if (SIDE_LEFT_RE.test(v)) return 'Leva';
+    if (SIDE_RIGHT_RE.test(v)) return 'Desna';
+    return '';
+}
 function parseDocDesc(docDesc, productCode, productName) {
     const code = (productCode || '').toUpperCase();
     const productType = getProductTypeFromCode(productCode, productName);
@@ -2395,7 +2407,7 @@ function parseDocDesc(docDesc, productCode, productName) {
         while ((pm = NUM_POS_RE.exec(docDesc)) !== null) {
             let itemType = productType;
             if (pm[2]) { const tk = pm[2].trim(); itemType = typeTranslations[tk] || typeTranslations[tk.replace(/\s+\d+$/,'')] || tk; }
-            posItems.push({ type: itemType, color: translateColorServer(pm[3].trim()), size: pm[4].replace(/\s+/g,' ').trim().toUpperCase() });
+            const _side3 = detectSide(pm[3]); posItems.push({ type: itemType, color: _side3 || translateColorServer(pm[3].trim()), size: pm[4].replace(/\s+/g,' ').trim().toUpperCase() });
         }
         if (posItems.length >= 1) return posItems;
     }
@@ -2433,6 +2445,8 @@ function parseDocDesc(docDesc, productCode, productName) {
             const plainSize = /^[\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?(?:\s+\d{2,3}-\d{2,3})?$/i;
             const ageRange = /\d+\s*[\u2013-]\s*\d+/.test(rawVal) &&
                 /godin|godina|let|year|jahr|\u00e9v|lat|rok|χρον|χρόν|ani|anni|cm/i.test(rawVal);
+            const _side = detectSide(rawVal);
+            if (_side) color = _side;
             if (sizeParen) {
                 size = sizeParen[1].toUpperCase().trim();
             } else if (plainSize.test(rawVal)) {
@@ -2442,6 +2456,8 @@ function parseDocDesc(docDesc, productCode, productName) {
             } else if (COLOR_ONLY_RE.test(rawVal.replace(/\s+/g, ' ').trim())) {
                 const c = rawVal.replace(/\s+/g, ' ').trim();
                 color = c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
+            } else if (_side) {
+                // pozicija vsebuje samo stran (npr. "1 : Lijeva") — to je veljaven podatek
             } else {
                 allSized = false; // messy/ime-only pozicija -> ne prevzemi, pusti fallback opozorilo
                 break;
