@@ -3151,6 +3151,17 @@ async function maintainRolling() {
         const score = (p + 1) * Math.min(ageMin, 24 * 60);
         if (score > bestScore) { bestScore = score; best = { day, p }; }
     }
+    // [2026-08-19 Dejan] VAROVALKA PROTI STRADANJU: sveži dnevi imajo 800-1000 živih naročil,
+    // stari pa 20-60, zato bi jih ocena skoraj vedno prehitela. Če kateri dan ni bil na vrsti
+    // vec kot 6 ur, ima BREZPOGOJNO prednost — s tem je najslabsi primer ~6 h, ne "nikoli".
+    let starved = null, starvedAge = 6 * 60;
+    for (let i = 3; i < ROTATE_DAYS; i++) {
+        const day = tsdb.dayStr(-i);
+        const ts = parseInt(tsdb.getMeta('dayRef:' + day) || '0', 10);
+        const ageMin = ts ? (Date.now() - ts) / 60000 : 99999;
+        if (ageMin > starvedAge) { starvedAge = ageMin; starved = { day, p: pending[day] || 0 }; }
+    }
+    if (starved) best = starved;
     if (!best) return;
     const ok = await fetchOneDayIntoRolling(best.day);
     if (ok) {
