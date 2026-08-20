@@ -1449,7 +1449,7 @@ app.get('/api/packing/orders', async (req, res) => {
         let results = [];
         // [2026-08-14] 20 strani = 2000 najnovejsih narocil -> pri 14-dnevnem oknu je to pokrilo
         // samo ~3 dni (zato je topsellers kazal le 11.-14.). Za DOLGO okno v OZADJU dvignemo mejo.
-        const MAX_PAGES = (isBg && isLongWindow) ? 120 : 20;
+        const MAX_PAGES = (isBg && isLongWindow) ? 200 : 20;   // [2026-08-19] 30-dnevno okno ima ~14.600 narocil; 120 strani (12.000) bi odrezalo najstarejse dneve
         let offset = 0;
         let pageNum = 0;
         // Background warmup tolerira pocasno Metakocko (nocna degradacija 02-07h: query rabi
@@ -2892,6 +2892,7 @@ function markMetakockaFail() {
 const tsdb = require('./topsellers-db');
 const ROLLING_FILE = path.join(__dirname, 'data', 'orders-rolling.json');
 const ROLLING_DAYS = 14;
+const ROTATE_DAYS = 30;   // [2026-08-19] rotacija sledi statusom cez cel 30-dnevni prikaz
 function _dayStr(offsetDays) {
     const d = new Date(Date.now() + (offsetDays || 0) * 24 * 60 * 60 * 1000);
     return d.toISOString().split('T')[0];
@@ -3028,12 +3029,22 @@ let LONG_WARMUP_RUNNING = false;
 // Tece SAMO: (a) ob zagonu, ce skladisce ne pokriva celega okna, (b) vsak dan ob 04:00,
 // (c) na zahtevo, ce uporabnik odpre topsellers in okno se ni pokrito.
 // Med dnevom skladisce sproti dopolnjujejo redni 5-dnevni packing sync-i (brez dodatnih MK klicev).
-async function backfillRolling(days) {
+async function backfillRolling(days, opts) {
+    const manual = !!(opts && opts.manual);
     const d = Math.min(days || PACKING_LONG_DAYS, PACKING_DAYS_MAX);
-    if (LONG_WARMUP_RUNNING || BACKGROUND_WARMUP_RUNNING) return;      // packing ima prednost
-    if (isMetakockaCircuitOpen()) return;
+    // [2026-08-19 Dejan] ROCNI "Poln sync" je PREJ TIHO ODSTOPIL, ce je ravno tekel warmup
+    // (ta tece vsakih 90 s po ~46 s -> priblizno vsak drugi klik ni naredil nicesar,
+    // endpoint pa je vseeno vrnil {started:true}). Zdaj rocni klic POCAKA na warmup.
+    if (manual) {
+        for (let i = 0; i < 60 && (LONG_WARMUP_RUNNING || BACKGROUND_WARMUP_RUNNING); i++) {
+            await new Promise(r => setTimeout(r, 2000));
+        }
+    }
+    if (LONG_WARMUP_RUNNING || BACKGROUND_WARMUP_RUNNING) { tsdb.setMeta('lastFullSyncResult', 'preskocen: warmup tece'); return; }
+    if (isMetakockaCircuitOpen()) { tsdb.setMeta('lastFullSyncResult', 'preskocen: Metakocka nedosegljiva'); return; }
     // Cooldown: tudi ce vec uporabnikov odpre topsellers, backfill ne stece veckrat kot na 10 min.
-    if (global._lastBackfillAt && Date.now() - global._lastBackfillAt < 10 * 60 * 1000) return;
+    // Rocni klik ta cooldown obide — uporabnik ga je namenoma sprozil.
+    if (!manual && global._lastBackfillAt && Date.now() - global._lastBackfillAt < 10 * 60 * 1000) { tsdb.setMeta('lastFullSyncResult', 'preskocen: cooldown 10 min'); return; }
     global._lastBackfillAt = Date.now();
     LONG_WARMUP_RUNNING = true;
     const t0 = Date.now();
@@ -3124,9 +3135,13 @@ async function maintainRolling() {
     //    EN dan na tek — tistega, ki ima najvec se "zivih" narocil in ni bil najdlje osvezen.
     //    Tek je vsakih 10 min => cel rep (9 dni) se osvezi v ~1,5 ure, strosek ~6 poceni klicev/h
     //    (za primerjavo: redni packing warmup naredi ~275 strani/h — to je ~9 % dodatka).
-    const pending = tsdb.pendingByDay(ROLLING_DAYS);
+    // [2026-08-19 Dejan] Prikaz je 30-dnevni, zato mora rotacija pokriti VSEH 30 dni.
+    // Prej je segala samo do 13. dneva -> naročila, starejša od 14 dni, se NIKOLI niso
+    // osvezila in so obvisela v starem statusu (DELAY namesto Odpremljen).
+    // Ritem ostaja EN dan na tek (vsakih 10 min) -> cel rep v ~4,5 h, brez dodatnih MK klicev.
+    const pending = tsdb.pendingByDay(ROTATE_DAYS);
     let best = null, bestScore = -1;
-    for (let i = 5; i < ROLLING_DAYS; i++) {
+    for (let i = 3; i < ROTATE_DAYS; i++) {
         const day = tsdb.dayStr(-i);
         const p = pending[day] || 0;
         const lastTs = parseInt(tsdb.getMeta('dayRef:' + day) || '0', 10);
@@ -3183,7 +3198,11 @@ app.get('/api/packing/topsellers-resync', (req, res) => {
     if (!(ip.includes('127.0.0.1') || ip.includes('::1')) || req.headers['x-forwarded-for'] || req.headers['x-real-ip']) return res.status(403).json({ error: 'localhost only' });
     if (LONG_WARMUP_RUNNING) return res.json({ running: true, note: 'uvoz ze tece' });
     tsdb.setMeta('lastFullSyncTs', String(Date.now()));
-    backfillRolling(ROLLING_DAYS).then(() => tsdb.setMeta('lastFullSync', new Date().toISOString())).catch(() => {});
+    tsdb.setMeta('lastFullSyncResult', 'tece...');
+    // Cel 30-dnevni prikaz (prej samo 14 dni -> starejsa narocila gumb ni osvezil).
+    backfillRolling(ROTATE_DAYS, { manual: true })
+        .then(() => tsdb.setMeta('lastFullSync', new Date().toISOString()))
+        .catch(() => {});
     res.json({ started: true });
 });
 
