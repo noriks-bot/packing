@@ -179,7 +179,10 @@ function cacheSet(k, orders) {
                ON CONFLICT(k) DO UPDATE SET cached_at = excluded.cached_at, orders = excluded.orders`)
      .run(String(k), new Date().toISOString(), JSON.stringify(orders || []));
     // pokrov na 30 kljucev (kot prej)
-    d.prepare('DELETE FROM cache WHERE k NOT IN (SELECT k FROM cache ORDER BY cached_at DESC LIMIT 30)').run();
+    // [2026-08-19 Dejan] Vroci kljuci strani (…_last3d, …_last30d) se NIKOLI ne izlocijo.
+    // Enodnevni kljuci (…_2026-08-14) so enkratni; ce jih je vec kot 30, so prej izrinili
+    // glavno stran iz predpomnilnika -> vsak obisk skladisca je sel na Metakocko (pocasno).
+    d.prepare("DELETE FROM cache WHERE k NOT LIKE '%last%' AND k NOT IN (SELECT k FROM cache WHERE k NOT LIKE '%last%' ORDER BY cached_at DESC LIMIT 20)").run();
 }
 // Enkratna selitev iz orders-cache.json (samo ce je cache tabela prazna).
 function cacheImportFromJson(jsonPath) {
