@@ -3228,7 +3228,12 @@ app.get('/api/packing/topsellers-sync', (req, res) => {
     const agoMin = Math.round((Date.now() - lastTs) / 60000);
     if (lastTs && agoMin < 2) return res.json({ skipped: true, agoMin });
     tsdb.setMeta('lastFullSyncTs', String(Date.now()));
-    backfillRolling(ROLLING_DAYS).then(() => tsdb.setMeta('lastFullSync', new Date().toISOString())).catch(() => {});
+    tsdb.setMeta('lastFullSyncResult', 'tece...');
+    // [2026-08-20 Dejan] Cel 30-dnevni prikaz (prej 14 dni) + manual:true, da uvoz
+    // POCAKA na warmup namesto da tiho odstopi (prej ~vsak drugi klik ni naredil nicesar).
+    backfillRolling(ROTATE_DAYS, { manual: true })
+        .then(() => tsdb.setMeta('lastFullSync', new Date().toISOString()))
+        .catch(() => {});
     res.json({ started: true });
 });
 app.get('/api/packing/topsellers-sync-status', (req, res) => {
