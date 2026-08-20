@@ -3068,8 +3068,10 @@ async function backfillRolling(days, opts) {
         });
         const cov = tsdb.coverage(d);
         console.log(`[TopsellersDB] Polni uvoz koncan v ${Date.now() - t0}ms — v bazi ${cov.total} narocil, ${Object.keys(cov.byDay).length} dni, od ${cov.oldest || '-'}`);
+        tsdb.setMeta('lastFullSyncResult', `OK — ${d} dni, ${Math.round((Date.now() - t0) / 1000)} s, v bazi ${cov.total} narocil`);
     } catch (e) {
         console.error(`[Packing/Backfill${d}d] Failed:`, e.message);
+        tsdb.setMeta('lastFullSyncResult', 'NAPAKA: ' + e.message);
     } finally {
         LONG_WARMUP_RUNNING = false;
     }
