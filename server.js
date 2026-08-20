@@ -3159,7 +3159,9 @@ async function maintainRolling() {
         const day = tsdb.dayStr(-i);
         const ts = parseInt(tsdb.getMeta('dayRef:' + day) || '0', 10);
         const ageMin = ts ? (Date.now() - ts) / 60000 : 99999;
-        if (ageMin > starvedAge) { starvedAge = ageMin; starved = { day, p: pending[day] || 0 }; }
+        // >= (ne >): pri enaki starosti (npr. vec dni se ni bilo nikoli na vrsti) zmaga
+        // NAJSTAREJSI dan, ker se zanka vrti od najnovejsega proti najstarejsemu.
+        if (ageMin >= starvedAge) { starvedAge = ageMin; starved = { day, p: pending[day] || 0 }; }
     }
     if (starved) best = starved;
     if (!best) return;
