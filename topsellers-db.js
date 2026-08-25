@@ -39,7 +39,11 @@ function db() {
             total       TEXT,
             currency    TEXT,
             products    TEXT,
-            updated_at  TEXT
+            updated_at  TEXT,
+            wc_id       TEXT,
+            mk_id       TEXT,
+            eshop       TEXT,
+            buyer_ord   TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date);
         CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -50,6 +54,10 @@ function db() {
             orders    TEXT NOT NULL
         );
     `);
+    // [2026-08-25 Dejan] Migracija obstojece baze: gumba do WooCommerce in Metakocke.
+    for (const col of ['wc_id', 'mk_id', 'eshop', 'buyer_ord']) {
+        try { _db.exec(`ALTER TABLE orders ADD COLUMN ${col} TEXT`); } catch (_) {}
+    }
     try { _db.exec('PRAGMA journal_mode = WAL'); } catch (_) {}
     return _db;
 }
@@ -71,13 +79,17 @@ function upsertMany(orders) {
     if (!Array.isArray(orders) || !orders.length) return { inserted: 0, skipped: 0 };
     const d = db();
     const stmt = d.prepare(`
-        INSERT INTO orders (id, order_date, order_time, customer, country, status, total, currency, products, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO orders (id, order_date, order_time, customer, country, status, total, currency, products, updated_at, wc_id, mk_id, eshop, buyer_ord)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             order_date = excluded.order_date, order_time = excluded.order_time,
             customer = excluded.customer, country = excluded.country, status = excluded.status,
             total = excluded.total, currency = excluded.currency, products = excluded.products,
-            updated_at = excluded.updated_at
+            updated_at = excluded.updated_at,
+            wc_id = COALESCE(NULLIF(excluded.wc_id, ''), orders.wc_id),
+            mk_id = COALESCE(NULLIF(excluded.mk_id, ''), orders.mk_id),
+            eshop = COALESCE(NULLIF(excluded.eshop, ''), orders.eshop),
+            buyer_ord = COALESCE(NULLIF(excluded.buyer_ord, ''), orders.buyer_ord)
     `);
     const del = d.prepare('DELETE FROM orders WHERE id = ?');
     const now = new Date().toISOString();
@@ -96,7 +108,8 @@ function upsertMany(orders) {
             }));
             stmt.run(String(id), date, String(o.orderTime || o.time || ''), String(o.customer || ''),
                      String(o.country || ''), String(o.status || ''), String(o.total || ''),
-                     String(o.currency || 'EUR'), JSON.stringify(products), now);
+                     String(o.currency || 'EUR'), JSON.stringify(products), now,
+                     String(o.wcId || ''), String(o.mkId || ''), String(o.eshop || o._eshop || ''), String(o.buyerOrder || ''));
             inserted++;
         }
         d.exec('COMMIT');
@@ -119,6 +132,7 @@ function getOrders({ days = KEEP_DAYS, status = null, limit = 20000 } = {}) {
         id: r.id, customer: r.customer, country: r.country, status: r.status,
         date: r.order_date, time: r.order_time, orderDate: r.order_date, orderTime: r.order_time,
         total: r.total, currency: r.currency,
+        wcId: r.wc_id || '', mkId: r.mk_id || '', eshop: r.eshop || '', buyerOrder: r.buyer_ord || '',
         products: (() => { try { return JSON.parse(r.products || '[]'); } catch (_) { return []; } })()
     }));
 }

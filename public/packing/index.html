@@ -265,6 +265,13 @@
             .item-size { font-size: 10px; padding: 1px 6px; }
             .item-color { width: 10px; height: 10px; margin-right: 5px; }
         }
+    
+        .src-links { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+        .src-link { font-size:11px; padding:3px 9px; border-radius:5px; text-decoration:none; font-weight:600; border:1px solid transparent; }
+        .src-wc { background:#f3e8ff; color:#6b21a8; border-color:#e9d5ff; }
+        .src-mk { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
+        .src-link:hover { filter:brightness(0.95); }
+        .exchange-badge { background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; margin-left:6px; }
     </style>
 </head>
 <body>
@@ -879,6 +886,30 @@
             container.innerHTML = html;
         }
         
+
+        // [2026-08-25 Dejan] Gumba do izvornega narocila. Prikazemo ju SAMO pri NOVIH narocilih
+        // (status "Novo..."), ker se takrat najveckrat rabi pogledati original. WooCommerce naslov
+        // sestavimo iz eshop_name ("noriks.com/hr") in stevilke WC narocila (buyer_order).
+        function orderLinks(o) {
+            if (!/^novo/i.test(o.status || '')) return '';
+            const shop = (o._eshop || o.eshop || '').trim();
+            const wc = (o.wcId || '').trim();
+            const mk = (o.mkId || '').trim();
+            let h = '';
+            if (shop && wc) {
+                h += '<a class="src-link src-wc" target="_blank" rel="noopener" href="https://' + shop +
+                     '/wp-admin/admin.php?page=wc-orders&action=edit&id=' + encodeURIComponent(wc) +
+                     '" title="Odpri narocilo v WooCommerce">🛒 WooCommerce</a>';
+            }
+            if (mk) {
+                h += '<a class="src-link src-mk" target="_blank" rel="noopener" href="' + MK_ORDER_URL(mk) +
+                     '" title="Odpri narocilo v Metakocki">📘 Metakocka</a>';
+            }
+            return h ? '<div class="src-links no-print">' + h + '</div>' : '';
+        }
+        // Naslov narocila v Metakocki. Ce se oblika kdaj spremeni, popravi SAMO to vrstico.
+        const MK_ORDER_URL = (mkId) => 'https://main.metakocka.si/met/pos/doc/sales_order/' + encodeURIComponent(mkId);
+
         function renderOrderCard(order, isPacked) {
             const isSelected = selectedOrderIds.has(order.id);
             const packedInfo = packedOrders[order.id];
@@ -903,6 +934,7 @@
                                 ${order.customer}
                                 ${newOrderIds.has(order.id) ? '<span class="new-badge">NOV</span>' : ''}
                                 ${isPacked ? '<span class="packed-badge">✅ SPAKIRANO</span>' : ''}
+                                ${order.isExchange ? '<span class="exchange-badge">🔁 MENJAVA</span>' : ''}
                             </div>
                             <div class="order-price">
                                 ${parseFloat(order.total || 0).toFixed(2)} ${currencySymbols[order.currency] || order.currency}
@@ -916,6 +948,7 @@
                             <div>${countryFlags[order.country] || ''} ${order.country || ''}</div>
                             ${isPacked && packedInfo ? `<div style="color:#10b981; margin-top:3px;">Spakirano: ${new Date(packedInfo.packedAt).toLocaleTimeString('sl-SI', {hour:'2-digit',minute:'2-digit'})}</div>` : ''}
                             ${isPacked ? `<button class="btn btn-secondary no-print" onclick="unpackOrder('${order.id}')" style="font-size:10px; padding:2px 8px; margin-top:3px;">↩ Vrni</button>` : ''}
+                            ${orderLinks(order)}
                         </div>
                     </div>
                     <ul class="items-list">

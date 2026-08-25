@@ -1609,16 +1609,22 @@ app.get('/api/packing/orders', async (req, res) => {
                         // Validate items — flag warnings
                         const knownSlovenianColors = ['Črna', 'Modra', 'Bela', 'Siva', 'Zelena', 'Rdeča', 'Rjava', 'Bež', 'Roza', 'Oranžna', 'Vijolična', 'Rumena', 'Turkizna', 'Temno modra', 'Temnomodra', 'Svetlo modra', 'Svetlomodra', 'Tamnoplava', 'Smeđa', 'Črna & Bela', 'Ni podatka', ''];
                         const knownTypes = ['Majica', 'Boksarice', 'Starter paket', 'Nogavice', 'Nogavica', ''];
+                        // [2026-08-25 Dejan] Mystery majica je EDINI izdelek, ki sme ostati brez barve —
+                        // barva je namerno presenecenje ("boja je iznenadenje"). Zato zanjo NE opozarjamo
+                        // na manjkajoco/neznano barvo niti na "neprepoznan tip". Velikost pa kupec IZBERE,
+                        // zato opozorilo za manjkajoco velikost ostane tudi pri Mystery.
+                        const MYSTERY_RE = /presene|mystery|iznenad|iznenađ|prekvapen|meglepet|niespodziank|surpriz|έκπληξ|sorpres|überrasch/i;
                         for (const item of allItems) {
                             if (item.noWarning) { delete item.noWarning; continue; }
+                            const isMystery = MYSTERY_RE.test(item.type || '') || MYSTERY_RE.test(item.color || '');
                             const warnings = [];
-                            if (item.color && !knownSlovenianColors.includes(item.color)) {
+                            if (item.color && !knownSlovenianColors.includes(item.color) && !isMystery) {
                                 warnings.push(`Neprevedena barva: "${item.color}"`);
                             }
-                            if (item.type && !knownTypes.includes(item.type) && !item.type.startsWith('Nogavic')) {
+                            if (item.type && !knownTypes.includes(item.type) && !item.type.startsWith('Nogavic') && !isMystery) {
                                 warnings.push(`Neprepoznan tip: "${item.type}"`);
                             }
-                            if (!item.color && !item.type.startsWith('Nogavic')) {
+                            if (!item.color && !item.type.startsWith('Nogavic') && !isMystery) {
                                 warnings.push('Manjka barva');
                             }
                             if (!item.size) {
@@ -1694,6 +1700,14 @@ app.get('/api/packing/orders', async (req, res) => {
                 products: items, // [{label, items: [...]}]
                 items: items.map(p => p.items || p), // flat for backward compat
                 _wcRef: order.title || '', // e.g. "NORIKS-HR-5779" for WC lookup
+                // [2026-08-25 Dejan] Gumba na kartici: odpri narocilo v WooCommerce / Metakocki.
+                // buyer_order je stevilka WC narocila; ce je v obliki "NORIKS-HR-5779", vzamemo stevilke.
+                wcId: String(order.buyer_order || order.title || '').match(/(\d+)\s*$/) ? String(order.buyer_order || order.title).match(/(\d+)\s*$/)[1] : '',
+                mkId: String(order.mk_id || ''),
+                // [2026-08-25 Dejan] Menjave nimajo variant (0,00 EUR, brez velikosti/barve) —
+                // na kartici to izpisemo, da skladisce ve, zakaj podatkov ni.
+                buyerOrder: String(order.buyer_order || ''),
+                isExchange: /menjav|zamjen|zamen|csere|wymian|schimb|ανταλλαγ|cambio|umtausch|exchange/i.test(String(order.buyer_order || '')),
                 _eshop: order.eshop_name || '', // e.g. "noriks.com/hr"
                 _rawProducts: rawProducts // keep raw for enrichment check
             };
@@ -2520,8 +2534,8 @@ function parseDocDesc(docDesc, productCode, productName) {
         const items = [];
         if (docDesc) {
             // Match various language patterns for shirt/boxer sizes
-            const shirtSize = docDesc.match(/(?:velicina-majice|velkost-tricka|megethos-mployzakia|rozmiar-koszulki|meret-polo|rozmer-tricka)\s*:\s*(\S+)/i);
-            const boxerSize = docDesc.match(/(?:velicina-bokseric|velkost-boxerek|megethos-mpoxer|rozmiar-bokserki|meret-boxer|rozmer-boxerek)\s*:\s*(\S+)/i);
+            const shirtSize = docDesc.match(/(?:velikost-majice|velicina-majice|velkost-tricka|megethos-mployzakia|rozmiar-koszulki|meret-polo|rozmer-tricka|marimea-tricoului)\s*:\s*(\S+)/i);   // [2026-08-25] SI: velikost-majice
+            const boxerSize = docDesc.match(/(?:velikost-boksarice|velikost-boksaric|velicina-bokseric|velkost-boxerek|megethos-mpoxer|rozmiar-bokserki|meret-boxer|rozmer-boxerek|marimea-boxerilor)\s*:\s*(\S+)/i);   // [2026-08-25] SI: velikost-boksarice
             const sSize = shirtSize ? shirtSize[1].toUpperCase() : bundleSize;
             const bSize = boxerSize ? boxerSize[1].toUpperCase() : bundleSize;
             
@@ -2922,6 +2936,8 @@ function slimForRolling(o) {
         id: o.id, customer: o.customer || '', country: o.country || '', status: o.status || '',
         date: o.date || '', time: o.time || '', orderDate: o.orderDate || '', orderTime: o.orderTime || '',
         shippedDate: o.shippedDate || '', total: o.total || '', currency: o.currency || 'EUR',
+        wcId: o.wcId || '', mkId: o.mkId || '', eshop: o._eshop || o.eshop || '',
+        buyerOrder: o.buyerOrder || '', isExchange: !!o.isExchange,
         products: (o.products || []).map(p => ({
             label: p.label || '',
             items: (p.items || []).slice(0, ROLL_MAX_ITEMS).map(it => ({ type: it.type || '', color: it.color || '', size: it.size || '' }))
