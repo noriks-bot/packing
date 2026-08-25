@@ -1706,6 +1706,9 @@ app.get('/api/packing/orders', async (req, res) => {
                 mkId: String(order.mk_id || ''),
                 // [2026-08-25 Dejan] Menjave nimajo variant (0,00 EUR, brez velikosti/barve) —
                 // na kartici to izpisemo, da skladisce ve, zakaj podatkov ni.
+                // POZOR: polja s podcrtajem (_eshop) se pred odgovorom pobrisejo (glej 'delete o._eshop'),
+                // zato trg za povezavo do WooCommerce shranimo v CISTO polje.
+                eshopUrl: order.eshop_name || '',
                 buyerOrder: String(order.buyer_order || ''),
                 isExchange: /menjav|zamjen|zamen|csere|wymian|schimb|ανταλλαγ|cambio|umtausch|exchange/i.test(String(order.buyer_order || '')),
                 _eshop: order.eshop_name || '', // e.g. "noriks.com/hr"
@@ -2936,7 +2939,7 @@ function slimForRolling(o) {
         id: o.id, customer: o.customer || '', country: o.country || '', status: o.status || '',
         date: o.date || '', time: o.time || '', orderDate: o.orderDate || '', orderTime: o.orderTime || '',
         shippedDate: o.shippedDate || '', total: o.total || '', currency: o.currency || 'EUR',
-        wcId: o.wcId || '', mkId: o.mkId || '', eshop: o._eshop || o.eshop || '',
+        wcId: o.wcId || '', mkId: o.mkId || '', eshop: o.eshopUrl || o._eshop || o.eshop || '',
         buyerOrder: o.buyerOrder || '', isExchange: !!o.isExchange,
         products: (o.products || []).map(p => ({
             label: p.label || '',

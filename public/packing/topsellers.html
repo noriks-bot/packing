@@ -250,7 +250,7 @@
         const EXCHANGE_RE = /menjav|zamjen|zamen|csere|wymian|schimb|\u03b1\u03bd\u03c4\u03b1\u03bb\u03bb\u03b1\u03b3|cambio|umtausch|exchange/i;
         function orderLinks(o) {
             if (!/^novo/i.test(o.status || '')) return '';
-            const shop = (o.eshop || o._eshop || '').trim(), wc = (o.wcId || '').trim(), mk = (o.mkId || '').trim();
+            const shop = (o.eshopUrl || o.eshop || o._eshop || '').trim(), wc = (o.wcId || '').trim(), mk = (o.mkId || '').trim();
             let h = '';
             if (shop && wc) h += '<a class="src-link src-wc" target="_blank" rel="noopener" href="https://' + shop + '/wp-admin/admin.php?page=wc-orders&action=edit&id=' + encodeURIComponent(wc) + '">&#128722; WooCommerce</a>';
             if (mk) h += '<a class="src-link src-mk" target="_blank" rel="noopener" href="' + MK_ORDER_URL(mk) + '">&#128216; Metakocka</a>';

@@ -892,7 +892,7 @@
         // sestavimo iz eshop_name ("noriks.com/hr") in stevilke WC narocila (buyer_order).
         function orderLinks(o) {
             if (!/^novo/i.test(o.status || '')) return '';
-            const shop = (o._eshop || o.eshop || '').trim();
+            const shop = (o.eshopUrl || o._eshop || o.eshop || '').trim();
             const wc = (o.wcId || '').trim();
             const mk = (o.mkId || '').trim();
             let h = '';
