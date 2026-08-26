@@ -282,14 +282,27 @@
         .ptab.aktiven { background:#111827; border-color:#111827; color:#fff; }
         .ptab .pn { font-size:11px; font-weight:700; background:rgba(17,24,39,.08); padding:1px 6px; border-radius:999px; }
         .ptab.aktiven .pn { background:rgba(255,255,255,.2); }
+    
+        /* [2026-08-26 Dejan] EN GLAVNI MENI: zavihki izdelkov SO meni. */
+        .topnav { flex-wrap: wrap; height: auto; min-height: var(--topnav-h); padding-top: 4px; padding-bottom: 4px; }
+        .header { top: auto; position: static; }
+        .topnav .ptabs { display: flex; flex-wrap: wrap; gap: 5px; margin: 0; flex: 1; }
+        .topnav .ptab {
+            border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); color: rgba(255,255,255,.72);
+            font: inherit; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 999px;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+        }
+        .topnav .ptab:hover { background: rgba(255,255,255,.12); color: #fff; }
+        .topnav .ptab.aktiven { background: #10b981; border-color: #10b981; color: #062e22; }
+        .topnav .ptab .pn { font-size: 11px; font-weight: 800; background: rgba(0,0,0,.18); padding: 1px 6px; border-radius: 999px; }
+        .topnav .ptab.aktiven .pn { background: rgba(0,0,0,.14); }
     </style>
 </head>
 <body>
     <nav class="topnav no-print">
         <div class="brand">📦 NORIKS</div>
-        <a href="/" class="active">Majice &amp; Bokserice</a>
-        <a href="/topsellers.html">Topsellers</a>
-        <a href="/predpriprava.html">Predpriprava</a>
+        <div id="prodTabs" class="ptabs"></div>
+                <a href="/predpriprava.html">Predpriprava</a>
     </nav>
     <div class="header">
         <h1>📦 <span>Pakiranje</span> | NORIKS</h1>
@@ -307,7 +320,6 @@
     </div>
     
     <div class="container">
-        <div id="prodTabs" class="ptabs no-print"></div>
         <div class="filters no-print">
             <label>
                 Status:
