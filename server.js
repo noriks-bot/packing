@@ -1152,12 +1152,19 @@ async function enrichOrtoOrdersFromWC(orders) {
     // Find orders that have ORTO products with "Ni podatka"
     const ordersToEnrich = orders.filter(o => {
         if (!o._wcRef || !o._eshop) return false;
-        // Check if any product has ORTO code without doc_desc
+        // (a) ORTO brez doc_desc — kot doslej.
         const hasOrtoMissing = (o._rawProducts || []).some(p => {
             const code = (p.code || '').toUpperCase();
             return code.includes('ORTO') && !p.doc_desc;
         });
-        return hasOrtoMissing;
+        // (b) [2026-08-26 Dejan] KARKOLI, cesar iz Metakocke nismo znali razcleniti.
+        //     Metakocka je samo posrednik — izvorni podatek (velikost, barva, kolicina)
+        //     je vedno v WooCommerce in do njega imamo dostop prek stevilke narocila.
+        //     Zato ne ugibamo in ne pustimo opozorila, dokler nismo vprasali izvora.
+        const neresolveno = (o.products || []).some(pr =>
+            (pr.items || []).some(i => (i.warnings && i.warnings.length) ||
+                                       i.color === 'Ni podatka' || i.size === 'Ni podatka'));
+        return hasOrtoMissing || neresolveno;
     });
     
     if (ordersToEnrich.length === 0) return;
@@ -1264,17 +1271,28 @@ async function enrichOrtoOrdersFromWC(orders) {
             
             // Parse WC line items for product details
             const wcItems = [];
+            const wcBySku = new Map();   // [2026-08-26] da podatke pripnemo PRAVI postavki
+            const dodaj = (sku, arr) => {
+                if (!arr || !arr.length) return;
+                wcItems.push(...arr);
+                const k = String(sku || '').toUpperCase();
+                if (!wcBySku.has(k)) wcBySku.set(k, []);
+                wcBySku.get(k).push(...arr);
+            };
             for (const lineItem of (wcOrder.line_items || [])) {
                 const sku = (lineItem.sku || '').toUpperCase();
                 const metaData = lineItem.meta_data || [];
+                const kolicina = parseInt(lineItem.quantity) || 1;
                 
                 // Strategy 1: ORTO products — parse numeric meta keys ("1": "Majica: Zelena - 2XL")
                 if (sku.includes('ORTO')) {
+                    const zbrani = [];
                     for (const meta of metaData) {
                         if (!/^\d+$/.test(meta.key)) continue;
                         const parsed = parseWcMetaValue(meta.value, sku);
-                        if (parsed) wcItems.push(parsed);
+                        if (parsed) zbrani.push(parsed);
                     }
+                    dodaj(sku, zbrani);
                     continue;
                 }
                 
@@ -1286,9 +1304,38 @@ async function enrichOrtoOrdersFromWC(orders) {
                 const syntheticDocDesc = descParts.join(' ');
                 if (syntheticDocDesc) {
                     const parsedBundle = parseDocDesc(syntheticDocDesc, sku, lineItem.name || '');
-                    if (parsedBundle.length > 0 && !parsedBundle.every(i => i.color === 'Ni podatka')) {
-                        wcItems.push(...parsedBundle);
+                    if (parsedBundle.length > 0 && !parsedBundle.every(i => i.color === 'Ni podatka')
+                        && parsedBundle.every(i => i.size || i.color)) {
+                        dodaj(sku, parsedBundle);
+                        continue;
                     }
+                }
+
+                // Strategija 3 [2026-08-26 Dejan]: SPLOSNO. Ce zgornji dve ne uspeta,
+                // preberemo velikost in barvo naravnost iz meta polj WooCommerca po
+                // pomenu kljuca (vsi trgi imajo svoje ime za "velikost" in "barva").
+                // S tem pokrijemo izdelke, pri katerih je doc_desc v Metakocki prazen.
+                const KLJUC_VEL = /^(velicina|veličina|velikost|veľkost|velkost|rozmiar|marime|mărime|meret|méret|megethos|μέγεθος|groesse|größe|grosse|taglia|size)/i;
+                const KLJUC_BARVA = /^(boja|barva|kolor|culoare|szin|szín|color|colour|farbe|colore|χρώμα|chroma|barwa)/i;
+                let gVel = '', gBarva = '';
+                for (const meta of metaData) {
+                    const k = String(meta.key || '').trim();
+                    if (k.startsWith('_')) continue;
+                    const v = String(meta.value || '').trim();
+                    if (!v) continue;
+                    if (!gVel && KLJUC_VEL.test(k)) gVel = v.toUpperCase();
+                    else if (!gBarva && KLJUC_BARVA.test(k)) gBarva = translateWcColor(v);
+                }
+                // barvo sprejmemo samo, ce jo RES prepoznamo — sicer bi ime paketa
+                // ("tonuri", "každodenní") koncalo v polju za barvo in skladisce bi
+                // videlo smiselno videti, a napacen podatek.
+                const ZNANA_BARVA = /^(Črna|Bela|Siva|Zelena|Modra|Rdeča|Rjava|Bež|Roza|Oranžna|Vijolična|Rumena|Turkizna|Temno modra|Svetlo modra|Črna & Bela)$/;
+                if (gBarva && !ZNANA_BARVA.test(gBarva)) gBarva = '';
+                if (gVel || gBarva) {
+                    const tip = sku.includes('BOXER') ? 'Boksarice'
+                              : (sku.includes('SOCK') || sku.includes('KOMZIPS')) ? 'Nogavice'
+                              : translateWcType(String(lineItem.name || '').split(/[|:]/)[0] || '') || 'Izdelek';
+                    dodaj(sku, Array(kolicina).fill(null).map(() => ({ type: tip, color: gBarva, size: gVel })));
                 }
             }
             
@@ -1299,16 +1346,27 @@ async function enrichOrtoOrdersFromWC(orders) {
             
             console.log(`[Packing WC] Enriched order ${order.id} with ${wcItems.length} items from WC ${storeKey}/${wcOrderId}`);
             
-            // Replace "Ni podatka" items in order products
+            // [2026-08-26 Dejan] Zamenjamo SAMO postavke, ki jim podatek manjka, in to
+            // s podatki ISTE sifre. Prej se je cel paket povozil z vsemi vrsticami iz
+            // WooCommerca — pri narocilu z vec izdelki je to podvajalo kose.
             for (const product of order.products) {
                 if (!product.items) continue;
-                const hasNiPodatka = product.items.some(i => i.color === 'Ni podatka' || i.size === 'Ni podatka');
-                if (!hasNiPodatka) continue;
-                
-                // Replace with WC data
-                product.items = wcItems.map(item => ({ ...item, noWarning: true }));
-                // Update label
-                product.label = product.label.replace(/\(\d+ kos\)/, `(${wcItems.length} kos)`);
+                const potrebuje = product.items.some(i => (i.warnings && i.warnings.length) ||
+                                                          i.color === 'Ni podatka' || i.size === 'Ni podatka');
+                if (!potrebuje) continue;
+
+                let zamenjava = wcBySku.get(String(product.code || '').toUpperCase());
+                // ce sifre ne najdemo, smemo vzeti vse SAMO kadar je v narocilu en sam izdelek
+                if ((!zamenjava || !zamenjava.length) && order.products.length === 1) zamenjava = wcItems;
+                if (!zamenjava || !zamenjava.length) continue;
+
+                product.items = zamenjava.map(item => {
+                    const cist = { ...item };
+                    delete cist.warnings;          // podatek imamo — opozorilo ni vec upraviceno
+                    cist.noWarning = true;
+                    return cist;
+                });
+                product.label = product.label.replace(/\(\d+ kos\)/, `(${zamenjava.length} kos)`);
             }
             // Update flat items too
             order.items = order.products.map(p => p.items || p);
@@ -1632,13 +1690,13 @@ app.get('/api/packing/orders', async (req, res) => {
                             }
                             if (warnings.length > 0) item.warnings = warnings;
                         }
-                        return { label: productLabel, items: allItems };
+                        return { label: productLabel, items: allItems, code };
                     }
                     
                     // [2026-08-12] Izdelki BREZ variacij (BUNION, ORTOPAS, FISIOREST, KIDSNEST, KNEEFIX,
                     // NORIKSHERS-*): nimajo barve/velikosti, zato "Ni bilo mogoce parsati" ni napaka.
                     // Kolicina = amount x _bundle_pairs (ce je v doc_desc), sicer amount.
-                    const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KIDSNEST|KIDNEST|KNEEFIX|CONTROLPRO|NORIKSHERS/;
+                    const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KIDSNEST|KIDNEST|KNEEFIX|KNEEHEAT|SNORE|CONTROLPRO|NORIKSHERS/;
                     if (NOVAR_CODES.test(code)) {
                         const bp = (docDesc || '').match(/_bundle_pairs\s*:\s*(\d+)/i);
                         const per = bp ? (parseInt(bp[1], 10) || 1) : 1;
@@ -1647,15 +1705,21 @@ app.get('/api/packing/orders', async (req, res) => {
                         for (let a = 0; a < amount * per; a++) {
                             novarItems.push({ type: cleanName, color: '', size: '', noWarning: true });
                         }
-                        return { label: productLabel, items: novarItems };
+                        return { label: productLabel, items: novarItems, code };
                     }
 
                     // Fallback — flag as warning (no parsed data!)
                     const fallbackItems = [];
                     for (let a = 0; a < amount; a++) {
-                        fallbackItems.push({ type: name, color: '', size: '', colorHex: '#ccc', warnings: ['Ni bilo mogoče parsati izdelkov — preverite ročno!'] });
+                        // [2026-08-26 Dejan] Menjava ("Naročilo kupca: menjava …") po naravi nima
+                        // variant — ni je treba oznacevati kot tezavo, ker podatka NIKJER ni.
+                        const jeMenjava = /menjav|zamjen|zamen|csere|wymian|schimb|ανταλλαγ|cambio|umtausch|exchange/i
+                            .test(String(order.buyer_order || ''));
+                        fallbackItems.push(jeMenjava
+                            ? { type: name, color: '', size: '', colorHex: '#ccc', noWarning: true }
+                            : { type: name, color: '', size: '', colorHex: '#ccc', warnings: ['Ni bilo mogoče parsati izdelkov — preverite ročno!'] });
                     }
-                    return { label: productLabel, items: fallbackItems };
+                    return { label: productLabel, items: fallbackItems, code };
                 });
             
             // Parse date and time
@@ -1702,7 +1766,16 @@ app.get('/api/packing/orders', async (req, res) => {
                 _wcRef: order.title || '', // e.g. "NORIKS-HR-5779" for WC lookup
                 // [2026-08-25 Dejan] Gumba na kartici: odpri narocilo v WooCommerce / Metakocki.
                 // buyer_order je stevilka WC narocila; ce je v obliki "NORIKS-HR-5779", vzamemo stevilke.
-                wcId: String(order.buyer_order || order.title || '').match(/(\d+)\s*$/) ? String(order.buyer_order || order.title).match(/(\d+)\s*$/)[1] : '',
+                // [2026-08-26 Dejan] Stevilka WC narocila ni vedno v istem polju: nekje je v
+                // buyer_order ("NORIKS-HR-13006" ali "9075"), drugje je tam IME kupca
+                // ("nViera Andrejkova") in stevilka je v title. Vzamemo prvega, ki ima stevilko.
+                wcId: (() => {
+                    for (const kandidat of [order.buyer_order, order.title, order.bank_ref_number]) {
+                        const m = String(kandidat || '').match(/(\d+)\s*$/);
+                        if (m && m[1].length >= 3) return m[1];
+                    }
+                    return '';
+                })(),
                 mkId: String(order.mk_id || ''),
                 // [2026-08-25 Dejan] Menjave nimajo variant (0,00 EUR, brez velikosti/barve) —
                 // na kartici to izpisemo, da skladisce ve, zakaj podatkov ni.
@@ -1923,8 +1996,8 @@ const bundleContents = {
         { type: 'Majica', color: 'Bela', size },
         { type: 'Majica', color: 'Siva', size },
         { type: 'Majica', color: 'Siva', size },
-        { type: 'Majica', color: 'Tamnoplava', size },
-        { type: 'Majica', color: 'Smeđa', size },
+        { type: 'Majica', color: 'Temno modra', size },
+        { type: 'Majica', color: 'Rjava', size },
         { type: 'Majica', color: 'Zelena', size },
     ],
     // Full spectrum 9-pack: image = 2x črna, 1x siva, 1x tamnoplava, 1x zelena, 1x smeđa, 1x bež, 1x bela + 1 extra
@@ -1932,9 +2005,9 @@ const bundleContents = {
         { type: 'Majica', color: 'Črna', size },
         { type: 'Majica', color: 'Črna', size },
         { type: 'Majica', color: 'Siva', size },
-        { type: 'Majica', color: 'Tamnoplava', size },
+        { type: 'Majica', color: 'Temno modra', size },
         { type: 'Majica', color: 'Zelena', size },
-        { type: 'Majica', color: 'Smeđa', size },
+        { type: 'Majica', color: 'Rjava', size },
         { type: 'Majica', color: 'Bež', size },
         { type: 'Majica', color: 'Bela', size },
         { type: 'Majica', color: 'Bela', size },
@@ -1944,9 +2017,9 @@ const bundleContents = {
         { type: 'Majica', color: 'Črna', size },
         { type: 'Majica', color: 'Črna', size },
         { type: 'Majica', color: 'Siva', size },
-        { type: 'Majica', color: 'Tamnoplava', size },
+        { type: 'Majica', color: 'Temno modra', size },
         { type: 'Majica', color: 'Zelena', size },
-        { type: 'Majica', color: 'Smeđa', size },
+        { type: 'Majica', color: 'Rjava', size },
         { type: 'Majica', color: 'Bež', size },
         { type: 'Majica', color: 'Bela', size },
         { type: 'Majica', color: 'Bela', size },
@@ -1985,10 +2058,37 @@ const bundleContents = {
         ...Array(6).fill(null).map(() => ({ type: 'Majica', color: 'Črna', size })),
         ...Array(6).fill(null).map(() => ({ type: 'Majica', color: 'Bela', size })),
     ],
+    // [2026-08-26 Dejan] Zemljani toni 6-paket — sestava s slike izdelka
+    // (urban-earth-6x.jpg): 3x črna, 1x temno modra, 1x zelena, 1x bež.
+    'NORIKS-EARTH-TONES-6-PACK': (size) => [
+        ...Array(3).fill(null).map(() => ({ type: 'Majica', color: 'Črna', size })),
+        { type: 'Majica', color: 'Temno modra', size },
+        { type: 'Majica', color: 'Zelena', size },
+        { type: 'Majica', color: 'Bež', size },
+    ],
+    // [2026-08-26 Dejan] Vsakdanji mix 6-paket — slika everyday-6X.jpg:
+    // po ena črna, siva, temno modra, zelena, bež, bela.
+    'NORIKS-EVERYDAY-6-PACK': (size) => [
+        { type: 'Majica', color: 'Črna', size },
+        { type: 'Majica', color: 'Siva', size },
+        { type: 'Majica', color: 'Temno modra', size },
+        { type: 'Majica', color: 'Zelena', size },
+        { type: 'Majica', color: 'Bež', size },
+        { type: 'Majica', color: 'Bela', size },
+    ],
+    // [2026-08-26 Dejan] Mešane boksarice 10-paket — slika boksarice_10x-mesane.webp:
+    // 2x črna, 2x siva, 3x modra, 2x zelena, 1x rdeča.  <-- POTRDI PRI DEJANU
+    'NORIKS-BOX-BUNDLE-10-FIRST': (size) => [
+        ...Array(2).fill(null).map(() => ({ type: 'Boksarice', color: 'Črna', size })),
+        ...Array(2).fill(null).map(() => ({ type: 'Boksarice', color: 'Siva', size })),
+        ...Array(3).fill(null).map(() => ({ type: 'Boksarice', color: 'Modra', size })),
+        ...Array(2).fill(null).map(() => ({ type: 'Boksarice', color: 'Zelena', size })),
+        { type: 'Boksarice', color: 'Rdeča', size },
+    ],
     // Earth dozen 12-pack: image = 6x črna, 1x tamnoplava, 2x bež, 3x zelena
     'NORIKS-EARTH-DOZEN': (size) => [
         ...Array(6).fill(null).map(() => ({ type: 'Majica', color: 'Črna', size })),
-        { type: 'Majica', color: 'Tamnoplava', size },
+        { type: 'Majica', color: 'Temno modra', size },
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Bež', size })),
         ...Array(3).fill(null).map(() => ({ type: 'Majica', color: 'Zelena', size })),
     ],
@@ -1996,7 +2096,7 @@ const bundleContents = {
     'NORIKS-EVERYDAY-MIX-12-PACK': (size) => [
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Črna', size })),
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Zelena', size })),
-        ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Tamnoplava', size })),
+        ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Temno modra', size })),
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Siva', size })),
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Bež', size })),
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Bela', size })),
@@ -2005,8 +2105,8 @@ const bundleContents = {
     'NORIKS-FULL-BASICS-12-PACK': (size) => [
         ...Array(3).fill(null).map(() => ({ type: 'Majica', color: 'Črna', size })),
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Siva', size })),
-        ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Tamnoplava', size })),
-        { type: 'Majica', color: 'Smeđa', size },
+        ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Temno modra', size })),
+        { type: 'Majica', color: 'Rjava', size },
         { type: 'Majica', color: 'Bež', size },
         { type: 'Majica', color: 'Zelena', size },
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Bela', size })),
@@ -2014,10 +2114,10 @@ const bundleContents = {
     // Full basics 15-pack: image = 3x črna, 2x tamnoplava, 1x zelena, 2x siva, 2x smeđa, 2x bež, 3x bela
     'NORIKS-FULL-BASICS-15-PACK': (size) => [
         ...Array(3).fill(null).map(() => ({ type: 'Majica', color: 'Črna', size })),
-        ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Tamnoplava', size })),
+        ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Temno modra', size })),
         { type: 'Majica', color: 'Zelena', size },
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Siva', size })),
-        ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Smeđa', size })),
+        ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Rjava', size })),
         ...Array(2).fill(null).map(() => ({ type: 'Majica', color: 'Bež', size })),
         ...Array(3).fill(null).map(() => ({ type: 'Majica', color: 'Bela', size })),
     ],
@@ -2262,6 +2362,9 @@ const colorTranslationsServer = {
     'Temno modra': 'Temno modra', 'Tamnoplava': 'Temno modra', 'Smeđa': 'Rjava',
     'Roza': 'Roza', 'Oranžna': 'Oranžna', 'Vijolična': 'Vijolična', 'Rumena': 'Rumena',
     'Turkizna': 'Turkizna', 'Svetlo modra': 'Svetlo modra',
+    // [2026-08-26 Dejan] Skladiscu se ne sme prikazati madzarska ali hrvaska beseda
+    // za barvo — te oblike so prihajale skozi in bile prikazane surovo.
+    'temnomodra': 'Temno modra', 'smedja': 'Rjava', 'verzi': 'Zelena', 'hnedá': 'Rjava', 'sötét kék': 'Temno modra',
 };
 
 function translateColorServer(color) {
@@ -2290,6 +2393,24 @@ function translateColorServer(color) {
         // meja besede: kljuc obdan z ne-crkovnim znakom ali robom niza
         const re = new RegExp('(^|[^\\p{L}])' + kNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\p{L}])', 'u');
         if (re.test(normalized)) return colorTranslationsServer[key];
+    }
+    // [2026-08-26 Dejan] SKLONI IN MNOZINA: Metakocka na mesto barve vcasih zapise
+    // IME izdelka v drugem sklonu — npr. upsell "1 : Zelene Bokserice - 4XL".
+    // "zelene" se ne ujema s kljucem "zelena", zato je taka postavka padla v
+    // opozorilo "Neprevedena barva", cetudi je barva ocitna. Primerjamo KORENE:
+    // kljucu odrezemo koncni samoglasnik in pogledamo, ali se katera beseda v
+    // nizu zacne z njim (zelen- -> zelene, crn- -> crne, siv- -> sive).
+    const besede = normalized.split(/[^\p{L}]+/u).filter(w => w.length >= 3);
+    for (const key of keysByLen) {
+        const kNorm = key.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        if (kNorm.length < 4) continue;                     // prekratki kljuci delajo lazne zadetke
+        const koren = kNorm.replace(/[aeiouy]$/, '');       // zelena -> zelen, crna -> crn
+        if (koren.length < 3) continue;
+        // beseda se mora zaceti s korenom in ne sme biti bistveno daljsa
+        // (da "bel" ne pobere "belgija" ipd.)
+        if (besede.some(w => w.startsWith(koren) && w.length <= koren.length + 3)) {
+            return colorTranslationsServer[key];
+        }
     }
     return trimmed;
 }
@@ -2537,8 +2658,8 @@ function parseDocDesc(docDesc, productCode, productName) {
         const items = [];
         if (docDesc) {
             // Match various language patterns for shirt/boxer sizes
-            const shirtSize = docDesc.match(/(?:velikost-majice|velicina-majice|velkost-tricka|megethos-mployzakia|rozmiar-koszulki|meret-polo|rozmer-tricka|marimea-tricoului)\s*:\s*(\S+)/i);   // [2026-08-25] SI: velikost-majice
-            const boxerSize = docDesc.match(/(?:velikost-boksarice|velikost-boksaric|velicina-bokseric|velkost-boxerek|megethos-mpoxer|rozmiar-bokserki|meret-boxer|rozmer-boxerek|marimea-boxerilor)\s*:\s*(\S+)/i);   // [2026-08-25] SI: velikost-boksarice
+            const shirtSize = docDesc.match(/(?:velikost-majice|velicina-majice|velkost-tricka|megethos-mployzakia|rozmiar-koszulki|meret-polo|rozmer-tricka|marimea-tricoului|marime-tricou)\s*:\s*(\S+)/i);   // [2026-08-25] SI: velikost-majice
+            const boxerSize = docDesc.match(/(?:velikost-boksarice|velikost-boksaric|velicina-bokseric|velkost-boxerek|megethos-mpoxer|rozmiar-bokserki|meret-boxer|rozmer-boxerek|marimea-boxerilor|marime-boxeri)\s*:\s*(\S+)/i);   // [2026-08-25] SI: velikost-boksarice
             const sSize = shirtSize ? shirtSize[1].toUpperCase() : bundleSize;
             const bSize = boxerSize ? boxerSize[1].toUpperCase() : bundleSize;
             

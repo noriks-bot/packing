@@ -104,12 +104,13 @@ function upsertMany(orders) {
             if (!date) { skipped++; continue; }
             const products = (o.products || []).map(p => ({
                 label: p.label || '',
+                code: p.code || '',
                 items: (p.items || []).slice(0, MAX_ITEMS).map(it => ({ type: it.type || '', color: it.color || '', size: it.size || '' }))
             }));
             stmt.run(String(id), date, String(o.orderTime || o.time || ''), String(o.customer || ''),
                      String(o.country || ''), String(o.status || ''), String(o.total || ''),
                      String(o.currency || 'EUR'), JSON.stringify(products), now,
-                     String(o.wcId || ''), String(o.mkId || ''), String(o.eshop || o._eshop || ''), String(o.buyerOrder || ''));
+                     String(o.wcId || ''), String(o.mkId || ''), String(o.eshopUrl || o.eshop || o._eshop || ''), String(o.buyerOrder || ''));
             inserted++;
         }
         d.exec('COMMIT');

@@ -891,7 +891,7 @@
         // (status "Novo..."), ker se takrat najveckrat rabi pogledati original. WooCommerce naslov
         // sestavimo iz eshop_name ("noriks.com/hr") in stevilke WC narocila (buyer_order).
         function orderLinks(o) {
-            if (!/^novo/i.test(o.status || '')) return '';
+            // [2026-08-26 Dejan] Povezavi kazemo pri VSEH narocilih, ne le pri novih.
             const shop = (o.eshopUrl || o._eshop || o.eshop || '').trim();
             const wc = (o.wcId || '').trim();
             const mk = (o.mkId || '').trim();
@@ -908,7 +908,7 @@
             return h ? '<div class="src-links no-print">' + h + '</div>' : '';
         }
         // Naslov narocila v Metakocki. Ce se oblika kdaj spremeni, popravi SAMO to vrstico.
-        const MK_ORDER_URL = (mkId) => 'https://main.metakocka.si/met/pos/doc/sales_order/' + encodeURIComponent(mkId);
+        const MK_ORDER_URL = (mkId) => 'https://main.metakocka.si/apps/ordermanagement/orders/all/' + encodeURIComponent(mkId);
 
         function renderOrderCard(order, isPacked) {
             const isSelected = selectedOrderIds.has(order.id);

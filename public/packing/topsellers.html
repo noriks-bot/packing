@@ -246,10 +246,10 @@
         let ROWS = [];
 
         // [2026-08-25 Dejan] Gumba do izvornega narocila — SAMO pri novih narocilih.
-        const MK_ORDER_URL = (mkId) => 'https://main.metakocka.si/met/pos/doc/sales_order/' + encodeURIComponent(mkId);
+        const MK_ORDER_URL = (mkId) => 'https://main.metakocka.si/apps/ordermanagement/orders/all/' + encodeURIComponent(mkId);
         const EXCHANGE_RE = /menjav|zamjen|zamen|csere|wymian|schimb|\u03b1\u03bd\u03c4\u03b1\u03bb\u03bb\u03b1\u03b3|cambio|umtausch|exchange/i;
         function orderLinks(o) {
-            if (!/^novo/i.test(o.status || '')) return '';
+            // [2026-08-26 Dejan] Povezavi kazemo pri VSEH narocilih, ne le pri novih.
             const shop = (o.eshopUrl || o.eshop || o._eshop || '').trim(), wc = (o.wcId || '').trim(), mk = (o.mkId || '').trim();
             let h = '';
             if (shop && wc) h += '<a class="src-link src-wc" target="_blank" rel="noopener" href="https://' + shop + '/wp-admin/admin.php?page=wc-orders&action=edit&id=' + encodeURIComponent(wc) + '">&#128722; WooCommerce</a>';
