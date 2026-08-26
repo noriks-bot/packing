@@ -659,7 +659,7 @@
                             const qty = (it.count > 1 ? it.count : 1) + 'x ';
                             const name = hit
                                 ? qty + pname + (it.color ? ' ' + it.color : '')
-                                : qty + ((it.oznaka || (/KOMPSFIT|FIT.?KOMPRES/i.test(String(p.code||p.label||'')) ? 'FIT' : /KOMZIPS/i.test(String(p.code||p.label||'')) ? 'ZIP' : '')) ? '<b class="oznaka">' + (it.oznaka || (/KOMPSFIT|FIT.?KOMPRES/i.test(String(p.code||p.label||'')) ? 'FIT' : 'ZIP')) + '</b> ' : '') + (it.color ? it.color + ' ' : '') + (it.type || '');
+                                : ((it.oznaka || (/KOMPSFIT|FIT.?KOMPRES/i.test(String(p.code||p.label||'')) ? 'FIT' : /KOMZIPS/i.test(String(p.code||p.label||'')) ? 'ZIP' : '')) ? '<b class="oznaka">' + (it.oznaka || (/KOMPSFIT|FIT.?KOMPRES/i.test(String(p.code||p.label||'')) ? 'FIT' : 'ZIP')) + '</b> ' : '') + qty + (it.color ? it.color + ' ' : '') + (it.type || '');
                             return '<li class="item' + (hit ? ' hit' : '') + '">' +
                                 '<input type="checkbox" class="item-checkbox">' +
                                 (it.color ? '<div class="item-color" style="background:' + (colorHex[it.color] || '#ccc') + (it.color === 'Bela' ? ';border-color:#ccc' : '') + '"></div>' : '') +
