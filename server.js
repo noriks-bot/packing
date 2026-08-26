@@ -2091,7 +2091,7 @@ const bundleContents = {
         { type: 'Majica', color: 'Bela', size },
     ],
     // [2026-08-26 Dejan] Mešane boksarice 10-paket — slika boksarice_10x-mesane.webp:
-    // 2x črna, 2x siva, 3x modra, 2x zelena, 1x rdeča.  <-- POTRDI PRI DEJANU
+    // 2x črna, 2x siva, 3x modra, 2x zelena, 1x rdeča.  — POTRDIL Dejan, 26.8.2026.
     'NORIKS-BOX-BUNDLE-10-FIRST': (size) => [
         ...Array(2).fill(null).map(() => ({ type: 'Boksarice', color: 'Črna', size })),
         ...Array(2).fill(null).map(() => ({ type: 'Boksarice', color: 'Siva', size })),
