@@ -1066,7 +1066,7 @@
                                 <li class="item ${hasWarning ? 'item-warning' : ''}">
                                     <input type="checkbox" class="item-checkbox">
                                     ${item.color ? `<div class="item-color" style="background: ${colorHex[item.color] || item.colorHex || '#ccc'}; ${item.color === 'Bela' ? 'border-color: #ccc;' : ''}"></div>` : ''}
-                                    <span class="item-name">${(item.oznaka || oznakaZa) ? '<b class="oznaka">' + (item.oznaka || oznakaZa) + '</b> ' : ''}${item.count > 1 ? item.count + 'x ' : ''}${item.color ? item.color + ' ' : ''}${item.type}</span>
+                                    <span class="item-name">${(item.oznaka || oznakaZa) ? '<b class="oznaka">' + (item.oznaka || oznakaZa) + '</b> ' : ''}${(item.count || 1) + 'x '}${item.color ? item.color + ' ' : ''}${item.type}</span>
                                     <span class="item-size">${item.size}</span>
                                     ${hasWarning ? `<span class="item-warning-badge" title="${item.warnings.join('; ')}">⚠️</span>` : ''}
                                 </li>
