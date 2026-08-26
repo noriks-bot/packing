@@ -1776,9 +1776,17 @@ app.get('/api/packing/orders', async (req, res) => {
                 // buyer_order ("NORIKS-HR-13006" ali "9075"), drugje je tam IME kupca
                 // ("nViera Andrejkova") in stevilka je v title. Vzamemo prvega, ki ima stevilko.
                 wcId: (() => {
-                    for (const kandidat of [order.buyer_order, order.title, order.bank_ref_number]) {
+                    // [2026-08-26 Dejan] bank_ref_number NI stevilka WC narocila — je samo
+                    // metakockina stevilka brez posevnice ("49619/2026" -> "496192026").
+                    // Povezava iz nje vrne 404, kar je slabse kot da povezave ni.
+                    // Zato: samo buyer_order in title, in nikoli vrednost, ki je enaka
+                    // metakockini stevilki.
+                    const mkStevilke = String(order.count_code || '').replace(/\D/g, '');
+                    for (const kandidat of [order.buyer_order, order.title]) {
                         const m = String(kandidat || '').match(/(\d+)\s*$/);
-                        if (m && m[1].length >= 3) return m[1];
+                        if (!m || m[1].length < 3) continue;
+                        if (m[1] === mkStevilke) continue;
+                        return m[1];
                     }
                     return '';
                 })(),
