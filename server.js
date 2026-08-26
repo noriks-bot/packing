@@ -1654,6 +1654,13 @@ app.get('/api/packing/orders', async (req, res) => {
                         console.log(`[Packing DEBUG] Parse issue: code="${code}" name="${name}" docDesc="${docDesc}" amount=${amount} items=${JSON.stringify(parsedItems)}`);
                     }
                     
+                    // [2026-08-26 Dejan] FIT kompresijska majica se mora v seznamu lociti od
+                    // navadne majice — skladisce ju ne sme zamenjati. Kosi dobijo oznako "FIT",
+                    // ki se izpise pred barvo: "2x FIT Bela Majica".
+                    const OZNAKE = [[/KOMPSFIT|FIT.?KOMPRES/i, 'FIT'], [/KOMZIPS/i, 'ZIP']];
+                    const oznakaKosa = (OZNAKE.find(([re]) => re.test(code) || re.test(nameOriginal)) || [])[1] || '';
+                    if (oznakaKosa) for (const it of parsedItems) it.oznaka = oznakaKosa;
+
                     // Build product label with item count
                     const totalItems = parsedItems.length * amount;
                     const productLabel = (amount > 1 ? amount + 'x ' : '') + name + 
@@ -1702,7 +1709,7 @@ app.get('/api/packing/orders', async (req, res) => {
                     // [2026-08-12] Izdelki BREZ variacij (BUNION, ORTOPAS, FISIOREST, KIDSNEST, KNEEFIX,
                     // NORIKSHERS-*): nimajo barve/velikosti, zato "Ni bilo mogoce parsati" ni napaka.
                     // Kolicina = amount x _bundle_pairs (ce je v doc_desc), sicer amount.
-                    const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KIDSNEST|KIDNEST|KNEEFIX|KNEEHEAT|SNORE|CONTROLPRO|NORIKSHERS/;
+                    const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KIDSNEST|KIDNEST|KNEEFIX|KNEEHEAT|SNORE|CLOUD|CONTROLPRO|NORIKSHERS/;
                     if (NOVAR_CODES.test(code)) {
                         const bp = (docDesc || '').match(/_bundle_pairs\s*:\s*(\d+)/i);
                         const per = bp ? (parseInt(bp[1], 10) || 1) : 1;
@@ -3084,7 +3091,8 @@ function slimForRolling(o) {
         buyerOrder: o.buyerOrder || '', isExchange: !!o.isExchange,
         products: (o.products || []).map(p => ({
             label: p.label || '',
-            items: (p.items || []).slice(0, ROLL_MAX_ITEMS).map(it => ({ type: it.type || '', color: it.color || '', size: it.size || '' }))
+            code: p.code || '',
+            items: (p.items || []).slice(0, ROLL_MAX_ITEMS).map(it => ({ type: it.type || '', color: it.color || '', size: it.size || '', oznaka: it.oznaka || '' }))
         }))
         // opomba: polje `items` (podvojen ravni seznam) NE gre v skladisce — kartice ga ne rabijo
     };

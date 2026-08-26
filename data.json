@@ -1645,7 +1645,349 @@
       ]
     },
     "EN": {
-      "tasks": [],
+      "tasks": [
+        {
+          "id": "default-0",
+          "name": "Instagram review",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-1",
+          "name": "Facebook review",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-2",
+          "name": "Facebook objave",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-3",
+          "name": "TikTok objave",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-4",
+          "name": "Checker - stran OK",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-5",
+          "name": "Checker - Hotjar ideje",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-6",
+          "name": "Call center (abandon)",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-7",
+          "name": "Call center (stari kupci)",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-8",
+          "name": "SMS abandon",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-9",
+          "name": "Mailing abandon",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-10",
+          "name": "Influencerji",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-11",
+          "name": "Upselli na strani",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-12",
+          "name": "Jackpot na strani",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-13",
+          "name": "Poročilo upselli",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-14",
+          "name": "Kampanje vsi paketi",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-15",
+          "name": "Trustpilot API",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-16",
+          "name": "YouTube oglasi",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-17",
+          "name": "Letaki v paketih",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-18",
+          "name": "Profit tracking",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-19",
+          "name": "Neprevzeti tracking",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-20",
+          "name": "CR tracking",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-21",
+          "name": "Checkout/nakupi ratio",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-22",
+          "name": "Call center report",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-23",
+          "name": "Upsell report",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        }
+      ],
+      "customTasks": []
+    },
+    "DE": {
+      "tasks": [
+        {
+          "id": "default-0",
+          "name": "Instagram review",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-1",
+          "name": "Facebook review",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-2",
+          "name": "Facebook objave",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-3",
+          "name": "TikTok objave",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-4",
+          "name": "Checker - stran OK",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-5",
+          "name": "Checker - Hotjar ideje",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-6",
+          "name": "Call center (abandon)",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-7",
+          "name": "Call center (stari kupci)",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-8",
+          "name": "SMS abandon",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-9",
+          "name": "Mailing abandon",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-10",
+          "name": "Influencerji",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-11",
+          "name": "Upselli na strani",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-12",
+          "name": "Jackpot na strani",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-13",
+          "name": "Poročilo upselli",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-14",
+          "name": "Kampanje vsi paketi",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-15",
+          "name": "Trustpilot API",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-16",
+          "name": "YouTube oglasi",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-17",
+          "name": "Letaki v paketih",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-18",
+          "name": "Profit tracking",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-19",
+          "name": "Neprevzeti tracking",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-20",
+          "name": "CR tracking",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-21",
+          "name": "Checkout/nakupi ratio",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-22",
+          "name": "Call center report",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        },
+        {
+          "id": "default-23",
+          "name": "Upsell report",
+          "done": false,
+          "assignee": "",
+          "notes": ""
+        }
+      ],
       "customTasks": []
     }
   }

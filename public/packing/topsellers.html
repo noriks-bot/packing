@@ -148,6 +148,7 @@
         .src-wc { background:#f3e8ff; color:#6b21a8; border-color:#e9d5ff; }
         .src-mk { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
         .exchange-badge { background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; }
+            .oznaka { color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:0 4px; font-size:11px; font-weight:800; }
     </style>
 </head>
 <body>
@@ -164,8 +165,8 @@
             <div id="sumOrders">Naročil: <b>–</b></div>
             <div id="sumItems">Kosov: <b>–</b></div>
             <div id="sumWarn" style="color:#fbbf24"></div>
-            <button class="btn btn-sec" onclick="load()">🔄 Osveži</button>
-            <button class="btn btn-green" id="fullSyncBtn" onclick="fullSync()" title="Potegne vseh 14 dni iz Metakocke — traja ~2 min">⚡ Poln sync</button>
+            <button class="btn btn-sec" id="refreshBtn" onclick="osveziStatuse(this)" title="Potegne sveže statuse zadnjih dni iz Metakocke (~30 s), nato znova prebere bazo">🔄 Osveži</button>
+            <button class="btn btn-green" id="fullSyncBtn" onclick="fullSync()" title="Potegne vseh 30 dni iz Metakocke in osveži statuse — traja ~6 min. Gumb Osveži samo znova prebere bazo (takoj).">⚡ Poln sync</button>
             <button class="btn btn-sec" onclick="exportCsv()">⬇ CSV</button>
         </div>
     </div>
@@ -225,22 +226,37 @@
         const PRODUCTS = [
             // [2026-08-14 Dejan] Zavihek VSE = vsa naročila, ki vsebujejo KATERIKOLI od spodnjih izdelkov.
             { key: 'VSE', name: 'VSE', hasVar: true, icon: '📦', all: true, re: /$^/ },
-            { key: 'KOMPSFIT',  name: 'KOMPSFIT',  hasVar: true,  icon: '🔥', re: /kompsfit|fit\s*kompres/i, not: /(čarap|carap|nogavic|socks|zokni|ponož|skarpet|ciorap)/i },
-            { key: 'ORTOPAS', hasVar: false,   name: 'ORTOPAS',   icon: '🎗️', re: /ortopas|ortopedski pojas|pojas za le|derék|záda|plecy|spate|schiena|πλάτ|hrbet|opasek|pas za/i },
-            { key: 'KOMZIPS',   name: 'KOMZIPS',   hasVar: true,  icon: '🧦', re: /komzips|kompresijske čarape|zatvarač|kompres.*(zokni|ponož|ciorap|skarpet|calze|κάλτσ)/i },
-            { key: 'BUNION', hasVar: false,    name: 'BUNION',    icon: '🦶', re: /bunion|čuklj|cuklj|halux|haluks|bütyök|butyok|alluce|ballen|monturi/i },
-            { key: 'FISIOREST', hasVar: false, name: 'FISIOREST', icon: '💆', re: /fisiorest|uređaj za vrat|nyak|krk|szyj|cervical|collo|αυχέν/i },
-            { key: 'KNEEFIX', hasVar: false,   name: 'KNEEFIX',   icon: '🦵', re: /kneefix|koleno|kolen|térd|genunchi|kolan|γόνατ|ginocchi|knie/i },
-            { key: 'KIDSNEST', hasVar: false,  name: 'KIDSNEST',  icon: '🌙', re: /kidsnest|kidnest|ortopedski jastuk|vzglavnik|párna|polštář|poduszka|perna|cuscino|μαξιλάρ/i }
+            { key: 'KOMPSFIT', sku: /KOMPSFIT|FIT-KOMPRES/i,  name: 'KOMPSFIT',  hasVar: true,  icon: '🔥', re: /kompsfit|fit\s*kompres/i, not: /(čarap|carap|nogavic|socks|zokni|ponož|skarpet|ciorap)/i },
+            { key: 'ORTOPAS', sku: /ORTOPAS/i, hasVar: false,   name: 'ORTOPAS',   icon: '🎗️', re: /ortopas|ortopedski pojas|pojas za le|derék|záda|plecy|spate|schiena|πλάτ|hrbet|opasek|pas za/i },
+            { key: 'KOMZIPS', sku: /KOMZIPS/i,   name: 'KOMZIPS',   hasVar: true,  icon: '🧦', re: /komzips|kompresijske čarape|zatvarač|kompres.*(zokni|ponož|ciorap|skarpet|calze|κάλτσ)/i },
+            { key: 'BUNION', sku: /BUNION/i, hasVar: false,    name: 'BUNION',    icon: '🦶', re: /bunion|čuklj|cuklj|halux|haluks|bütyök|butyok|alluce|ballen|monturi/i },
+            { key: 'FISIOREST', sku: /FISIOREST/i, hasVar: false, name: 'FISIOREST', icon: '💆', re: /fisiorest|uređaj za vrat|nyak|krk|szyj|cervical|collo|αυχέν/i },
+            { key: 'KNEEFIX', sku: /KNEEFIX/i, hasVar: false,   name: 'KNEEFIX',   icon: '🦵', re: /kneefix|koleno|kolen|térd|genunchi|kolan|γόνατ|ginocchi|knie/i },
+            // [2026-08-26 Dejan] CLOUD (blazina med kolena) je svoj izdelek, a ima v imenu
+            // "ortopedski jastuk" — zato ga je zavihek KIDSNEST pobral k sebi. Stoji PRED
+            // njim, ker productOf vrne prvi zadetek, KIDSNEST pa ga izrecno izloci.
+            { key: 'CLOUD', sku: /CLOUD/i,    hasVar: false,   name: 'CLOUD',     icon: '☁️', re: /noriks[\s-]*cloud|jastuk za koljena|blazina za kolena|polštář mezi kolena|poduszka między kolana|perna para joelhos|pernă pentru genunchi|párna térd|μαξιλάρι για γόνατα|knie[\s-]?kissen|knee pillow/i },
+            { key: 'KIDSNEST', sku: /KIDSNEST|KIDNEST/i, hasVar: false,  name: 'KIDSNEST',  icon: '🌙', re: /kidsnest|kidnest|ortopedski jastuk|vzglavnik|párna|polštář|poduszka|perna|cuscino|μαξιλάρ/i, not: /noriks[\s-]*cloud|za koljena|za kolena|mezi kolena|między kolana|genunchi|γόνατα|knie/i }
         ];
         let CURRENT = PRODUCTS.find(p => p.key === 'VSE') || PRODUCTS[0]; // [2026-08-18 Dejan] privzeto VSE
         // Zavihek VSE se ujema z izdelkom, ki ustreza KATERIKOLI drugi definiciji.
-        const matchProduct = (label, p) => p.all
-            ? PRODUCTS.some(x => !x.all && matchProduct(label, x))
-            : (p.re.test(label || '') && !(p.not && p.not.test(label || '')));
+        // [2026-08-26 Dejan] Razvrscamo po SIFRI (SKU), ne po imenu izdelka. Ime je
+        // nezanesljivo: "NORIKS Cloud | Ortopedski jastuk ..." vsebuje besedo, ki jo
+        // ima v vzorcu KIDSNEST, zato je CLOUD koncal v napacnem zavihku. Sifra je
+        // enolicna in enaka na vseh trgih. Ime uporabimo samo, ce sifre ni.
+        const VSI_SKU = PRODUCTS.filter(x => x.sku).map(x => x.sku);
+        const matchProduct = (izd, p) => {
+            if (p.all) return PRODUCTS.some(x => !x.all && matchProduct(izd, x));
+            const code  = String((izd && izd.code) || '');
+            const label = String((izd && izd.label !== undefined) ? izd.label : (izd || ''));
+            if (code && p.sku && p.sku.test(code)) return true;
+            // sifra pripada DRUGEMU izdelku -> po imenu ne ugibamo vec
+            if (code && VSI_SKU.some(re => re.test(code))) return false;
+            return p.re.test(label) && !(p.not && p.not.test(label));
+        };
         // Kateremu zavihku pripada ta vrstica izdelka (za oznake v pogledu VSE).
-        const productOf = (label) => PRODUCTS.find(x => !x.all && matchProduct(label, x)) || null;
-        const IS_KOMPSFIT = (label) => matchProduct(label, CURRENT);
+        const productOf = (izd) => PRODUCTS.find(x => !x.all && matchProduct(izd, x)) || null;
+        const IS_KOMPSFIT = (izd) => matchProduct(izd, CURRENT);
         const STATUSES = ['Novo', 'Pripravljen za odpremo', 'Odpremljen'];
         const FLAGS = { 'Croatia':'🇭🇷','Slovenia':'🇸🇮','Czech Republic':'🇨🇿','Czechia':'🇨🇿','Poland':'🇵🇱','Greece':'🇬🇷','Italy':'🇮🇹','Hungary':'🇭🇺','Slovakia':'🇸🇰','Romania':'🇷🇴','Germany':'🇩🇪','Bulgaria':'🇧🇬','English':'🌐' };
         let ROWS = [];
@@ -295,7 +311,7 @@
         let RAW = [];
         function buildSubmenu() {
             const counts = {};
-            PRODUCTS.forEach(p => { counts[p.key] = RAW.filter(o => (o.products || []).some(x => matchProduct(x.label, p))).length; });
+            PRODUCTS.forEach(p => { counts[p.key] = RAW.filter(o => (o.products || []).some(x => matchProduct(x, p))).length; });
             document.getElementById('submenu').innerHTML = PRODUCTS.map(p =>
                 '<button class="' + (p.key === CURRENT.key ? 'active' : '') + '" onclick="selectProduct(\'' + p.key + '\')">' +
                 p.icon + ' ' + p.name + '<span class="cnt">' + (counts[p.key] || 0) + '</span></button>').join('');
@@ -312,12 +328,12 @@
             const orders = RAW;
             ROWS = [];
             for (const o of orders) {
-                const lines = (o.products || []).filter(p => IS_KOMPSFIT(p.label));
+                const lines = (o.products || []).filter(p => IS_KOMPSFIT(p));
                 if (!lines.length) continue;
                 let variants = [], qty = 0;
                 for (const p of lines) {
                     // V pogledu VSE pred velikost pripišemo, za kateri izdelek gre.
-                    const own = CURRENT.all ? productOf(p.label) : CURRENT;
+                    const own = CURRENT.all ? productOf(p) : CURRENT;
                     const tag = CURRENT.all ? ((own && own.name) || '?') : '';
                     const withTag = (s) => tag ? (tag + (s ? ' · ' + s : '')) : s;
                     const noVar = CURRENT.all ? (own ? own.hasVar === false : false) : (CURRENT.hasVar === false);
@@ -341,7 +357,7 @@
                 // vse ostalo v istem paketu (ne izbrani izdelek)
                 const others = [];
                 for (const p of (o.products || [])) {
-                    if (matchProduct(p.label, CURRENT)) continue;
+                    if (matchProduct(p, CURRENT)) continue;
                     const nm = (p.label || '').replace(/\s*\(\d+[^)]*\)/g, '').replace(/^\s*\d+\s*[x×]\s*/i, '').trim();
                     const its = (p.items || []).map(it => [it.color, it.size].filter(Boolean).join(' · ')).filter(Boolean);
                     const n = (p.items || []).length || 1;
@@ -440,6 +456,26 @@
 
         // --- POLN SYNC NA ZAHTEVO (gumb ⚡): potegne vseh 14 dni iz Metakocke v bazo.
         // Tece na STREZNIKU (neodvisno od brskalnika), klient samo poizveduje stanje.
+
+        // [2026-08-26 Dejan] "Osveži" je prej samo znova prebral bazo — če je bil status
+        // v Metakocki pravkar spremenjen, ni pokazal nič novega. Zdaj najprej potegne
+        // sveže statuse zadnjih dni (kratek klic, ~30 s), šele nato prebere bazo.
+        // Za starejša naročila je še vedno pravi gumb "Poln sync" (vseh 30 dni).
+        async function osveziStatuse(btn) {
+            const orig = btn.innerHTML;
+            btn.disabled = true;
+            const t0 = Date.now();
+            const tik = setInterval(() => { btn.innerHTML = '⏳ ' + Math.round((Date.now() - t0) / 1000) + 's'; }, 1000);
+            try {
+                await fetch('/api/packing/orders?status=Odpremljen&limit=2000&_bg=1&force=1');
+            } catch (e) { /* tudi ob napaki prikazi, kar je v bazi */ }
+            clearInterval(tik);
+            await Promise.all([loadPacked(), loadNotes()]);
+            await load();
+            btn.innerHTML = '✅ ' + Math.round((Date.now() - t0) / 1000) + 's';
+            setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 2500);
+        }
+
         async function fullSync() {
             const btn = document.getElementById('fullSyncBtn');
             const orig = btn.innerHTML;
@@ -572,10 +608,10 @@
             const eur = cur !== 'EUR' ? ' <span class="order-price-eur">≈ ' + (parseFloat(row.total || 0) * (toEurRates[cur] || 1)).toFixed(2) + ' €</span>' : '';
             const prods = (o.products || []);
             const items = prods.map(p => {
-                const hit = matchProduct(p.label, CURRENT);
+                const hit = matchProduct(p, CURRENT);
                 // [2026-08-16 Dejan] Pri izdelku iz zavihka pisemo IME IZDELKA (KOMPSFIT),
                 // ne generickega "Majica" — sicer je zmedeno ob navadnih majicah.
-                const own = hit ? (productOf(p.label) || CURRENT) : null;
+                const own = hit ? (productOf(p) || CURRENT) : null;
                 const pname = own ? own.name : '';
                 const raw = (p.items || []).slice().sort((a, b) => (a.type || '').localeCompare(b.type || '') || (a.color || '').localeCompare(b.color || ''));
                 const grouped = [];
@@ -594,7 +630,7 @@
                             const qty = (it.count > 1 ? it.count : 1) + 'x ';
                             const name = hit
                                 ? qty + pname + (it.color ? ' ' + it.color : '')
-                                : qty + (it.color ? it.color + ' ' : '') + (it.type || '');
+                                : qty + (it.oznaka ? '<b class="oznaka">' + it.oznaka + '</b> ' : '') + (it.color ? it.color + ' ' : '') + (it.type || '');
                             return '<li class="item' + (hit ? ' hit' : '') + '">' +
                                 '<input type="checkbox" class="item-checkbox">' +
                                 (it.color ? '<div class="item-color" style="background:' + (colorHex[it.color] || '#ccc') + (it.color === 'Bela' ? ';border-color:#ccc' : '') + '"></div>' : '') +

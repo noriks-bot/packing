@@ -105,7 +105,7 @@ function upsertMany(orders) {
             const products = (o.products || []).map(p => ({
                 label: p.label || '',
                 code: p.code || '',
-                items: (p.items || []).slice(0, MAX_ITEMS).map(it => ({ type: it.type || '', color: it.color || '', size: it.size || '' }))
+                items: (p.items || []).slice(0, MAX_ITEMS).map(it => ({ type: it.type || '', color: it.color || '', size: it.size || '', oznaka: it.oznaka || '' }))
             }));
             stmt.run(String(id), date, String(o.orderTime || o.time || ''), String(o.customer || ''),
                      String(o.country || ''), String(o.status || ''), String(o.total || ''),
