@@ -302,7 +302,6 @@
     <nav class="topnav no-print">
         <div class="brand">📦 NORIKS</div>
         <div id="prodTabs" class="ptabs"></div>
-                <a href="/predpriprava.html">Predpriprava</a>
     </nav>
     <div class="header">
         <h1>📦 <span>Pakiranje</span> | NORIKS</h1>
@@ -798,18 +797,6 @@
             const status = document.getElementById('filter-status').value;
             
             let orders = window.allOrders || [];
-
-            // [2026-08-26 Dejan] Ta stran je "Majice & Bokserice". Topseller izdelki
-            // (KOMPSFIT, KOMZIPS, BUNION, ORTOPAS ...) imajo svoj zavihek Topsellers.
-            // Naročilo skrijemo SAMO, ce ne vsebuje nicesar drugega — ce ima poleg
-            // topsellerja tudi majico ali boksarice, mora ostati tu, ker se pakira skupaj.
-            // Locujemo po SIFRI izdelka, ne po imenu, da deluje na vseh trgih.
-            const TOPSELLER_CODES = /KOMPSFIT|KOMZIPS|BUNION|ORTOPAS|FISIOREST|KNEEFIX|KNEEHEAT|KIDSNEST|KIDNEST|SNORE|CLOUD|HUG|LIFT|CONTROLPRO|NORIKSHERS/i;
-            const jeSamoTopseller = (o) => {
-                const p = o.products || [];
-                if (!p.length) return false;
-                return p.every(x => TOPSELLER_CODES.test(String(x.code || x.label || '')));
-            };
             if (IZBRAN !== 'VSE') orders = orders.filter(o => glavniZavihek(o) === IZBRAN);
 
             if (selectedCountry) {
@@ -971,7 +958,6 @@
             { key: 'SNORE',    name: 'SNORE',     icon: '😴', sku: /SNORE/i },
             { key: 'FACELIFT', name: 'FACELIFT',  icon: '✨', sku: /LIFT/i },
             { key: 'HUGGER',   name: 'HUGGER',    icon: '🧣', sku: /HUG/i },
-            { key: 'OSTALO',   name: 'OSTALO',    icon: '📎', zadnji: true },
         ];
         let IZBRAN = 'VSE';
         function glavniZavihek(o) {
@@ -983,7 +969,17 @@
             const tip = String(((p.items || [])[0] || {}).type || '');
             const poTipu = IZDELKI.find(x => x.tip && x.tip.test(tip));
             if (poTipu) return poTipu.key;
-            return 'OSTALO';
+            // [2026-08-26 Dejan] Brez kosa "OSTALO": za vsako sifro, ki je ne poznamo,
+            // sam naredimo zavihek iz sifre (NORIKS-CONTROLPRO-M -> CONTROLPRO).
+            // Tako ima vsak izdelek, ki se dejansko prodaja, svoj zavihek.
+            if (code) {
+                const osnova = code.replace(/^NORIKS[-\s]*/i, '')
+                                   .replace(/-(XS|S|M|L|XL|2XL|3XL|4XL|5XL)$/i, '')
+                                   .replace(/-\d+(-\d+)*$/,'')
+                                   .split('-')[0].toUpperCase();
+                if (osnova) return osnova;
+            }
+            return 'BREZ ŠIFRE';
         }
         function izrisiZavihke() {
             const c = document.getElementById('prodTabs');
@@ -991,12 +987,17 @@
             const vsi = window.allOrders || [];
             const st = {};
             vsi.forEach(o => { const k = glavniZavihek(o); st[k] = (st[k] || 0) + 1; });
-            c.innerHTML = IZDELKI
-                .filter(x => x.all || st[x.key])
+            const znani = IZDELKI.filter(x => x.all || st[x.key]);
+            const znaniKljuci = new Set(IZDELKI.map(x => x.key));
+            const samodejni = Object.keys(st)
+                .filter(k => !znaniKljuci.has(k))
+                .sort((a, b) => st[b] - st[a])
+                .map(k => ({ key: k, name: k, icon: '🏷️' }));
+            c.innerHTML = znani.concat(samodejni)
                 .map(x => '<button class="ptab' + (IZBRAN === x.key ? ' aktiven' : '') + '" data-izd="' + x.key + '">' +
                           x.icon + ' ' + x.name + '<span class="pn">' + (x.all ? vsi.length : (st[x.key] || 0)) + '</span></button>').join('');
             c.querySelectorAll('[data-izd]').forEach(b => b.addEventListener('click', () => {
-                IZBRAN = b.dataset.izd; izrisiZavihke(); renderOrders();
+                IZBRAN = b.dataset.izd; izrisiZavihke(); filterByCountry();
             }));
         }
 
