@@ -379,7 +379,7 @@
         async function loadPackedOrders() {
             try {
                 const res = await fetch('/api/packing/packed-orders');
-                if (res.status === 401) { window.location.href = '/packing/login.html'; return; }
+                if (res.status === 401) { window.location.href = '/login.html'; return; }
                 packedOrders = await res.json();
             } catch(e) { console.error('Failed to load packed orders:', e); }
         }
@@ -409,7 +409,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orders: batch })
                 });
-                if (res.status === 401) window.location.href = '/packing/login.html';
+                if (res.status === 401) window.location.href = '/login.html';
             } catch(e) { console.error('Failed to save packed:', e); }
         }
         
@@ -422,7 +422,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orderId })
                 });
-                if (res.status === 401) window.location.href = '/packing/login.html';
+                if (res.status === 401) window.location.href = '/login.html';
             } catch(e) { console.error('Failed to unpack:', e); }
         }
         loadPackedOrders();
@@ -1044,6 +1044,12 @@
                     </div>
                     <ul class="items-list">
                         ${(order.products || order.items).map(product => {
+                        // [2026-08-26 Dejan] Oznako (FIT/ZIP) izracunamo TUDI tukaj, ne samo
+                        // ob razclembi na strezniku — starejsa narocila v predpomnilniku so
+                        // bila razclenjena pred to spremembo in oznake nimajo shranjene.
+                        const _sifra = String(product.code || product.label || '');
+                        const oznakaZa = /KOMPSFIT|FIT.?KOMPRES/i.test(_sifra) ? 'FIT'
+                                       : /KOMZIPS/i.test(_sifra) ? 'ZIP' : '';
                             const rawItems = (product.items || (Array.isArray(product) ? product : [product])).slice().sort((a, b) => (a.type || '').localeCompare(b.type || '') || (a.color || '').localeCompare(b.color || ''));
                             const grouped = [];
                             rawItems.forEach(item => {
@@ -1060,7 +1066,7 @@
                                 <li class="item ${hasWarning ? 'item-warning' : ''}">
                                     <input type="checkbox" class="item-checkbox">
                                     ${item.color ? `<div class="item-color" style="background: ${colorHex[item.color] || item.colorHex || '#ccc'}; ${item.color === 'Bela' ? 'border-color: #ccc;' : ''}"></div>` : ''}
-                                    <span class="item-name">${item.count > 1 ? item.count + 'x ' : ''}${item.oznaka ? '<b class="oznaka">' + item.oznaka + '</b> ' : ''}${item.color ? item.color + ' ' : ''}${item.type}</span>
+                                    <span class="item-name">${item.count > 1 ? item.count + 'x ' : ''}${(item.oznaka || oznakaZa) ? '<b class="oznaka">' + (item.oznaka || oznakaZa) + '</b> ' : ''}${item.color ? item.color + ' ' : ''}${item.type}</span>
                                     <span class="item-size">${item.size}</span>
                                     ${hasWarning ? `<span class="item-warning-badge" title="${item.warnings.join('; ')}">⚠️</span>` : ''}
                                 </li>
