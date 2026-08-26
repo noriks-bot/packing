@@ -2592,8 +2592,14 @@ function parseDocDesc(docDesc, productCode, productName) {
             } else if (ageRange) {
                 size = rawVal.replace(/\s+/g, ' ').trim();
             } else if (COLOR_ONLY_RE.test(rawVal.replace(/\s+/g, ' ').trim())) {
+                // [2026-08-26 Dejan] Prej smo tu naredili samo veliko zacetnico, zato so
+                // madzarske/hrvaske oblike ("bézs", "sötétkék") koncale na kartici surove.
+                // Vrednost gre skozi isti prevajalnik kot vse ostale barve.
                 const c = rawVal.replace(/\s+/g, ' ').trim();
-                color = c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
+                const prevedenaBarva = translateColorServer(c);
+                color = (prevedenaBarva && prevedenaBarva !== c)
+                    ? prevedenaBarva
+                    : c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
             } else if (_side) {
                 // pozicija vsebuje samo stran (npr. "1 : Lijeva") — to je veljaven podatek
             } else {
