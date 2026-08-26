@@ -1212,7 +1212,13 @@ async function enrichOrtoOrdersFromWC(orders) {
     
     function translateWcColor(raw) {
         const lower = (raw || '').trim().toLowerCase();
-        return wcColorMap[lower] || raw.trim();
+        if (wcColorMap[lower]) return wcColorMap[lower];
+        // [2026-08-26 Dejan] Ta slovar je krajsi od glavnega in ni poznal moskih
+        // oblik ("czarny", "zielony", "granatowy") — te so kot barva koncale na
+        // kartici surove, brez opozorila, ker enrichment postavke oznaci kot urejene.
+        // Zato pademo na GLAVNI prevajalnik, ki pozna sklone in vse trge.
+        const glavni = translateColorServer(raw);
+        return glavni || raw.trim();
     }
     
     function translateWcType(raw) {
