@@ -275,6 +275,13 @@
             .oznaka { color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:0 4px; font-size:11px; font-weight:800; letter-spacing:.02em; }
             .topseller-note { margin: 0 0 8px; font-size: 12px; }
         .topseller-note a { color:#6b21a8; background:#f3e8ff; border:1px solid #e9d5ff; border-radius:6px; padding:4px 10px; text-decoration:none; display:inline-block; font-weight:600; }
+            .ptabs { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+        .ptab { display:inline-flex; align-items:center; gap:6px; border:1px solid #e5e7eb; background:#fff; color:#374151;
+                font:inherit; font-size:12px; font-weight:600; padding:6px 11px; border-radius:999px; cursor:pointer; }
+        .ptab:hover { background:#f9fafb; }
+        .ptab.aktiven { background:#111827; border-color:#111827; color:#fff; }
+        .ptab .pn { font-size:11px; font-weight:700; background:rgba(17,24,39,.08); padding:1px 6px; border-radius:999px; }
+        .ptab.aktiven .pn { background:rgba(255,255,255,.2); }
     </style>
 </head>
 <body>
@@ -300,6 +307,7 @@
     </div>
     
     <div class="container">
+        <div id="prodTabs" class="ptabs no-print"></div>
         <div class="filters no-print">
             <label>
                 Status:
@@ -726,6 +734,7 @@
                 }
                 
                 window.allOrders = data.orders || [];
+                izrisiZavihke();
                 // Ce je response stale (cache fallback), NE updejtaj seen tracking-a.
                 // Drugace bi stale cache lahko "izgubil" nove order-je ki so v knownOrderIds-u.
                 if (!data.stale) {
@@ -783,18 +792,13 @@
             // Naročilo skrijemo SAMO, ce ne vsebuje nicesar drugega — ce ima poleg
             // topsellerja tudi majico ali boksarice, mora ostati tu, ker se pakira skupaj.
             // Locujemo po SIFRI izdelka, ne po imenu, da deluje na vseh trgih.
-            const TOPSELLER_CODES = /KOMPSFIT|KOMZIPS|BUNION|ORTOPAS|FISIOREST|KNEEFIX|KNEEHEAT|KIDSNEST|KIDNEST|SNORE|CLOUD|CONTROLPRO|NORIKSHERS/i;
+            const TOPSELLER_CODES = /KOMPSFIT|KOMZIPS|BUNION|ORTOPAS|FISIOREST|KNEEFIX|KNEEHEAT|KIDSNEST|KIDNEST|SNORE|CLOUD|HUG|LIFT|CONTROLPRO|NORIKSHERS/i;
             const jeSamoTopseller = (o) => {
                 const p = o.products || [];
                 if (!p.length) return false;
                 return p.every(x => TOPSELLER_CODES.test(String(x.code || x.label || '')));
             };
-            const skritih = orders.filter(jeSamoTopseller).length;
-            orders = orders.filter(o => !jeSamoTopseller(o));
-            const opomnik = document.getElementById('topsellerNote');
-            if (opomnik) opomnik.innerHTML = skritih
-                ? '<a href="/topsellers.html">' + skritih + ' naročil je samo s topseller izdelki — odpri Topsellers &rarr;</a>'
-                : '';
+            if (IZBRAN !== 'VSE') orders = orders.filter(o => glavniZavihek(o) === IZBRAN);
 
             if (selectedCountry) {
                 orders = orders.filter(o => o.country === selectedCountry);
@@ -930,6 +934,59 @@
         }
         // Naslov narocila v Metakocki. Ce se oblika kdaj spremeni, popravi SAMO to vrstico.
         const MK_ORDER_URL = (mkId) => 'https://main.metakocka.si/apps/ordermanagement/orders/all/' + encodeURIComponent(mkId);
+
+
+        // ── ENOTNI ZAVIHKI PO IZDELKU ──────────────────────────────────────────
+        // [2026-08-26 Dejan] Ena raven: VSE / MAJICE / BOKSERICE / KOMPSFIT / ...
+        // Vsako naročilo pripada TOČNO ENEMU zavihku — tistemu od svojega GLAVNEGA
+        // izdelka, kar je PRVI izdelek v naročilu. Vse ostalo v paketu so dodatki.
+        // Razvrščamo po ŠIFRI (SKU); ime je nezanesljivo (npr. NORIKS-CLOUD ima v
+        // imenu "Ortopedski jastuk", kar je izraz iz KIDSNEST).
+        const IZDELKI = [
+            { key: 'VSE',      name: 'VSE',       icon: '📦', all: true },
+            { key: 'MAJICE',   name: 'MAJICE',    icon: '👕', tip: /^Majic/i },
+            { key: 'BOKSERICE',name: 'BOKSERICE', icon: '🩲', tip: /^Boks/i },
+            { key: 'NOGAVICE', name: 'NOGAVICE',  icon: '🧦', tip: /^Nogavic/i },
+            { key: 'KOMPSFIT', name: 'KOMPSFIT',  icon: '🔥', sku: /KOMPSFIT|FIT-KOMPRES/i },
+            { key: 'ORTOPAS',  name: 'ORTOPAS',   icon: '🎗️', sku: /ORTOPAS/i },
+            { key: 'KOMZIPS',  name: 'KOMZIPS',   icon: '🧦', sku: /KOMZIPS/i },
+            { key: 'BUNION',   name: 'BUNION',    icon: '🦶', sku: /BUNION/i },
+            { key: 'FISIOREST',name: 'FISIOREST', icon: '💆', sku: /FISIOREST/i },
+            { key: 'KNEEFIX',  name: 'KNEEFIX',   icon: '🦵', sku: /KNEEFIX/i },
+            { key: 'KNEEHEAT', name: 'KNEEHEAT',  icon: '🔥', sku: /KNEEHEAT/i },
+            { key: 'CLOUD',    name: 'CLOUD',     icon: '☁️', sku: /CLOUD/i },
+            { key: 'KIDSNEST', name: 'KIDSNEST',  icon: '🌙', sku: /KIDSNEST|KIDNEST/i },
+            { key: 'SNORE',    name: 'SNORE',     icon: '😴', sku: /SNORE/i },
+            { key: 'FACELIFT', name: 'FACELIFT',  icon: '✨', sku: /LIFT/i },
+            { key: 'HUGGER',   name: 'HUGGER',    icon: '🧣', sku: /HUG/i },
+            { key: 'OSTALO',   name: 'OSTALO',    icon: '📎', zadnji: true },
+        ];
+        let IZBRAN = 'VSE';
+        function glavniZavihek(o) {
+            const p = (o.products || [])[0];
+            if (!p) return 'OSTALO';
+            const code = String(p.code || '');
+            const poSifri = IZDELKI.find(x => x.sku && x.sku.test(code));
+            if (poSifri) return poSifri.key;
+            const tip = String(((p.items || [])[0] || {}).type || '');
+            const poTipu = IZDELKI.find(x => x.tip && x.tip.test(tip));
+            if (poTipu) return poTipu.key;
+            return 'OSTALO';
+        }
+        function izrisiZavihke() {
+            const c = document.getElementById('prodTabs');
+            if (!c) return;
+            const vsi = window.allOrders || [];
+            const st = {};
+            vsi.forEach(o => { const k = glavniZavihek(o); st[k] = (st[k] || 0) + 1; });
+            c.innerHTML = IZDELKI
+                .filter(x => x.all || st[x.key])
+                .map(x => '<button class="ptab' + (IZBRAN === x.key ? ' aktiven' : '') + '" data-izd="' + x.key + '">' +
+                          x.icon + ' ' + x.name + '<span class="pn">' + (x.all ? vsi.length : (st[x.key] || 0)) + '</span></button>').join('');
+            c.querySelectorAll('[data-izd]').forEach(b => b.addEventListener('click', () => {
+                IZBRAN = b.dataset.izd; izrisiZavihke(); renderOrders();
+            }));
+        }
 
         function renderOrderCard(order, isPacked) {
             const isSelected = selectedOrderIds.has(order.id);

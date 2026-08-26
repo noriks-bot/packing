@@ -1709,7 +1709,7 @@ app.get('/api/packing/orders', async (req, res) => {
                     // [2026-08-12] Izdelki BREZ variacij (BUNION, ORTOPAS, FISIOREST, KIDSNEST, KNEEFIX,
                     // NORIKSHERS-*): nimajo barve/velikosti, zato "Ni bilo mogoce parsati" ni napaka.
                     // Kolicina = amount x _bundle_pairs (ce je v doc_desc), sicer amount.
-                    const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KIDSNEST|KIDNEST|KNEEFIX|KNEEHEAT|SNORE|CLOUD|CONTROLPRO|NORIKSHERS/;
+                    const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KIDSNEST|KIDNEST|KNEEFIX|KNEEHEAT|SNORE|CLOUD|HUG|LIFT|CONTROLPRO|NORIKSHERS/;
                     if (NOVAR_CODES.test(code)) {
                         const bp = (docDesc || '').match(/_bundle_pairs\s*:\s*(\d+)/i);
                         const per = bp ? (parseInt(bp[1], 10) || 1) : 1;

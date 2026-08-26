@@ -226,6 +226,9 @@
         const PRODUCTS = [
             // [2026-08-14 Dejan] Zavihek VSE = vsa naročila, ki vsebujejo KATERIKOLI od spodnjih izdelkov.
             { key: 'VSE', name: 'VSE', hasVar: true, icon: '📦', all: true, re: /$^/ },
+            { key: 'MAJICE',   name: 'MAJICE',    hasVar: true,  icon: '👕', re: /$^/, tip: /^Majic/i },
+            { key: 'BOKSERICE',name: 'BOKSERICE', hasVar: true,  icon: '🩲', re: /$^/, tip: /^Boks/i },
+            { key: 'NOGAVICE', name: 'NOGAVICE',  hasVar: true,  icon: '🧦', re: /$^/, tip: /^Nogavic/i },
             { key: 'KOMPSFIT', sku: /KOMPSFIT|FIT-KOMPRES/i,  name: 'KOMPSFIT',  hasVar: true,  icon: '🔥', re: /kompsfit|fit\s*kompres/i, not: /(čarap|carap|nogavic|socks|zokni|ponož|skarpet|ciorap)/i },
             { key: 'ORTOPAS', sku: /ORTOPAS/i, hasVar: false,   name: 'ORTOPAS',   icon: '🎗️', re: /ortopas|ortopedski pojas|pojas za le|derék|záda|plecy|spate|schiena|πλάτ|hrbet|opasek|pas za/i },
             { key: 'KOMZIPS', sku: /KOMZIPS/i,   name: 'KOMZIPS',   hasVar: true,  icon: '🧦', re: /komzips|kompresijske čarape|zatvarač|kompres.*(zokni|ponož|ciorap|skarpet|calze|κάλτσ)/i },
@@ -236,6 +239,11 @@
             // "ortopedski jastuk" — zato ga je zavihek KIDSNEST pobral k sebi. Stoji PRED
             // njim, ker productOf vrne prvi zadetek, KIDSNEST pa ga izrecno izloci.
             { key: 'CLOUD', sku: /CLOUD/i,    hasVar: false,   name: 'CLOUD',     icon: '☁️', re: /noriks[\s-]*cloud|jastuk za koljena|blazina za kolena|polštář mezi kolena|poduszka między kolana|perna para joelhos|pernă pentru genunchi|párna térd|μαξιλάρι για γόνατα|knie[\s-]?kissen|knee pillow/i },
+            { key: 'KNEEHEAT', name: 'KNEEHEAT',  hasVar: false, icon: '🔥', re: /kneeheat|grija.*koljen|grelnik kolen/i, sku: /KNEEHEAT/i },
+            { key: 'SNORE',    name: 'SNORE',     hasVar: false, icon: '😴', re: /hrkanj|smrčan|snore|schnarch/i, sku: /SNORE/i },
+            { key: 'FACELIFT', name: 'FACELIFT',  hasVar: false, icon: '💆', re: /facelift|kolagenska traka/i, sku: /LIFT/i },
+            { key: 'HUGGER',   name: 'HUGGER',    hasVar: false, icon: '🧣', re: /hugger|termofor/i, sku: /HUG/i },
+            { key: 'OSTALO',   name: 'OSTALO',    hasVar: true,  icon: '📦', re: /$^/, zadnji: true },
             { key: 'KIDSNEST', sku: /KIDSNEST|KIDNEST/i, hasVar: false,  name: 'KIDSNEST',  icon: '🌙', re: /kidsnest|kidnest|ortopedski jastuk|vzglavnik|párna|polštář|poduszka|perna|cuscino|μαξιλάρ/i, not: /noriks[\s-]*cloud|za koljena|za kolena|mezi kolena|między kolana|genunchi|γόνατα|knie/i }
         ];
         let CURRENT = PRODUCTS.find(p => p.key === 'VSE') || PRODUCTS[0]; // [2026-08-18 Dejan] privzeto VSE
@@ -245,6 +253,25 @@
         // ima v vzorcu KIDSNEST, zato je CLOUD koncal v napacnem zavihku. Sifra je
         // enolicna in enaka na vseh trgih. Ime uporabimo samo, ce sifre ni.
         const VSI_SKU = PRODUCTS.filter(x => x.sku).map(x => x.sku);
+        const zavihek = (k) => PRODUCTS.find(x => x.key === k) || null;
+
+        // [2026-08-26 Dejan] ENA RAVEN ZAVIHKOV. Vsako narocilo pripada TOCNO ENEMU
+        // zavihku — tistemu od svojega GLAVNEGA izdelka, kar je PRVI izdelek v narocilu
+        // (tako jih zapise Metakocka). Vse ostalo v paketu so dodatki in na razvrstitev
+        // ne vplivajo. Zato se nobeno narocilo ne pojavi dvakrat in nobeno ne izpade.
+        function glavniIzdelek(o) {
+            const p = (o.products || [])[0];
+            if (!p) return zavihek('OSTALO');
+            const code = String(p.code || '');
+            const poSifri = PRODUCTS.find(x => x.sku && x.sku.test(code));
+            if (poSifri) return poSifri;
+            const tip = String(((p.items || [])[0] || {}).type || '');
+            const poTipu = PRODUCTS.find(x => x.tip && x.tip.test(tip));
+            if (poTipu) return poTipu;
+            const poImenu = PRODUCTS.find(x => !x.all && !x.zadnji && x.re && x.re.source !== '$^' && x.re.test(p.label || ''));
+            return poImenu || zavihek('OSTALO');
+        }
+        const glavniProd = (o) => (o.products || [])[0] || null;
         const matchProduct = (izd, p) => {
             if (p.all) return PRODUCTS.some(x => !x.all && matchProduct(izd, x));
             const code  = String((izd && izd.code) || '');
@@ -311,7 +338,7 @@
         let RAW = [];
         function buildSubmenu() {
             const counts = {};
-            PRODUCTS.forEach(p => { counts[p.key] = RAW.filter(o => (o.products || []).some(x => matchProduct(x, p))).length; });
+            PRODUCTS.forEach(p => { counts[p.key] = p.all ? RAW.length : RAW.filter(o => glavniIzdelek(o) === p).length; });
             document.getElementById('submenu').innerHTML = PRODUCTS.map(p =>
                 '<button class="' + (p.key === CURRENT.key ? 'active' : '') + '" onclick="selectProduct(\'' + p.key + '\')">' +
                 p.icon + ' ' + p.name + '<span class="cnt">' + (counts[p.key] || 0) + '</span></button>').join('');
@@ -328,15 +355,18 @@
             const orders = RAW;
             ROWS = [];
             for (const o of orders) {
-                const lines = (o.products || []).filter(p => IS_KOMPSFIT(p));
+                const zav = glavniIzdelek(o);
+                if (!CURRENT.all && zav !== CURRENT) continue;
+                const glavni = glavniProd(o);
+                const lines = glavni ? [glavni] : [];
                 if (!lines.length) continue;
                 let variants = [], qty = 0;
                 for (const p of lines) {
                     // V pogledu VSE pred velikost pripišemo, za kateri izdelek gre.
-                    const own = CURRENT.all ? productOf(p) : CURRENT;
+                    const own = zav || productOf(p) || CURRENT;
                     const tag = CURRENT.all ? ((own && own.name) || '?') : '';
                     const withTag = (s) => tag ? (tag + (s ? ' · ' + s : '')) : s;
-                    const noVar = CURRENT.all ? (own ? own.hasVar === false : false) : (CURRENT.hasVar === false);
+                    const noVar = own ? own.hasVar === false : false;
                     const items = p.items || [];
                     if (items.length) {
                         if (noVar) { qty += items.length; if (CURRENT.all) variants.push({ t: withTag(''), plain: true }); }
@@ -357,13 +387,13 @@
                 // vse ostalo v istem paketu (ne izbrani izdelek)
                 const others = [];
                 for (const p of (o.products || [])) {
-                    if (matchProduct(p, CURRENT)) continue;
+                    if (p === glavni) continue;
                     const nm = (p.label || '').replace(/\s*\(\d+[^)]*\)/g, '').replace(/^\s*\d+\s*[x×]\s*/i, '').trim();
                     const its = (p.items || []).map(it => [it.color, it.size].filter(Boolean).join(' · ')).filter(Boolean);
                     const n = (p.items || []).length || 1;
                     others.push({ name: nm, n, its });
                 }
-                if (CURRENT.hasVar === false) variants = [{ t: qty + '× kos', plain: true }];
+                if (zav && zav.hasVar === false) variants = [{ t: qty + '× kos', plain: true }];
                 ROWS.push({ o, others, id: o.id, wcRef: o._wcRef || o.wcRef || '', date: o.orderDate || o.date || '', time: o.orderTime || o.time || '', customer: o.customer || '', country: o.country || '', status: o.status || '', total: o.total || '', currency: o.currency || '', qty, variants });
             }
             ROWS.sort((a,b) => (b.date||'').localeCompare(a.date||''));
