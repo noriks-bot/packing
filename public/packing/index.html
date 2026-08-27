@@ -486,6 +486,8 @@
                 <div id="warning-stats" style="display:none;" class="warning-count-header">⚠️ <span id="warning-count">0</span> z opozorili</div>
             </div>
             <button class="btn btn-secondary" onclick="refreshOrders()">🔄 Osveži</button>
+            <button class="btn btn-secondary" id="fullSyncBtn" onclick="polnSync(this)"
+                    title="Potegne vseh 30 dni iz Metakocke in osveži statuse — traja ~6 min">⚡ Poln sync</button>
             <button class="btn btn-secondary" id="toggle-packed-btn" onclick="toggleShowPacked()" style="display:none;">👁 Pokaži spakirane</button>
             <button class="btn btn-primary" onclick="printSelected()">🖨️ Natisni</button>
         </div>
@@ -899,6 +901,41 @@
                 localStorage.setItem("packing_notes_migrated", "1");
                 console.log("[Notes migration] OK");
             } catch(e) { console.error("[Notes migration] failed:", e); }
+        }
+
+
+        // [2026-08-26 Dejan] POLN SYNC: potegne vseh 30 dni iz Metakocke. Gumb je bil prej
+        // samo na strani Topsellers, ki je ni vec v meniju — brez njega ni bilo nacina,
+        // da bi skladisce takoj potegnilo statuse starejsih narocil.
+        async function polnSync(btn) {
+            const orig = btn.innerHTML;
+            btn.disabled = true;
+            const t0 = Date.now();
+            try {
+                const r = await fetch('/api/packing/topsellers-sync');
+                if (r.status === 401) { window.location.href = '/login.html'; return; }
+                const j = await r.json();
+                if (j.skipped) {
+                    btn.innerHTML = '✅ Sveže (' + j.agoMin + ' min)';
+                    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 3000);
+                    return;
+                }
+                const rok = t0 + 15 * 60 * 1000;
+                while (Date.now() < rok) {
+                    await new Promise(res => setTimeout(res, 5000));
+                    btn.innerHTML = '⏳ ' + Math.round((Date.now() - t0) / 1000) + 's';
+                    let st = null;
+                    try { st = await (await fetch('/api/packing/topsellers-sync-status')).json(); } catch (e) {}
+                    if (st && !st.running) {
+                        await refreshOrders();
+                        btn.innerHTML = '✅ Končano (' + Math.round((Date.now() - t0) / 1000) + 's)';
+                        break;
+                    }
+                }
+            } catch (e) {
+                btn.innerHTML = '✕ Napaka';
+            }
+            setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 4000);
         }
 
         async function refreshOrders() {
