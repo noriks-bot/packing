@@ -926,9 +926,15 @@
                     btn.innerHTML = '⏳ ' + Math.round((Date.now() - t0) / 1000) + 's';
                     let st = null;
                     try { st = await (await fetch('/api/packing/topsellers-sync-status')).json(); } catch (e) {}
+                    if (st && st.napredek) {
+                        const p = st.napredek;
+                        btn.innerHTML = '⏳ dan ' + p.koncano + '/' + p.skupaj +
+                                        (p.neuspeli ? ' (' + p.neuspeli + ' ponovno)' : '');
+                    }
                     if (st && !st.running) {
                         await refreshOrders();
-                        btn.innerHTML = '✅ Končano (' + Math.round((Date.now() - t0) / 1000) + 's)';
+                        btn.innerHTML = (st.izid && /^OK/.test(st.izid)) ? '✅ Končano' : '⚠ ' + (st.izid || 'končano');
+                        if (st.izid && !/^OK/.test(st.izid)) console.warn('[sync]', st.izid);
                         break;
                     }
                 }
@@ -946,7 +952,7 @@
             const status = document.getElementById('filter-status').value;
             
             try {
-                const response = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}`);
+                const response = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&days=30&limit=20000`);
                 const data = await response.json();
                 
                 if (data.error) {
@@ -1320,7 +1326,7 @@
             
             for (const status of statuses) {
                 try {
-                    const res = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}`);
+                    const res = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&days=30&limit=20000`);
                     const data = await res.json();
                     for (const order of (data.orders || [])) {
                         let orderHasWarning = false;

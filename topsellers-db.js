@@ -43,7 +43,8 @@ function db() {
             wc_id       TEXT,
             mk_id       TEXT,
             eshop       TEXT,
-            buyer_ord   TEXT
+            buyer_ord   TEXT,
+            shipped_date TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date);
         CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -55,7 +56,7 @@ function db() {
         );
     `);
     // [2026-08-25 Dejan] Migracija obstojece baze: gumba do WooCommerce in Metakocke.
-    for (const col of ['wc_id', 'mk_id', 'eshop', 'buyer_ord']) {
+    for (const col of ['wc_id', 'mk_id', 'eshop', 'buyer_ord', 'shipped_date']) {
         try { _db.exec(`ALTER TABLE orders ADD COLUMN ${col} TEXT`); } catch (_) {}
     }
     try { _db.exec('PRAGMA journal_mode = WAL'); } catch (_) {}
@@ -79,8 +80,8 @@ function upsertMany(orders) {
     if (!Array.isArray(orders) || !orders.length) return { inserted: 0, skipped: 0 };
     const d = db();
     const stmt = d.prepare(`
-        INSERT INTO orders (id, order_date, order_time, customer, country, status, total, currency, products, updated_at, wc_id, mk_id, eshop, buyer_ord)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO orders (id, order_date, order_time, customer, country, status, total, currency, products, updated_at, wc_id, mk_id, eshop, buyer_ord, shipped_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
             order_date = excluded.order_date, order_time = excluded.order_time,
             customer = excluded.customer, country = excluded.country, status = excluded.status,
@@ -89,7 +90,8 @@ function upsertMany(orders) {
             wc_id = COALESCE(NULLIF(excluded.wc_id, ''), orders.wc_id),
             mk_id = COALESCE(NULLIF(excluded.mk_id, ''), orders.mk_id),
             eshop = COALESCE(NULLIF(excluded.eshop, ''), orders.eshop),
-            buyer_ord = COALESCE(NULLIF(excluded.buyer_ord, ''), orders.buyer_ord)
+            buyer_ord = COALESCE(NULLIF(excluded.buyer_ord, ''), orders.buyer_ord),
+            shipped_date = COALESCE(NULLIF(excluded.shipped_date, ''), orders.shipped_date)
     `);
     const del = d.prepare('DELETE FROM orders WHERE id = ?');
     const now = new Date().toISOString();
@@ -133,8 +135,18 @@ function getOrders({ days = KEEP_DAYS, status = null, limit = 20000 } = {}) {
         id: r.id, customer: r.customer, country: r.country, status: r.status,
         date: r.order_date, time: r.order_time, orderDate: r.order_date, orderTime: r.order_time,
         total: r.total, currency: r.currency,
-        wcId: r.wc_id || '', mkId: r.mk_id || '', eshop: r.eshop || '', buyerOrder: r.buyer_ord || '',
-        products: (() => { try { return JSON.parse(r.products || '[]'); } catch (_) { return []; } })()
+        wcId: r.wc_id || '', mkId: r.mk_id || '', eshop: r.eshop || '', eshopUrl: r.eshop || '',
+        buyerOrder: r.buyer_ord || '', shippedDate: r.shipped_date || '',
+        isExchange: /menjav|zamjen|zamen|csere|wymian|schimb|\u03b1\u03bd\u03c4\u03b1\u03bb\u03bb\u03b1\u03b3|cambio|umtausch|exchange/i.test(String(r.buyer_ord || '')),
+        products: (() => { try { return JSON.parse(r.products || '[]'); } catch (_) { return []; } })(),
+        // [2026-08-27 Dejan] Glavna stran pricakuje TUDI ravni seznam `items` (tako ga
+        // sestavi obicajna pot iz Metakocke). Brez njega izris pade z "Cannot read
+        // properties of undefined (reading 'forEach')". Baza mora vracati ISTO obliko
+        // kot predpomnilnik — sicer se stran obnasa razlicno glede na vir podatkov.
+        items: (() => {
+            try { return JSON.parse(r.products || '[]').map(p => p.items || []); }
+            catch (_) { return []; }
+        })()
     }));
 }
 

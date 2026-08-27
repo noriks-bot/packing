@@ -3313,6 +3313,76 @@ async function fetchOneDayIntoRolling(day) {
         return false;
     } finally { LONG_WARMUP_RUNNING = false; }
 }
+
+// [2026-08-27 Dejan] POLN SYNC PO DNEVIH — zamenjava za en sam 30-dnevni zahtevek.
+// Zakaj: en zahtevek je bil ~194 strani; ce je padel pri 150., ni bilo nicesar, in
+// 27.8. je tiho odnehal po 14 min brez zapisanega razloga. Po dnevih vsak dan pristane
+// v bazi TAKOJ, delni napredek se ohrani, neuspel dan se ponovi SAM (do 3x).
+// KLJUCNO: kratek odgovor "stale/refreshing" (ozadje ravno vlece isti dan) se NE sme
+// steti za uspeh — prav to je 27.8. pustilo 18.8. in 13.8. neosvezena.
+async function backfillPoDnevih(dni) {
+    const N = Math.min(dni || ROTATE_DAYS, PACKING_DAYS_MAX);
+    // pocakaj na redno osvezevanje, da si ne skacemo v zelje
+    for (let i = 0; i < 60 && (LONG_WARMUP_RUNNING || BACKGROUND_WARMUP_RUNNING); i++) {
+        await new Promise(r => setTimeout(r, 2000));
+    }
+    if (LONG_WARMUP_RUNNING) { tsdb.setMeta('lastFullSyncResult', 'preskocen: sync ze tece'); return; }
+    LONG_WARMUP_RUNNING = true;
+    const t0 = Date.now();
+    let uspelo = 0; const neuspeli = [];
+    try {
+        for (let i = 0; i < N; i++) {
+            const dan = tsdb.dayStr(-i);
+            let ok = false;
+            for (let poskus = 1; poskus <= 3 && !ok; poskus++) {
+                ok = await potegniDan(dan);
+                if (!ok && poskus < 3) await new Promise(r => setTimeout(r, 6000));
+            }
+            if (ok) uspelo++; else neuspeli.push(dan);
+            tsdb.setMeta('syncNapredek', JSON.stringify({
+                skupaj: N, koncano: i + 1, dan, uspelo, neuspeli: neuspeli.length,
+                sekund: Math.round((Date.now() - t0) / 1000)
+            }));
+            await new Promise(r => setTimeout(r, 1500));
+        }
+        const sek = Math.round((Date.now() - t0) / 1000);
+        tsdb.setMeta('lastFullSync', new Date().toISOString());
+        tsdb.setMeta('lastFullSyncResult', neuspeli.length
+            ? `KONCANO z opozorilom — ${uspelo}/${N} dni, ${sek} s; NEUSPELI: ${neuspeli.join(', ')}`
+            : `OK — ${uspelo}/${N} dni, ${sek} s`);
+        console.log('[TopsellersDB] Sync po dnevih: ' + uspelo + '/' + N + ' dni v ' + sek + ' s' +
+                    (neuspeli.length ? ' | neuspeli: ' + neuspeli.join(', ') : ''));
+    } catch (e) {
+        tsdb.setMeta('lastFullSyncResult', 'NAPAKA: ' + e.message);
+        console.error('[TopsellersDB] Sync po dnevih padel:', e.message);
+    } finally {
+        LONG_WARMUP_RUNNING = false;
+        tsdb.setMeta('syncNapredek', '');
+    }
+}
+
+// En dan. Vrne true SAMO, ce smo res dobili sveze podatke (ne stale odgovora).
+function potegniDan(dan) {
+    return new Promise((resolve) => {
+        const mockReq = { query: { status: '', limit: '5000', date: dan, _bg: '1', force: '1' },
+                          method: 'GET', url: `/api/packing/orders?date=${dan}&_bg=1&force=1` };
+        let koncano = false;
+        const konec = (v) => { if (!koncano) { koncano = true; resolve(v); } };
+        const mockRes = { setHeader: () => {}, status: function (c) { this._s = c; return this; },
+            json: function (d) {
+                const sveze = d && Array.isArray(d.orders) && d.orders.length > 0 && !d.stale && !d.refreshing;
+                if (!sveze) console.log('[TopsellersDB] dan ' + dan + ' ni dal svezih podatkov' +
+                                        (d && d.stale ? ' (stale — ozadje ga ravno vlece)' : ''));
+                konec(!!sveze);
+            } };
+        const stack = (app._router && app._router.stack) || [];
+        const route = stack.find(l => l.route && l.route.path === '/api/packing/orders');
+        if (!route) return konec(false);
+        Promise.resolve(route.route.stack[0].handle(mockReq, mockRes, () => {})).catch(() => konec(false));
+        setTimeout(() => konec(false), 5 * 60 * 1000);
+    });
+}
+
 async function maintainRolling() {
     const cov = tsdb.coverage(ROLLING_DAYS);
     // 1) POLNI 14-dnevni uvoz: samo ce je baza prazna / manjka vec kot pol okna. Max 1x/24h.
@@ -3419,9 +3489,9 @@ app.get('/api/packing/topsellers-resync', (req, res) => {
     tsdb.setMeta('lastFullSyncTs', String(Date.now()));
     tsdb.setMeta('lastFullSyncResult', 'tece...');
     // Cel 30-dnevni prikaz (prej samo 14 dni -> starejsa narocila gumb ni osvezil).
-    backfillRolling(ROTATE_DAYS, { manual: true })
-        .then(() => tsdb.setMeta('lastFullSync', new Date().toISOString()))
-        .catch(() => {});
+    backfillPoDnevih(ROTATE_DAYS).catch((e) => {
+        tsdb.setMeta('lastFullSyncResult', 'NAPAKA: ' + e.message);
+    });
     res.json({ started: true });
 });
 
