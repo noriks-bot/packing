@@ -1020,7 +1020,10 @@
             Object.keys(st).forEach(k => { if (!videni.includes(k)) videni.push(k); });
             try { localStorage.setItem('packing-videni-izdelki', JSON.stringify(videni)); } catch (e) {}
 
-            const znani = IZDELKI.filter(x => x.all || st[x.key] || videni.includes(x.key));
+            // [2026-08-26 Dejan] Vsi NASI izdelki so vedno v meniju, tudi ce trenutno nimajo
+            // nobenega narocila (takrat pise 0). Sicer bi izdelek "izginil" in nihce ne bi
+            // vedel, da obstaja — npr. HUGGER, ki ima naročili v statusu TEST.
+            const znani = IZDELKI.slice();
             const znaniKljuci = new Set(IZDELKI.map(x => x.key));
             const samodejni = [...new Set([...Object.keys(st), ...videni])]
                 .filter(k => !znaniKljuci.has(k))
