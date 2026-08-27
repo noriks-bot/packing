@@ -2586,6 +2586,42 @@ function parseDocDesc(docDesc, productCode, productName) {
             .replace(/_noriks_upsell_pieces\s*:.*$/is, '')
             .replace(/\s+Discount\s*:.*$/is, '')
             .trim();
+        // [2026-08-26 Dejan] KLICNI CENTER / starter paket: pozicije so oblike
+        //   "1 : Majica: Fehér  2 : Majica: 2XL  3 : Majica: Fehér  4 : Majica: 2XL"
+        //   torej "N : <Tip>: <vrednost>", kjer se BARVA in VELIKOST izmenjujeta.
+        //   Prej je to padlo v opozorilo, cetudi je podatek popoln (2 majici: bela 2XL).
+        //   Pare sestavimo SAMO, ce je barv in velikosti enako — sicer raje opozorimo.
+        {
+            const TIP_POS_RE = /(\d+)\s*:\s*([^:_]+?)\s*:\s*((?:(?!\s+\d+\s*:)(?!\s+_[a-zA-Z])[^:_])+)/g;
+            const JE_VELIKOST = /^(?:[\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?|\d{2,3}\s*-\s*\d{2,3})$/i;
+            const najdene = [];
+            let tm; TIP_POS_RE.lastIndex = 0;
+            while ((tm = TIP_POS_RE.exec(docDesc)) !== null) {
+                najdene.push({ tip: tm[2].trim().replace(/\s+\d+$/, ''), vred: tm[3].trim() });
+            }
+            if (najdene.length >= 2 && najdene.length % 2 === 0) {
+                const barve = [], velikosti = [];
+                for (const x of najdene) {
+                    if (JE_VELIKOST.test(x.vred)) velikosti.push(x);
+                    else barve.push(x);
+                }
+                if (barve.length === velikosti.length && barve.length > 0) {
+                    const paricni = [];
+                    for (let i = 0; i < barve.length; i++) {
+                        const tipIme = typeTranslations[barve[i].tip] || barve[i].tip;
+                        const barva = translateColorServer(barve[i].vred);
+                        paricni.push({
+                            type: tipIme || productType || 'Izdelek',
+                            color: barva,
+                            size: velikosti[i].vred.replace(/\s+/g, ' ').toUpperCase(),
+                            noWarning: true
+                        });
+                    }
+                    if (paricni.length) return paricni;
+                }
+            }
+        }
+
         // "N : <value>" pozicije kjer value NE vsebuje _meta niti naslednje "N :" pozicije
         const SINGLE_POS_RE = /(\d+)\s*:\s*((?:(?!\s+\d+\s*:)(?!\s+_[a-zA-Z])[^:_])+)/g;
         const singleItems = [];
