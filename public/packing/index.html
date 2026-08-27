@@ -266,8 +266,8 @@
             .item-color { width: 10px; height: 10px; margin-right: 5px; }
         }
     
-        .src-links { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
-        .src-link { font-size:11px; padding:3px 9px; border-radius:5px; text-decoration:none; font-weight:600; border:1px solid transparent; }
+        .src-links { display:flex; gap:6px; margin-top:6px; flex-wrap: nowrap; }
+        .src-link { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size:11px; padding:3px 9px; border-radius:5px; text-decoration:none; font-weight:600; border:1px solid transparent; }
         .src-wc { background:#f3e8ff; color:#6b21a8; border-color:#e9d5ff; }
         .src-mk { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
         .src-link:hover { filter:brightness(0.95); }

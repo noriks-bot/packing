@@ -143,8 +143,8 @@
         .empty, .loading { text-align: center; padding: 56px 20px; color: #888; }
         .spin { display: inline-block; width: 18px; height: 18px; border: 3px solid #ddd; border-top-color: #10b981; border-radius: 50%; animation: sp .8s linear infinite; vertical-align: middle; margin-right: 8px; }
         @keyframes sp { to { transform: rotate(360deg); } }
-            .src-links { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; justify-content:flex-end; }
-        .src-link { font-size:11px; padding:3px 9px; border-radius:5px; text-decoration:none; font-weight:600; border:1px solid transparent; }
+            .src-links { display:flex; gap:6px; margin-top:6px; flex-wrap: nowrap; justify-content:flex-end; }
+        .src-link { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size:11px; padding:3px 9px; border-radius:5px; text-decoration:none; font-weight:600; border:1px solid transparent; }
         .src-wc { background:#f3e8ff; color:#6b21a8; border-color:#e9d5ff; }
         .src-mk { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
         .exchange-badge { background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; }
