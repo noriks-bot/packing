@@ -420,6 +420,22 @@
             #search-name { width: 100% !important; box-sizing: border-box; padding: 7px 10px; font-size: 12px; margin: 0 !important; }
             .container { padding-left: 11px !important; padding-right: 11px !important; }
         }
+    
+        /* [2026-08-26 Dejan] TABLICA: enotni odmiki v filtrih. Osnovni panel je imel
+           15px/20px (razlicno navpicno in vodoravno), skupine pa 15px razmika ob 6px
+           znotraj, poleg tega je imelo razvrscanje se margin-left:10px — zato je bilo
+           videti neporavnano. Tu je vse na isti meri. */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .filters {
+                padding: 12px !important; gap: 8px !important;
+                align-items: center !important; box-sizing: border-box;
+            }
+            .filters .sort-buttons { margin-left: 0 !important; }
+            .country-buttons, .sort-buttons { gap: 6px !important; }
+            .country-btn { padding: 6px 12px; font-size: 13px; }
+            #search-name { padding: 7px 10px; font-size: 13px; }
+            .filters label { font-size: 13px; }
+        }
     </style>
 </head>
 <body>
