@@ -367,12 +367,6 @@
                 gap: 4px 10px !important; row-gap: 2px !important;
             }
             #refresh-bar span { white-space: nowrap; }
-
-            .filters {
-                padding: 8px !important; margin: 0 0 8px !important;
-                border-radius: 10px; display: flex; flex-direction: column;
-                gap: 7px; box-sizing: border-box; max-width: 100%;
-            }
             .filters label { font-size: 12px; display: flex; align-items: center; gap: 6px; }
             .filters select { padding: 5px 8px; font-size: 12px; flex: 1; min-width: 0; }
             .country-buttons { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start; }
@@ -396,6 +390,35 @@
                 padding: 4px 8px; font-size: 10.5px;
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
             }
+        }
+    
+        /* [2026-08-26 Dejan] MOBILNI FILTRI — vse poravnano LEVO, brez odmika okrog panela.
+           Osnovni .filters ima align-items:center, kar je v stolpcu vse potisnilo na sredino;
+           tu ga izrecno povozimo. Vrstica "Status" je cisto levo, pod njo drzave, pod njimi
+           razvrscanje, na dnu iskanje cez celo sirino. */
+        @media (max-width: 768px) {
+            .filters {
+                padding: 0 !important; margin: 0 0 8px !important;
+                background: transparent !important; box-shadow: none !important;
+                border-radius: 0 !important;
+                display: flex !important; flex-direction: column !important;
+                align-items: flex-start !important; justify-content: flex-start !important;
+                gap: 6px !important; width: 100%; box-sizing: border-box;
+            }
+            .filters > * { width: 100% !important; margin-left: 0 !important; }
+            .filters label {
+                display: flex !important; align-items: center; justify-content: flex-start;
+                gap: 6px; font-size: 12px; margin: 0;
+            }
+            .filters select { flex: 1 1 auto; min-width: 0; padding: 6px 8px; font-size: 12px; }
+            .country-buttons, .sort-buttons {
+                display: flex !important; flex-wrap: wrap !important;
+                justify-content: flex-start !important; align-items: center;
+                gap: 4px !important; margin-left: 0 !important; width: 100%;
+            }
+            .country-btn { padding: 5px 9px !important; font-size: 12px !important; line-height: 1.1; margin: 0 !important; }
+            #search-name { width: 100% !important; box-sizing: border-box; padding: 7px 10px; font-size: 12px; margin: 0 !important; }
+            .container { padding-left: 6px !important; padding-right: 6px !important; }
         }
     </style>
 </head>
