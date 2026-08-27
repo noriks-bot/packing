@@ -321,6 +321,14 @@
             .header h1 { font-size: 15px; }
             .header .stats { font-size: 12px; gap: 8px; }
         }
+    
+        /* zlozen meni: samo izbrani izdelek + gumb za razpiranje */
+        .topnav .ptab.preklop { background: rgba(255,255,255,.10); color: #fff; border-color: rgba(255,255,255,.2); }
+        .topnav .ptabs.zlozen { display: flex; flex-wrap: nowrap; gap: 6px; }
+        .topnav .ptabs.zlozen .ptab { width: auto; }
+        @media (max-width: 768px) {
+            .topnav .ptabs.zlozen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
     </style>
 </head>
 <body>
@@ -985,6 +993,7 @@
             { key: 'HUGGER',   name: 'HUGGER',    icon: '🧣', sku: /HUG/i },
         ];
         let IZBRAN = 'VSE';
+        let MENI_ODPRT = false;   // privzeto zlozen
         function glavniZavihek(o) {
             const p = (o.products || [])[0];
             if (!p) return 'OSTALO';
@@ -1029,11 +1038,23 @@
                 .filter(k => !znaniKljuci.has(k))
                 .sort((a, b) => (st[b] || 0) - (st[a] || 0) || a.localeCompare(b))
                 .map(k => ({ key: k, name: k, icon: '🏷️' }));
-            c.innerHTML = znani.concat(samodejni)
-                .map(x => '<button class="ptab' + (IZBRAN === x.key ? ' aktiven' : '') + '" data-izd="' + x.key + '">' +
-                          x.icon + ' ' + x.name + '<span class="pn">' + (x.all ? vsi.length : (st[x.key] || 0)) + '</span></button>').join('');
+            // [2026-08-26 Dejan] Meni je PRIVZETO ZLOZEN: vidi se samo izbrani izdelek in
+            // gumb za razpiranje. Sestnajst gumbov je na telefonu zasedlo pol zaslona.
+            const vsiZav = znani.concat(samodejni);
+            const gumb = (x) => '<button class="ptab' + (IZBRAN === x.key ? ' aktiven' : '') + '" data-izd="' + x.key + '">' +
+                                x.icon + ' ' + x.name + '<span class="pn">' + (x.all ? vsi.length : (st[x.key] || 0)) + '</span></button>';
+            const aktiven = vsiZav.find(x => x.key === IZBRAN) || vsiZav[0];
+            const preklop = '<button class="ptab preklop" id="meniPreklop" title="Pokazi vse izdelke">' +
+                            (MENI_ODPRT ? '&#9650; zapri' : '&#9660; izdelki (' + vsiZav.length + ')') + '</button>';
+            c.innerHTML = (MENI_ODPRT ? vsiZav.map(gumb).join('') : gumb(aktiven)) + preklop;
+            c.classList.toggle('zlozen', !MENI_ODPRT);
+
+            const pk = document.getElementById('meniPreklop');
+            if (pk) pk.addEventListener('click', () => { MENI_ODPRT = !MENI_ODPRT; izrisiZavihke(); });
             c.querySelectorAll('[data-izd]').forEach(b => b.addEventListener('click', () => {
-                IZBRAN = b.dataset.izd; izrisiZavihke(); filterByCountry();
+                IZBRAN = b.dataset.izd;
+                MENI_ODPRT = false;              // po izbiri meni spet zlozimo
+                izrisiZavihke(); filterByCountry();
             }));
         }
 
