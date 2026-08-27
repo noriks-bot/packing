@@ -463,6 +463,12 @@
         @media (min-width: 1900px) {
             .container { max-width: 1700px; }
         }
+    
+        /* [2026-08-26 Dejan] Vrstica z urami osvezitev je na telefonu in tablici skrita —
+           tam sluzi le zaslon, podatek o zadnjih osvezitvah pa je za namizje. */
+        @media (max-width: 1024px) {
+            #refresh-bar { display: none !important; }
+        }
     </style>
 </head>
 <body>
