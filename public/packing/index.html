@@ -352,6 +352,35 @@
             .header .btn { font-size: 11px; padding: 5px 9px; }
             .header .btn svg, .header .btn .ico { display: none; }
         }
+    
+        /* [2026-08-26 Dejan] MOBILNI POGLED — nizji in tesnejsi.
+           Opozorilna pasica in vrstica osvezitev sta imeli inline slog, zato !important. */
+        @media (max-width: 768px) {
+            #global-warning-banner {
+                padding: 6px 10px !important; font-size: 11px !important;
+                line-height: 1.25 !important;
+            }
+            #refresh-bar {
+                padding: 3px 8px !important; font-size: 10.5px !important;
+                line-height: 1.35 !important; display: flex !important;
+                flex-wrap: wrap !important; align-items: center !important;
+                gap: 4px 10px !important; row-gap: 2px !important;
+            }
+            #refresh-bar span { white-space: nowrap; }
+
+            .filters {
+                padding: 8px !important; margin: 0 0 8px !important;
+                border-radius: 10px; display: flex; flex-direction: column;
+                gap: 7px; box-sizing: border-box; max-width: 100%;
+            }
+            .filters label { font-size: 12px; display: flex; align-items: center; gap: 6px; }
+            .filters select { padding: 5px 8px; font-size: 12px; flex: 1; min-width: 0; }
+            .country-buttons { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-start; }
+            .country-btn { padding: 5px 9px; font-size: 12px; line-height: 1; }
+            .filters .btn { padding: 5px 9px; font-size: 11px; }
+            #search-name { width: 100%; box-sizing: border-box; padding: 6px 9px; font-size: 12px; }
+            .container { padding-left: 6px; padding-right: 6px; }
+        }
     </style>
 </head>
 <body>
