@@ -455,20 +455,14 @@
             #orders-container { grid-template-columns: minmax(0, 1fr) !important; }
         }
     
-        /* [2026-08-26 Dejan] VELIKI ZASLONI: kartice se ne raztezajo cez cel monitor.
-           Vsebina je omejena in centrirana, da vrstica izdelka ni dolga pol metra. */
-        @media (min-width: 1500px) {
-            .container { max-width: 1500px; margin-left: auto; margin-right: auto; }
-        }
-        @media (min-width: 1900px) {
-            .container { max-width: 1700px; }
-        }
-    
         /* [2026-08-26 Dejan] Vrstica z urami osvezitev je na telefonu in tablici skrita —
            tam sluzi le zaslon, podatek o zadnjih osvezitvah pa je za namizje. */
         @media (max-width: 1024px) {
             #refresh-bar { display: none !important; }
         }
+    
+        /* [2026-08-26 Dejan] Vsebina je siroka najvec 1100px in centrirana. */
+        .container { max-width: 1100px; margin-left: auto; margin-right: auto; }
     </style>
 </head>
 <body>
