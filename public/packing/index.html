@@ -454,6 +454,15 @@
         @media (max-width: 768px) {
             #orders-container { grid-template-columns: minmax(0, 1fr) !important; }
         }
+    
+        /* [2026-08-26 Dejan] VELIKI ZASLONI: kartice se ne raztezajo cez cel monitor.
+           Vsebina je omejena in centrirana, da vrstica izdelka ni dolga pol metra. */
+        @media (min-width: 1500px) {
+            .container { max-width: 1500px; margin-left: auto; margin-right: auto; }
+        }
+        @media (min-width: 1900px) {
+            .container { max-width: 1700px; }
+        }
     </style>
 </head>
 <body>
