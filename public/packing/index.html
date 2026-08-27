@@ -436,6 +436,24 @@
             #search-name { padding: 7px 10px; font-size: 13px; }
             .filters label { font-size: 13px; }
         }
+    
+        /* [2026-08-26 Dejan] BREZ VODORAVNEGA PRELIVANJA — velja za vse velikosti zaslona.
+           Glavni krivec: mreza kartic "1fr 1fr" se NE skrci pod vsebino (privzeti min-width
+           je auto), zato dolgo ime izdelka razsiri stolpec cez zaslon in stran zdrsne v desno.
+           Resitev je minmax(0,1fr) + min-width:0 na otrocih, plus zapora na korenu. */
+        html, body { max-width: 100%; overflow-x: hidden; }
+        .topnav, .header, .container, .filters,
+        #refresh-bar, #global-warning-banner, #orders-container {
+            max-width: 100%; box-sizing: border-box;
+        }
+        #orders-container { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        #orders-container > * { min-width: 0; }
+        .order-card, .order-header, .order-meta, .items-list, .item { min-width: 0; }
+        .item-name { overflow-wrap: anywhere; }
+        #refresh-bar { flex-wrap: wrap; overflow: hidden; }
+        @media (max-width: 768px) {
+            #orders-container { grid-template-columns: minmax(0, 1fr) !important; }
+        }
     </style>
 </head>
 <body>
