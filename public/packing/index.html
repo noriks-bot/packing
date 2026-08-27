@@ -381,6 +381,22 @@
             #search-name { width: 100%; box-sizing: border-box; padding: 6px 9px; font-size: 12px; }
             .container { padding-left: 6px; padding-right: 6px; }
         }
+    
+        /* [2026-08-26 Dejan] Na telefonu sta gumba do izvora v ENI vrstici:
+           WooCommerce levo, Metakocka desno — sicer se zlagata drug pod drugega
+           in kartica po nepotrebnem zraste. */
+        @media (max-width: 768px) {
+            .src-links {
+                width: 100%; display: flex; flex-wrap: nowrap;
+                justify-content: space-between; align-items: center;
+                gap: 6px; margin-top: 5px;
+            }
+            .src-link {
+                flex: 0 1 auto; min-width: 0; text-align: center;
+                padding: 4px 8px; font-size: 10.5px;
+                overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            }
+        }
     </style>
 </head>
 <body>

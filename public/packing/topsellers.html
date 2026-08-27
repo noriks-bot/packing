@@ -149,6 +149,22 @@
         .src-mk { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
         .exchange-badge { background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; }
             .oznaka { color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:0 4px; font-size:11px; font-weight:800; }
+    
+        /* [2026-08-26 Dejan] Na telefonu sta gumba do izvora v ENI vrstici:
+           WooCommerce levo, Metakocka desno — sicer se zlagata drug pod drugega
+           in kartica po nepotrebnem zraste. */
+        @media (max-width: 768px) {
+            .src-links {
+                width: 100%; display: flex; flex-wrap: nowrap;
+                justify-content: space-between; align-items: center;
+                gap: 6px; margin-top: 5px;
+            }
+            .src-link {
+                flex: 0 1 auto; min-width: 0; text-align: center;
+                padding: 4px 8px; font-size: 10.5px;
+                overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            }
+        }
     </style>
 </head>
 <body>
