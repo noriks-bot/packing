@@ -461,6 +461,14 @@
         /* [2026-08-26 Dejan] Vrstica z urami osvezitev je skrita POVSOD — Dejan: nima smisla.
            Sama logika (logRefresh/updateRefreshBar) ostaja, samo prikaza ni. */
         #refresh-bar { display: none !important; }
+    
+        /* [2026-08-26 Dejan] Na telefonu enak razmik NAD in POD filtri. Zgoraj je bil vecji,
+           ker je vsebnik imel svoj zgornji odmik, spodaj pa je bilo samo 8px. */
+        @media (max-width: 768px) {
+            .container { padding-top: 8px !important; padding-bottom: 8px !important; }
+            #global-warning-banner { margin-bottom: 0 !important; }
+            .filters { margin: 0 0 8px !important; }
+        }
     </style>
 </head>
 <body>
