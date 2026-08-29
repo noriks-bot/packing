@@ -1712,7 +1712,15 @@ app.get('/api/packing/orders', async (req, res) => {
                     // [2026-08-29 Dejan] KIDSNEST je IZLOCEN — ima variacijo: starostni razpon
 // ("3–9 godina", "9–14 rokov", "3–9 éves", "9–14 ετών", "3–9 ani"). Ker je bil tu,
 // se velikost sploh ni izpisala in skladisce ni vedelo, katero blazino spakirati.
-const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KNEEFIX|KNEEHEAT|SNORE|CLOUD|HUG|LIFT|CONTROLPRO|NORIKSHERS/;
+// [2026-08-29 Dejan] Tu smejo biti SAMO izdelki, ki res nimajo nobene variacije.
+// Ta seznam je zasilna pot: uporabi se, ko razclemba ne uspe, in tiho izpise "N x kos".
+// Ce je na njem izdelek, ki variacijo IMA, se ob neuspeli razclembi podatek TIHO SKRIJE
+// namesto da bi opozoril — prav to se je zgodilo pri grskem KIDSNEST ("3-9 ετών").
+// Preverjeno na zivih podatkih 29.8.2026 (4 dni, vse postavke):
+//   BREZ variacij: BUNION, FISIOREST, CLOUD, KNEEHEAT, SNORE
+//   IMAJO variacijo -> odstranjeni: KNEEFIX (stran+velikost), ORTOPAS (velikost),
+//                      HUG in LIFT (barva), KIDSNEST (starostni razpon)
+const NOVAR_CODES = /BUNION|FISIOREST|KNEEHEAT|SNORE|CLOUD|CONTROLPRO|NORIKSHERS/;
                     if (NOVAR_CODES.test(code)) {
                         const bp = (docDesc || '').match(/_bundle_pairs\s*:\s*(\d+)/i);
                         const per = bp ? (parseInt(bp[1], 10) || 1) : 1;
