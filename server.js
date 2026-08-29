@@ -1709,7 +1709,10 @@ app.get('/api/packing/orders', async (req, res) => {
                     // [2026-08-12] Izdelki BREZ variacij (BUNION, ORTOPAS, FISIOREST, KIDSNEST, KNEEFIX,
                     // NORIKSHERS-*): nimajo barve/velikosti, zato "Ni bilo mogoce parsati" ni napaka.
                     // Kolicina = amount x _bundle_pairs (ce je v doc_desc), sicer amount.
-                    const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KIDSNEST|KIDNEST|KNEEFIX|KNEEHEAT|SNORE|CLOUD|HUG|LIFT|CONTROLPRO|NORIKSHERS/;
+                    // [2026-08-29 Dejan] KIDSNEST je IZLOCEN — ima variacijo: starostni razpon
+// ("3–9 godina", "9–14 rokov", "3–9 éves", "9–14 ετών", "3–9 ani"). Ker je bil tu,
+// se velikost sploh ni izpisala in skladisce ni vedelo, katero blazino spakirati.
+const NOVAR_CODES = /BUNION|ORTOPAS|FISIOREST|KNEEFIX|KNEEHEAT|SNORE|CLOUD|HUG|LIFT|CONTROLPRO|NORIKSHERS/;
                     if (NOVAR_CODES.test(code)) {
                         const bp = (docDesc || '').match(/_bundle_pairs\s*:\s*(\d+)/i);
                         const per = bp ? (parseInt(bp[1], 10) || 1) : 1;
@@ -2639,7 +2642,7 @@ function parseDocDesc(docDesc, productCode, productName) {
             const sizeParen = rawVal.match(/(?:^|\s)([\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?)\s*\(/i);
             const plainSize = /^[\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?(?:\s+\d{2,3}-\d{2,3})?$/i;
             const ageRange = /\d+\s*[\u2013-]\s*\d+/.test(rawVal) &&
-                /godin|godina|let|year|jahr|\u00e9v|lat|rok|χρον|χρόν|ani|anni|cm/i.test(rawVal);
+                /godin|godina|let|year|jahr|\u00e9v|lat|rok|χρον|χρόν|ετών|ετων|ani|anni|cm/i.test(rawVal);
             const _side = detectSide(rawVal);
             if (_side) color = _side;
             if (sizeParen) {
@@ -3507,15 +3510,20 @@ app.get('/api/packing/topsellers-sync', (req, res) => {
     tsdb.setMeta('lastFullSyncResult', 'tece...');
     // [2026-08-20 Dejan] Cel 30-dnevni prikaz (prej 14 dni) + manual:true, da uvoz
     // POCAKA na warmup namesto da tiho odstopi (prej ~vsak drugi klik ni naredil nicesar).
-    backfillRolling(ROTATE_DAYS, { manual: true })
-        .then(() => tsdb.setMeta('lastFullSync', new Date().toISOString()))
-        .catch(() => {});
+    // [2026-08-27 Dejan] Gumb gre po DNEVIH (glej backfillPoDnevih): vsak dan pristane
+    // takoj, neuspel se ponovi sam, "stale" odgovor se ne steje za uspeh.
+    backfillPoDnevih(ROTATE_DAYS).catch((e) => {
+        tsdb.setMeta('lastFullSyncResult', 'NAPAKA: ' + e.message);
+    });
     res.json({ started: true });
 });
 app.get('/api/packing/topsellers-sync-status', (req, res) => {
     const cov = tsdb.coverage(ROLLING_DAYS);
+    let napredek = null;
+    try { napredek = JSON.parse(tsdb.getMeta('syncNapredek') || 'null'); } catch (_) {}
     res.json({ running: LONG_WARMUP_RUNNING, total: cov.total, days: Object.keys(cov.byDay).length,
-               oldest: cov.oldest, missing: cov.missing, lastFullSync: tsdb.getMeta('lastFullSync') });
+               oldest: cov.oldest, missing: cov.missing, lastFullSync: tsdb.getMeta('lastFullSync'),
+               izid: tsdb.getMeta('lastFullSyncResult'), napredek });
 });
 
 // Stanje baze (za nadzor) — prav tako samo lokalno.
