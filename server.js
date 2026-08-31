@@ -3590,13 +3590,16 @@ app.get('/api/health', (req, res) => {
         const cov = tsdb.coverage(2);
         checks.db = { ok: cov.total > 100 && cov.missing.length <= 2, orders: cov.total, missingDays: cov.missing.length };
     } catch (e) { checks.db = { ok: false, error: e.message }; }
-    // 2) packing cache svezina (redni sync tece?)
+    // 2) tece osvezevanje? [2026-08-31 Dejan] Prej se je merila svezina cache kljuca
+    //    orders_Odpremljen_last3d. Ko je bil predpolnilnik ugasnjen, ta kljuc ni bil vec
+    //    osvezevan -> health je bil TRAJNO rdec in watchdog je alarmiral v prazno,
+    //    ceprav je aplikacija delala. Zdaj merimo pravo stvar: zadnji uspesen ChangeSync.
     try {
-        // [2026-08-31 Dejan] Samo casovni zig, ne vsebina.
-        const ts = tsdb.cacheAge('orders_Odpremljen_last3d');
-        const ageMin = ts ? Math.round((Date.now() - new Date(ts).getTime()) / 60000) : null;
-        checks.cache = { ok: ageMin !== null && ageMin < 30, ageMin };
-    } catch (e) { checks.cache = { ok: false, error: e.message }; }
+        const ts = parseInt(tsdb.getMeta('lastChangeSyncTs') || '0', 10);
+        const ageMin = ts ? Math.round((Date.now() - ts) / 60000) : null;
+        // ritem je 5 min; 30 min pomeni, da je 6 tekov zapored spodletelo
+        checks.sync = { ok: ageMin !== null && ageMin < 30, ageMin };
+    } catch (e) { checks.sync = { ok: false, error: e.message }; }
     // 3) packed-orders datoteka berljiva (kriticni podatek skladisca)
     try {
         // [2026-08-31 Dejan] Prej packedMod.count(), ki razcleni 2,5 MB datoteko ob
@@ -3611,7 +3614,7 @@ app.get('/api/health', (req, res) => {
         checks.disk = { ok: true };
     } catch (e) { checks.disk = { ok: false, error: e.message }; }
     checks.metakockaCircuit = { ok: !isMetakockaCircuitOpen() };   // info: odprt breaker ni fatalen (cache streze)
-    ok = checks.db.ok && checks.cache.ok && checks.packed.ok && checks.disk.ok;
+    ok = checks.db.ok && checks.sync.ok && checks.packed.ok && checks.disk.ok;
     res.status(ok ? 200 : 503).json({ ok, uptimeMin: Math.round(process.uptime() / 60), rssMb: Math.round(process.memoryUsage().rss / 1048576), checks });
 });
 
