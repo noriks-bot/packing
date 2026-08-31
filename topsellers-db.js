@@ -49,6 +49,14 @@ function db() {
         CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date);
         CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
         CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
+        -- [2026-08-31 Dejan] Shranjena dopolnitev iz WooCommerca. Brez tega smo isto
+        -- narocilo vprasali WooCommerce ob VSAKEM zajemu iz Metakocke (povprecno 11,7x,
+        -- rekord 219x na dan) — 3167 klicev na dan namesto 234.
+        CREATE TABLE IF NOT EXISTS wc_enrich (
+            id       TEXT PRIMARY KEY,
+            saved_at TEXT NOT NULL,
+            payload  TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS cache (
             k         TEXT PRIMARY KEY,
             cached_at TEXT NOT NULL,
@@ -179,6 +187,7 @@ function pendingByDay(days = KEEP_DAYS) {
 
 // Pobriši naročila starejša od okna (baza ostane majhna in hitra).
 function prune(days = KEEP_DAYS) {
+    try { wcPrune(days); } catch (_) {}
     const cutoff = dayStr(-(days - 1));
     const r = db().prepare('DELETE FROM orders WHERE order_date < ?').run(cutoff);
     return r.changes || 0;
@@ -256,5 +265,28 @@ function importFromJson(jsonPath) {
     }
 }
 
+// ── shramba dopolnitev iz WooCommerca ──────────────────────────────────────
+function wcGet(id) {
+    try {
+        const r = db().prepare('SELECT payload FROM wc_enrich WHERE id = ?').get(String(id));
+        return r ? JSON.parse(r.payload) : null;
+    } catch (_) { return null; }
+}
+function wcSet(id, payload) {
+    try {
+        db().prepare('INSERT INTO wc_enrich (id, saved_at, payload) VALUES (?, ?, ?) '
+                   + 'ON CONFLICT(id) DO UPDATE SET saved_at = excluded.saved_at, payload = excluded.payload')
+            .run(String(id), new Date().toISOString(), JSON.stringify(payload));
+    } catch (_) {}
+}
+function wcPrune(days) {
+    // pobrisi dopolnitve za narocila, ki so ze padla iz okna
+    try { db().prepare('DELETE FROM wc_enrich WHERE id NOT IN (SELECT id FROM orders)').run(); } catch (_) {}
+}
+function wcStats() {
+    try { return db().prepare('SELECT COUNT(*) c FROM wc_enrich').get().c; } catch (_) { return 0; }
+}
+
 module.exports = { upsertMany, getOrders, coverage, prune, setMeta, getMeta, importFromJson, dayStr, pendingByDay,
-                   cacheGet, cacheGetAll, cacheSet, cacheImportFromJson, KEEP_DAYS, DB_FILE };
+                   cacheGet, cacheGetAll, cacheSet, cacheImportFromJson, KEEP_DAYS, DB_FILE,
+                   wcGet, wcSet, wcPrune, wcStats };

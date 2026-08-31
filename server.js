@@ -1168,7 +1168,33 @@ async function enrichOrtoOrdersFromWC(orders) {
     });
     
     if (ordersToEnrich.length === 0) return;
-    console.log(`[Packing] Enriching ${ordersToEnrich.length} ORTO orders from WooCommerce`);
+
+    // [2026-08-31 Dejan] NAJPREJ IZ SHRAMBE. Prej smo isto narocilo vprasali WooCommerce
+    // ob vsakem zajemu iz Metakocke — meritev 30.-31.8.: 3167 klicev za 234 narocil,
+    // povprecno 11,7x na narocilo, rekord 219x v enem dnevu. Metakockin doc_desc ostane
+    // prazen, zato je bilo narocilo vsakic znova "nerazrešeno" in klic se je ponovil.
+    const zaWooCommerce = [];
+    let izShrambe = 0, preskoceno = 0;
+    for (const o of ordersToEnrich) {
+        let shranjeno = null;
+        try { shranjeno = tsdb.wcGet(o.id); } catch (_) {}
+        if (shranjeno && Array.isArray(shranjeno.all) && shranjeno.all.length) {
+            uporabiWcPodatke(o, new Map(Object.entries(shranjeno.bySku || {})), shranjeno.all);
+            izShrambe++;
+        } else if (shranjeno && shranjeno.ni) {
+            // [2026-08-31 Dejan] WooCommerce za to narocilo NIMA uporabnih podatkov.
+            // Brez tega zapisa smo ga klicali ob vsakem zajemu — 54673/2026 kar 191x
+            // v enem dnevu, vedno brez rezultata. Poskusimo spet cez 6 ur.
+            const starost = (Date.now() - new Date(shranjeno.ts || 0).getTime()) / 3600000;
+            if (starost < 6) { preskoceno++; } else { zaWooCommerce.push(o); }
+        } else {
+            zaWooCommerce.push(o);
+        }
+    }
+    if (izShrambe || preskoceno) console.log(`[Packing WC] iz shrambe: ${izShrambe}` +
+        (preskoceno ? `, preskoceno (WC nima podatkov): ${preskoceno}` : ''));
+    if (zaWooCommerce.length === 0) return;
+    console.log(`[Packing] Enriching ${zaWooCommerce.length} ORTO orders from WooCommerce`);
     
     // Map eshop_name to store key (e.g. "noriks.com/hr" → "hr")
     function getStoreKey(eshopName) {
@@ -1253,11 +1279,12 @@ async function enrichOrtoOrdersFromWC(orders) {
     }
     
     // Fetch and enrich in parallel
-    const enrichPromises = ordersToEnrich.map(async (order) => {
+    const enrichPromises = zaWooCommerce.map(async (order) => {
         const storeKey = getStoreKey(order._eshop);
         const wcOrderId = getWcOrderId(order._wcRef);
         if (!storeKey || !wcOrderId || !wcStores[storeKey]) {
             console.log(`[Packing WC] Cannot enrich order ${order.id}: store=${storeKey} wcId=${wcOrderId}`);
+            try { tsdb.wcSet(order.id, { ni: true, ts: new Date().toISOString() }); } catch (_) {}
             return;
         }
         
@@ -1266,6 +1293,7 @@ async function enrichOrtoOrdersFromWC(orders) {
             const wcRes = await fetch(`${store.url}/wp-json/wc/v3/orders/${wcOrderId}?consumer_key=${store.ck}&consumer_secret=${store.cs}`);
             if (!wcRes.ok) {
                 console.log(`[Packing WC] Failed to fetch WC order ${wcOrderId} from ${storeKey}: ${wcRes.status}`);
+                if (wcRes.status === 404) { try { tsdb.wcSet(order.id, { ni: true, ts: new Date().toISOString() }); } catch (_) {} }
                 return;
             }
             const wcOrder = await wcRes.json();
@@ -1347,15 +1375,30 @@ async function enrichOrtoOrdersFromWC(orders) {
             
             if (wcItems.length === 0) {
                 console.log(`[Packing WC] No items parsed from WC order ${wcOrderId}`);
+                try { tsdb.wcSet(order.id, { ni: true, ts: new Date().toISOString() }); } catch (_) {}
                 return;
             }
             
             console.log(`[Packing WC] Enriched order ${order.id} with ${wcItems.length} items from WC ${storeKey}/${wcOrderId}`);
             
-            // [2026-08-26 Dejan] Zamenjamo SAMO postavke, ki jim podatek manjka, in to
-            // s podatki ISTE sifre. Prej se je cel paket povozil z vsemi vrsticami iz
-            // WooCommerca — pri narocilu z vec izdelki je to podvajalo kose.
-            for (const product of order.products) {
+            uporabiWcPodatke(order, wcBySku, wcItems);
+            // shranimo, da tega narocila ne bomo vec spraševali (glej wcGet zgoraj)
+            try {
+                tsdb.wcSet(order.id, { bySku: Object.fromEntries(wcBySku), all: wcItems });
+            } catch (_) {}
+
+        } catch (e) {
+            console.error(`[Packing WC] Error enriching order ${order.id}:`, e.message);
+        }
+    });
+
+    await Promise.all(enrichPromises);
+}
+
+// [2026-08-31 Dejan] Uporaba podatkov iz WooCommerca na narocilu. Loceno, ker jo
+// klicemo iz DVEH mest: po svezem klicu na WooCommerce IN iz shranjene dopolnitve.
+function uporabiWcPodatke(order, wcBySku, wcItems) {
+    for (const product of order.products || []) {
                 if (!product.items) continue;
                 const potrebuje = product.items.some(i => (i.warnings && i.warnings.length) ||
                                                           i.color === 'Ni podatka' || i.size === 'Ni podatka');
@@ -1373,16 +1416,8 @@ async function enrichOrtoOrdersFromWC(orders) {
                     return cist;
                 });
                 product.label = product.label.replace(/\(\d+ kos\)/, `(${zamenjava.length} kos)`);
-            }
-            // Update flat items too
-            order.items = order.products.map(p => p.items || p);
-            
-        } catch (e) {
-            console.error(`[Packing WC] Error enriching order ${order.id}:`, e.message);
-        }
-    });
-    
-    await Promise.all(enrichPromises);
+    }
+    order.items = (order.products || []).map(p => p.items || p);
 }
 
 // Get packing orders from Metakocka
