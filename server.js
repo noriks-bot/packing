@@ -1426,6 +1426,10 @@ app.get('/api/packing/orders', async (req, res) => {
     const { status = 'Odpremljen', date, limit = 500 } = req.query;
     // _bg=1 oznaci background warmup klic: edini sme cakati dolgo na Metakocko.
     const isBg = req.query._bg === '1';
+    // [2026-08-31 Dejan] ?changed=<ISO+02:00> -> Metakocko vprasamo "kaj se je spremenilo
+    // od takrat" namesto "kaj je bilo narocenega ta dan". Ujame tudi stara narocila,
+    // ki jim je skladisce spremenilo status (DELAY -> Odpremljen), brez 30-dnevnega presa.
+    const spremenjenoOd = String(req.query.changed || '').trim();
 
     // [2026-08-14 Dejan] TOPSELLERS rabi 14-dnevno okno, packing zavihek pa OSTANE na 5 dneh.
     // KLJUCNO: cache key MORA vsebovati dolzino okna, sicer bi si strani povozili podatke
@@ -1464,7 +1468,7 @@ app.get('/api/packing/orders', async (req, res) => {
             const entry = tsdb.cacheGet(fastKey);   // [FAZA3.2] en kljuc, ne cel 4MB cache
             // [2026-08-14] force=1 (samo background backfill): preskoci cache-short-circuit,
             // sicer se backfill vrne iz svezega cache-a in skladisce se NIKOLI ne napolni.
-            const forceFetch = isBg && req.query.force === '1';
+            const forceFetch = (isBg && req.query.force === '1') || !!spremenjenoOd;
             if (entry && entry.orders && entry.cachedAt && !forceFetch) {
                 const ageMs = Date.now() - new Date(entry.cachedAt).getTime();
                 if (ageMs < _freshMs) {
@@ -1514,7 +1518,9 @@ app.get('/api/packing/orders', async (req, res) => {
         const queryAdvance = [];
         
         // Filter by date if provided
-        if (date) {
+        if (spremenjenoOd) {
+            queryAdvance.push({ type: 'last_change_from', value: spremenjenoOd });
+        } else if (date) {
             queryAdvance.push({ type: 'doc_date_from', value: `${date}+02:00` });
             queryAdvance.push({ type: 'doc_date_to', value: `${date}+02:00` });
         } else {
@@ -1548,7 +1554,7 @@ app.get('/api/packing/orders', async (req, res) => {
         let results = [];
         // [2026-08-14] 20 strani = 2000 najnovejsih narocil -> pri 14-dnevnem oknu je to pokrilo
         // samo ~3 dni (zato je topsellers kazal le 11.-14.). Za DOLGO okno v OZADJU dvignemo mejo.
-        const MAX_PAGES = (isBg && isLongWindow) ? 200 : 20;   // [2026-08-19] 30-dnevno okno ima ~14.600 narocil; 120 strani (12.000) bi odrezalo najstarejse dneve
+        const MAX_PAGES = spremenjenoOd ? 200 : ((isBg && isLongWindow) ? 200 : 20);   // [2026-08-19] 30-dnevno okno ima ~14.600 narocil; 120 strani (12.000) bi odrezalo najstarejse dneve
         let offset = 0;
         let pageNum = 0;
         // Background warmup tolerira pocasno Metakocko (nocna degradacija 02-07h: query rabi
@@ -1867,12 +1873,18 @@ const NOVAR_CODES = /BUNION|FISIOREST|KNEEHEAT|SNORE|CLOUD|CONTROLPRO|NORIKSHERS
         try {
             // [2026-08-14] Vsak uspesen fetch (5- ali 14-dnevni) dopolni kotalece se skladisce.
             mergeIntoRolling(allOrders);
-            const datePart = _datePart;
-            const cacheStatuses = [...new Set(['Odpremljen', 'Novo', 'Pripravljen za odpremo', status].filter(Boolean))];
-            for (const s of cacheStatuses) {
-                writePackingCacheEntry(`orders_${s}_${datePart}`, allOrders.filter(o => (o.status || '').startsWith(s)));
+            // [2026-08-31 Dejan] Cache pisemo SAMO za privzeto okno. Dnevni klici (full sync)
+            // in changed-klici so prej pisali 4 JSON kepe na dan v tabelo cache — isti podatki
+            // kot v tabeli orders, od tod 140 MB WAL. Te poti gredo tako ali tako mimo cachea
+            // (force=1), zato zapis ni nikoli nikomur koristil.
+            if (!date && !spremenjenoOd) {
+                const datePart = _datePart;
+                const cacheStatuses = [...new Set(['Odpremljen', 'Novo', 'Pripravljen za odpremo', status].filter(Boolean))];
+                for (const s of cacheStatuses) {
+                    writePackingCacheEntry(`orders_${s}_${datePart}`, allOrders.filter(o => (o.status || '').startsWith(s)));
+                }
+                if (!status) writePackingCacheEntry(`orders_all_${datePart}`, allOrders);
             }
-            if (!status) writePackingCacheEntry(`orders_all_${datePart}`, allOrders);
         } catch (cacheErr) {
             console.error('[Packing] Cache write failed:', cacheErr.message);
         }
@@ -3417,6 +3429,59 @@ async function backfillPoDnevih(dni, od = 0) {
 }
 
 // En dan. Vrne true SAMO, ce smo res dobili sveze podatke (ne stale odgovora).
+// [2026-08-31 Dejan] INKREMENTALNO OSVEZEVANJE PO ZADNJI SPREMEMBI.
+// Prej: ugibali smo, kateri star dan osveziti (en dan na 10 min => cel rep sele v ~4,5 h),
+// zato je naročilo s spremenjenim statusom obviselo tudi ure, in za KNEEFIX/KOMPSFIT je
+// bilo treba rocno gnati 30-dnevni sync (234 strani, ~20 min).
+// Zdaj vprasamo Metakocko naravnost: kaj se je spremenilo od zadnjic. Izmerjeno 31.8.2026:
+// spremembe zadnjih 10 min = ~2 strani = ~12 s.
+let CHANGE_SYNC_RUNNING = false;
+function mkCasZaMetakocko(ms) {
+    // Metakocka zahteva '2026-08-31T14:00:00+02:00'; ISO brez odmika ali z 'Z' zavrne.
+    return new Date(ms + 2 * 3600 * 1000).toISOString().replace(/\.\d+Z$/, '') + '+02:00';
+}
+async function osveziSpremenjena() {
+    if (CHANGE_SYNC_RUNNING || LONG_WARMUP_RUNNING) return;
+    CHANGE_SYNC_RUNNING = true;
+    const t0 = Date.now();
+    try {
+        const zadnji = parseInt(tsdb.getMeta('lastChangeSyncTs') || '0', 10);
+        // 10-minutno prekrivanje, da med dvema tekoma nic ne pade skozi; brez zgodovine
+        // pogledamo 2 uri nazaj, po dolgem izpadu najvec 24 h (dlje je delo za full sync).
+        // Prekrivanje 15 min pri 5-minutnem ritmu: tudi ce en ali dva teka spodletita,
+        // naslednji uspesni pokrije njuno okno in nic ne pade skozi mrezo.
+        const odMs = zadnji
+            ? Math.max(zadnji - 15 * 60 * 1000, Date.now() - 24 * 3600 * 1000)
+            : Date.now() - 2 * 3600 * 1000;
+        const od = mkCasZaMetakocko(odMs);
+        const n = await new Promise((resolve) => {
+            const mockReq = { query: { status: '', limit: '20000', changed: od, _bg: '1', force: '1' },
+                              method: 'GET', url: `/api/packing/orders?changed=${od}&_bg=1&force=1` };
+            let koncano = false;
+            const konec = (v) => { if (!koncano) { koncano = true; resolve(v); } };
+            const mockRes = { setHeader: () => {}, status: function (c) { this._s = c; return this; },
+                json: function (d) { konec(d && Array.isArray(d.orders) && !d.stale ? d.orders.length : -1); } };
+            const stack = (app._router && app._router.stack) || [];
+            const route = stack.find(l => l.route && l.route.path === '/api/packing/orders');
+            if (!route) return konec(-1);
+            Promise.resolve(route.route.stack[0].handle(mockReq, mockRes, () => {})).catch(() => konec(-1));
+            setTimeout(() => konec(-1), 10 * 60 * 1000);
+        });
+        const sek = Math.round((Date.now() - t0) / 1000);
+        if (n >= 0) {
+            tsdb.setMeta('lastChangeSyncTs', String(t0));
+            tsdb.setMeta('lastChangeSync', new Date(t0).toISOString());
+            tsdb.setMeta('lastChangeSyncResult', `OK — ${n} spremenjenih od ${od}, ${sek} s`);
+            console.log(`[ChangeSync] ${n} spremenjenih naročil od ${od} (${sek} s)`);
+        } else {
+            tsdb.setMeta('lastChangeSyncResult', `NEUSPELO po ${sek} s (cas zadnjega uspeha ostaja)`);
+            console.error('[ChangeSync] neuspelo — cas zadnjega uspeha ostaja, naslednjic pogledamo dlje nazaj');
+        }
+    } catch (e) {
+        console.error('[ChangeSync] napaka:', e.message);
+    } finally { CHANGE_SYNC_RUNNING = false; }
+}
+
 function potegniDan(dan) {
     return new Promise((resolve) => {
         const mockReq = { query: { status: '', limit: '5000', date: dan, _bg: '1', force: '1' },
@@ -3600,19 +3665,35 @@ try {
     console.log('[TopsellersDB] pripravljena: ' + c0.total + ' narocil, ' + Object.keys(c0.byDay).length + ' dni, najstarejsi ' + (c0.oldest || '-'));
 } catch (e) { console.error('[TopsellersDB] init:', e.message); }
 
+// [2026-08-31] Prvi ChangeSync ze 40 s po zagonu — skladisce ne sme cakati 3 min na
+// sveze statuse samo zato, ker je bila aplikacija restartana.
+setTimeout(() => { osveziSpremenjena().catch(() => {}); }, 40 * 1000);
+
 // Prvi pregled 3 min po zagonu, nato vsakih 10 min (en poceni enodnevni klic ali nic).
 setTimeout(() => {
     maintainRolling().catch(e => console.error('[TopsellersDB]', e.message));
     setInterval(() => { maintainRolling().catch(e => console.error('[TopsellersDB]', e.message)); }, 10 * 60 * 1000);
+    // [2026-08-31] Spremembe statusov lovimo naravnost (last_change_from), vsakih 10 min.
+    setInterval(() => { osveziSpremenjena().catch(e => console.error('[ChangeSync]', e.message)); }, 5 * 60 * 1000);
+    setTimeout(() => { osveziSpremenjena().catch(() => {}); }, 15 * 1000);
 }, 3 * 60 * 1000);
 
-// Zazeni warmup TAKOJ po startu (3s zaradi express init) + vsakih 90s
-setTimeout(() => {
-    warmupPackingCache().catch(e => console.error('[Packing/Warmup] First run error:', e.message));
-    setInterval(() => {
-        warmupPackingCache().catch(e => console.error('[Packing/Warmup] Run error:', e.message));
-    }, 90 * 1000);  // 5min -> 90s: bolj svez cache, manjsa luknja ob outage-u
-}, 45 * 1000);  // [2026-08-31] 3s -> 45s: aplikacija naj najprej postane odzivna,
+// [2026-08-31 Dejan] PREDPOLNILNIK UGASNJEN. Izmerjeno na zivem strezniku:
+// tekel je vsakih 90 s, vsakic 21 strani / 2000 narocil / 145 s — torej praktično
+// neprekinjeno. Pisal je cache kljuce orders_*_last3d, ki jih NOBENA stran ne bere:
+// index.html in topsellers.html klicheta z ?days=..., kar gre po poti isLongWindow
+// in se postreze iz baze (db:true). Povrhu je bil ta cache odrezan pri 2000 narocilih
+// (meja 20 strani), zato v njem ni bilo celega 29.8. — podatki so bili nepopolni.
+// Bazo zdaj polni osveziSpremenjena() prek last_change_from: 7 strani / 27 s, in ujame
+// tudi stara narocila s spremenjenim statusom, cesar warmup ni znal.
+// Funkcija warmupPackingCache() ostane (klice jo se stale-pot v handlerju), samo ne
+// tece vec po urniku. Ce bi bilo treba nazaj: odkomentiraj spodnji blok.
+// setTimeout(() => {
+//     warmupPackingCache().catch(e => console.error('[Packing/Warmup] First run error:', e.message));
+//     setInterval(() => {
+//         warmupPackingCache().catch(e => console.error('[Packing/Warmup] Run error:', e.message));
+//     }, 90 * 1000);
+// }, 45 * 1000);
 
 
 // [2026-08-31 Dejan] Poln sync prezivi restart. Restarti se dogajajo (deploy, watchdog,
