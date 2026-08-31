@@ -3597,8 +3597,14 @@ app.get('/api/health', (req, res) => {
     try {
         const ts = parseInt(tsdb.getMeta('lastChangeSyncTs') || '0', 10);
         const ageMin = ts ? Math.round((Date.now() - ts) / 60000) : null;
-        // ritem je 5 min; 30 min pomeni, da je 6 tekov zapored spodletelo
-        checks.sync = { ok: ageMin !== null && ageMin < 30, ageMin };
+        // ritem je 5 min; 30 min pomeni, da je 6 tekov zapored spodletelo.
+        // [2026-08-31] IZJEMA: ce je Metakocka nedosegljiva (circuit breaker odprt),
+        // stara sinhronizacija NI nasa napaka in restart je ne bo popravil — watchdog
+        // bi aplikacijo brezveze ubijal vsakih 10 min skozi cel izpad Metakocke.
+        // Stran medtem normalno strezi iz baze, zato je to zdravo stanje.
+        const mkDol = isMetakockaCircuitOpen();
+        checks.sync = { ok: mkDol || (ageMin !== null && ageMin < 30), ageMin,
+                        metakockaNedosegljiva: mkDol || undefined };
     } catch (e) { checks.sync = { ok: false, error: e.message }; }
     // 3) packed-orders datoteka berljiva (kriticni podatek skladisca)
     try {
