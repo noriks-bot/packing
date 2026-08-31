@@ -3535,6 +3535,17 @@ async function maintainRolling() {
     // Prej je segala samo do 13. dneva -> naročila, starejša od 14 dni, se NIKOLI niso
     // osvezila in so obvisela v starem statusu (DELAY namesto Odpremljen).
     // Ritem ostaja EN dan na tek (vsakih 10 min) -> cel rep v ~4,5 h, brez dodatnih MK klicev.
+    // [2026-08-31 Dejan] Rotacija je bila edini nacin, da ujamemo spremembo statusa pri
+    // starem narocilu — na slepo smo vsakih 10 min znova prebrali en star dan (cel rep sele
+    // v ~4,5 h). osveziSpremenjena() zdaj vpraSa Metakocko naravnost (last_change_from) in
+    // isto ujame v sekundah. Rotacijo zato pustimo SAMO kot varovalko: ce ChangeSync ze pol
+    // ure ni uspel, se spet vklopi.
+    const chTs = parseInt(tsdb.getMeta('lastChangeSyncTs') || '0', 10);
+    if (chTs && Date.now() - chTs < 30 * 60 * 1000) {
+        console.log('[TopsellersDB] rotacija preskocena — ChangeSync je svez (' +
+                    Math.round((Date.now() - chTs) / 60000) + ' min)');
+        return;
+    }
     const pending = tsdb.pendingByDay(ROTATE_DAYS);
     let best = null, bestScore = -1;
     for (let i = 3; i < ROTATE_DAYS; i++) {
