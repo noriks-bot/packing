@@ -3138,7 +3138,10 @@ function markMetakockaFail() {
 // JSON ostane le kot enkratni uvoz ob prehodu.
 const tsdb = require('./topsellers-db');
 const ROLLING_FILE = path.join(__dirname, 'data', 'orders-rolling.json');
-const ROLLING_DAYS = 14;
+// [2026-08-31 Dejan] 14 -> 7 dni. Ob hladnem zagonu je 14-dnevni uvoz (~23.000 narocil)
+// presegel pm2 mejo, pm2 je proces ubil sredi warmupa in nastala je zanka strtja
+// (14 restartov). Sedem dni prepolovi vrh porabe. Prikaz ostane 30-dnevni iz baze.
+const ROLLING_DAYS = 7;
 const ROTATE_DAYS = 30;   // [2026-08-19] rotacija sledi statusom cez cel 30-dnevni prikaz
 function _dayStr(offsetDays) {
     const d = new Date(Date.now() + (offsetDays || 0) * 24 * 60 * 60 * 1000);
@@ -3366,7 +3369,7 @@ async function fetchOneDayIntoRolling(day) {
 // v bazi TAKOJ, delni napredek se ohrani, neuspel dan se ponovi SAM (do 3x).
 // KLJUCNO: kratek odgovor "stale/refreshing" (ozadje ravno vlece isti dan) se NE sme
 // steti za uspeh — prav to je 27.8. pustilo 18.8. in 13.8. neosvezena.
-async function backfillPoDnevih(dni) {
+async function backfillPoDnevih(dni, od = 0) {
     const N = Math.min(dni || ROTATE_DAYS, PACKING_DAYS_MAX);
     // pocakaj na redno osvezevanje, da si ne skacemo v zelje
     for (let i = 0; i < 60 && (LONG_WARMUP_RUNNING || BACKGROUND_WARMUP_RUNNING); i++) {
@@ -3376,8 +3379,10 @@ async function backfillPoDnevih(dni) {
     LONG_WARMUP_RUNNING = true;
     const t0 = Date.now();
     let uspelo = 0; const neuspeli = [];
+    const poskusiResume = (parseInt(tsdb.getMeta('syncPoskusi') || '0', 10) || 0) + 1;
+    tsdb.setMeta('syncPoskusi', String(poskusiResume));
     try {
-        for (let i = 0; i < N; i++) {
+        for (let i = od; i < N; i++) {
             const dan = tsdb.dayStr(-i);
             let ok = false;
             for (let poskus = 1; poskus <= 3 && !ok; poskus++) {
@@ -3389,6 +3394,8 @@ async function backfillPoDnevih(dni) {
                 skupaj: N, koncano: i + 1, dan, uspelo, neuspeli: neuspeli.length,
                 sekund: Math.round((Date.now() - t0) / 1000)
             }));
+            // [2026-08-31] Zapisi naslednji dan, da po restartu nadaljujemo tam, kjer smo ostali.
+            tsdb.setMeta('syncNadaljuj', JSON.stringify({ skupaj: N, naslednji: i + 1, poskusi: poskusiResume }));
             await new Promise(r => setTimeout(r, 1500));
         }
         const sek = Math.round((Date.now() - t0) / 1000);
@@ -3396,6 +3403,8 @@ async function backfillPoDnevih(dni) {
         tsdb.setMeta('lastFullSyncResult', neuspeli.length
             ? `KONCANO z opozorilom — ${uspelo}/${N} dni, ${sek} s; NEUSPELI: ${neuspeli.join(', ')}`
             : `OK — ${uspelo}/${N} dni, ${sek} s`);
+        tsdb.setMeta('syncNadaljuj', '');
+        tsdb.setMeta('syncPoskusi', '0');
         console.log('[TopsellersDB] Sync po dnevih: ' + uspelo + '/' + N + ' dni v ' + sek + ' s' +
                     (neuspeli.length ? ' | neuspeli: ' + neuspeli.join(', ') : ''));
     } catch (e) {
@@ -3500,20 +3509,24 @@ app.get('/api/health', (req, res) => {
     let ok = true;
     // 1) topsellers baza berljiva in pokrita
     try {
-        const cov = tsdb.coverage(ROLLING_DAYS);
+        // [2026-08-31 Dejan] Health mora biti POCENI. Prej je klical coverage(), ki
+        // prescese celo okno — trajalo je 12-15 s in watchdog je aplikacijo ubijal.
+        const cov = tsdb.coverage(2);
         checks.db = { ok: cov.total > 100 && cov.missing.length <= 2, orders: cov.total, missingDays: cov.missing.length };
     } catch (e) { checks.db = { ok: false, error: e.message }; }
     // 2) packing cache svezina (redni sync tece?)
     try {
-        const all = readPackingCache();
-        const e = all['orders_Odpremljen_last3d'];
-        const ageMin = e && e.cachedAt ? Math.round((Date.now() - new Date(e.cachedAt).getTime()) / 60000) : null;
+        // [2026-08-31 Dejan] Samo casovni zig, ne vsebina.
+        const ts = tsdb.cacheAge('orders_Odpremljen_last3d');
+        const ageMin = ts ? Math.round((Date.now() - new Date(ts).getTime()) / 60000) : null;
         checks.cache = { ok: ageMin !== null && ageMin < 30, ageMin };
     } catch (e) { checks.cache = { ok: false, error: e.message }; }
     // 3) packed-orders datoteka berljiva (kriticni podatek skladisca)
     try {
-        const n = packedMod.count();
-        checks.packed = { ok: n > 0, entries: n };
+        // [2026-08-31 Dejan] Prej packedMod.count(), ki razcleni 2,5 MB datoteko ob
+        // vsakem klicu. Dovolj je, da datoteka obstaja in ni prazna.
+        const st = fs.statSync(path.join(__dirname, 'data', 'packed-orders.json'));
+        checks.packed = { ok: st.size > 100, kB: Math.round(st.size / 1024) };
     } catch (e) { checks.packed = { ok: false, error: e.message }; }
     // 4) disk zapisljiv (atomicni zapisi ga rabijo)
     try {
@@ -3535,7 +3548,8 @@ app.get('/api/packing/topsellers-resync', (req, res) => {
     tsdb.setMeta('lastFullSyncTs', String(Date.now()));
     tsdb.setMeta('lastFullSyncResult', 'tece...');
     // Cel 30-dnevni prikaz (prej samo 14 dni -> starejsa narocila gumb ni osvezil).
-    backfillPoDnevih(ROTATE_DAYS).catch((e) => {
+    const odDne = Math.max(0, Math.min(parseInt(req.query.od || '0', 10) || 0, PACKING_DAYS_MAX - 1));
+    backfillPoDnevih(ROTATE_DAYS, odDne).catch((e) => {
         tsdb.setMeta('lastFullSyncResult', 'NAPAKA: ' + e.message);
     });
     res.json({ started: true });
@@ -3555,7 +3569,8 @@ app.get('/api/packing/topsellers-sync', (req, res) => {
     // POCAKA na warmup namesto da tiho odstopi (prej ~vsak drugi klik ni naredil nicesar).
     // [2026-08-27 Dejan] Gumb gre po DNEVIH (glej backfillPoDnevih): vsak dan pristane
     // takoj, neuspel se ponovi sam, "stale" odgovor se ne steje za uspeh.
-    backfillPoDnevih(ROTATE_DAYS).catch((e) => {
+    const odDne = Math.max(0, Math.min(parseInt(req.query.od || '0', 10) || 0, PACKING_DAYS_MAX - 1));
+    backfillPoDnevih(ROTATE_DAYS, odDne).catch((e) => {
         tsdb.setMeta('lastFullSyncResult', 'NAPAKA: ' + e.message);
     });
     res.json({ started: true });
@@ -3597,7 +3612,30 @@ setTimeout(() => {
     setInterval(() => {
         warmupPackingCache().catch(e => console.error('[Packing/Warmup] Run error:', e.message));
     }, 90 * 1000);  // 5min -> 90s: bolj svez cache, manjsa luknja ob outage-u
-}, 3 * 1000);  // 10s -> 3s: hitrejsi cold-start cache fill
+}, 45 * 1000);  // [2026-08-31] 3s -> 45s: aplikacija naj najprej postane odzivna,
+
+
+// [2026-08-31 Dejan] Poln sync prezivi restart. Restarti se dogajajo (deploy, watchdog,
+// druga seja) in prej so vsakic ubili sync na sredini. Zdaj se po zagonu sam nadaljuje
+// od zadnjega koncanega dneva. Varovalka: najvec 10 nadaljevanj, da ne zaide v zanko.
+setTimeout(() => {
+    try {
+        const raw = tsdb.getMeta('syncNadaljuj');
+        if (!raw) return;
+        const st = JSON.parse(raw);
+        if (!st || typeof st.naslednji !== 'number' || st.naslednji >= st.skupaj) return;
+        if ((st.poskusi || 0) > 10) {
+            tsdb.setMeta('lastFullSyncResult', 'USTAVLJENO: prevec nadaljevanj (' + st.poskusi + ')');
+            tsdb.setMeta('syncNadaljuj', '');
+            return;
+        }
+        console.log('[TopsellersDB] Nadaljujem prekinjen sync od dneva ' + st.naslednji + '/' + st.skupaj);
+        backfillPoDnevih(st.skupaj, st.naslednji).catch((e) => {
+            tsdb.setMeta('lastFullSyncResult', 'NAPAKA: ' + e.message);
+        });
+    } catch (e) { console.error('[TopsellersDB] Nadaljevanje synca ni uspelo:', e.message); }
+}, 75 * 1000);
+                //  sele nato tezki warmup — sicer pm2 ubije proces sredi zagona.
 // =====================================================
 
 // [FAZA3] Globalni Express error handler: napaka v handlerju vrne cist 500 JSON

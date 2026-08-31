@@ -952,7 +952,7 @@
             const status = document.getElementById('filter-status').value;
             
             try {
-                const response = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&days=30&limit=20000`);
+                const response = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&days=14&limit=8000`);
                 const data = await response.json();
                 
                 if (data.error) {
@@ -1326,7 +1326,7 @@
             
             for (const status of statuses) {
                 try {
-                    const res = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&days=30&limit=20000`);
+                    const res = await fetch(`/api/packing/orders?status=${encodeURIComponent(status)}&days=14&limit=8000`);
                     const data = await res.json();
                     for (const order of (data.orders || [])) {
                         let orderHasWarning = false;

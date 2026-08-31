@@ -22,7 +22,10 @@ alert() {
     fi
 }
 
-BODY="$(curl -sm 15 http://localhost:3006/api/health 2>/dev/null || true)"
+# [2026-08-31 Dejan] 15s -> 45s. Health je zacel trajati 12-15 s, watchdog je zato
+# dobil prazen odgovor in aplikacijo restartal, cetudi je bila ziva. To je povzrocilo
+# zanko restartov (25 restartov v uri) in ubijalo poln sync na drugem dnevu.
+BODY="$(curl -sm 45 http://localhost:3006/api/health 2>/dev/null || true)"
 OK="$(echo "$BODY" | python3 -c 'import json,sys
 try: print("1" if json.load(sys.stdin).get("ok") else "0")
 except Exception: print("0")' 2>/dev/null || echo 0)"

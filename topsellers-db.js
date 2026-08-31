@@ -266,6 +266,15 @@ function importFromJson(jsonPath) {
 }
 
 // ── shramba dopolnitev iz WooCommerca ──────────────────────────────────────
+// [2026-08-31 Dejan] Samo casovni zig kljuca, BREZ vsebine. Health je prej bral in
+// razclenil cel predpomnilnik (desetine MB) in zato trajal 15 s.
+function cacheAge(k) {
+    try {
+        const r = db().prepare('SELECT cached_at FROM cache WHERE k = ?').get(String(k));
+        return r ? r.cached_at : null;
+    } catch (_) { return null; }
+}
+
 function wcGet(id) {
     try {
         const r = db().prepare('SELECT payload FROM wc_enrich WHERE id = ?').get(String(id));
@@ -289,4 +298,4 @@ function wcStats() {
 
 module.exports = { upsertMany, getOrders, coverage, prune, setMeta, getMeta, importFromJson, dayStr, pendingByDay,
                    cacheGet, cacheGetAll, cacheSet, cacheImportFromJson, KEEP_DAYS, DB_FILE,
-                   wcGet, wcSet, wcPrune, wcStats };
+                   wcGet, wcSet, wcPrune, wcStats, cacheAge };

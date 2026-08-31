@@ -8,7 +8,7 @@ module.exports = {
         script: 'server.js',
         cwd: '/home/ec2-user/apps/packing',
         exec_mode: 'fork',
-        max_memory_restart: '400M',
+        max_memory_restart: '800M',
         // pocasnejsi restart-loop guard: ce app pade takoj po zagonu, pm2 caka
         min_uptime: '20s',
         max_restarts: 10,
