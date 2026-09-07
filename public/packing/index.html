@@ -524,6 +524,7 @@
                 <button class="country-btn" data-sort="name-desc" onclick="setSort('name-desc', this)">🔤 Ž→A</button>
                 <button class="country-btn" data-sort="id-asc" onclick="setSort('id-asc', this)">#↑</button>
                 <button class="country-btn" data-sort="id-desc" onclick="setSort('id-desc', this)">#↓</button>
+                <button class="country-btn" data-sort="artikli" onclick="setSort('artikli', this)">📦 Artikli</button>
             </div>
             <input type="text" id="search-name" placeholder="Iskanje: ime ali št. naročila…" oninput="filterByCountry()" style="padding:6px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:180px; margin-left:10px;">
         </div>
@@ -697,7 +698,7 @@
         };
         
         let selectedCountry = '';
-        let currentSort = 'newest'; // newest, oldest, name-asc, name-desc, id-asc, id-desc
+        let currentSort = 'newest'; // newest, oldest, name-asc, name-desc, id-asc, id-desc, artikli
         
         function setSort(mode, btn) {
             currentSort = mode;
@@ -1032,9 +1033,37 @@
             const unpacked = orders.filter(o => !isOrderPacked(o.id));
             const packed = orders.filter(o => isOrderPacked(o.id));
             
+            // [2026-09-01 Dejan] Sortiranje po ARTIKLIH. Trije nivoji, po vrsti:
+            //   1) naročila z ENIM samim artiklom pridejo prva,
+            //   2) nato po abecedi artikla (glavni = PRVI izdelek naročila, isto kot zavihki),
+            //   3) na koncu po abecedi stranke.
+            // Ime artikla beremo iz istega vira kot kartica, da se seznam ujema s tem,
+            // kar skladiščnik vidi na zaslonu.
+            const glavniArtikel = (o) => {
+                const p = (o.products || [])[0] || {};
+                const it = (p.items || [])[0] || {};
+                return String(it.type || p.label || p.code || '').trim();
+            };
+            // Kosi, ne vrstice: kartica izpiše "3x", zato item.count šteje.
+            const steviloKosov = (o) => {
+                let n = 0;
+                for (const pr of (o.products || [])) {
+                    for (const it of (pr.items || [])) n += (it.count || 1);
+                }
+                return n;
+            };
+
             // Sort
             const sortFn = (a, b) => {
                 switch (currentSort) {
+                    case 'artikli': {
+                        const ea = steviloKosov(a) === 1 ? 0 : 1;
+                        const eb = steviloKosov(b) === 1 ? 0 : 1;
+                        if (ea !== eb) return ea - eb;
+                        const raz = glavniArtikel(a).localeCompare(glavniArtikel(b), 'sl');
+                        if (raz !== 0) return raz;
+                        return (a.customer || '').localeCompare(b.customer || '', 'sl');
+                    }
                     case 'newest': {
                         const da = (a.date || '') + ' ' + (a.time || '');
                         const db = (b.date || '') + ' ' + (b.time || '');
