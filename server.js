@@ -3099,6 +3099,86 @@ app.get('/api/packing/health', (req, res) => {
 // Serve index.html for root
 // [2026-09-07 Dejan] Novi podstrani. Sta za requireAuth (auth.install je zgoraj),
 // zato zahtevata prijavo kot vse ostalo. Zaenkrat prazni.
+// [2026-09-07 Dejan] SPAKIRANI PAKETI — iskanje, filtriranje, razvrscanje.
+// Zakaj tako: spakiranih je ~42.000, a vsak zapis nosi le id, cas in ime kupca.
+// Podrobnosti (drzava, izdelki, povezave) so v bazi, a le za zadnjih 30 dni.
+// Zato: filtriramo in razvrscamo nad lahkim seznamom, iz baze pa poberemo
+// podrobnosti SAMO za prikazano stran (~60 narocil) — ena poizvedba.
+let _drzaveCache = { ts: 0, map: null };
+function drzaveZaSpakirane() {
+    // Drzava je v bazi; index zgradimo enkrat na minuto, da filter po drzavi
+    // ne pomeni poizvedbe na vsak pritisk tipke.
+    // 5 min: gradnja prebere 30 dni naročil (~29k), drzave pa se prakticno ne spreminjajo.
+    if (_drzaveCache.map && Date.now() - _drzaveCache.ts < 5 * 60 * 1000) return _drzaveCache.map;
+    const m = new Map();
+    try {
+        for (const o of tsdb.getOrders({ days: PACKING_DAYS_MAX, limit: 100000 })) {
+            if (o.country) m.set(o.id, o.country);
+        }
+    } catch (e) { console.error('[Spakirani] index drzav:', e.message); }
+    _drzaveCache = { ts: Date.now(), map: m };
+    return m;
+}
+
+app.get('/api/packing/spakirani', (req, res) => {
+    try {
+        const q = String(req.query.q || '').trim().toLowerCase();
+        const od = String(req.query.od || '').trim();          // YYYY-MM-DD
+        const doD = String(req.query.do || '').trim();
+        const drzava = String(req.query.drzava || '').trim();
+        const sort = String(req.query.sort || 'novo');
+        const naStran = Math.min(Math.max(parseInt(req.query.naStran, 10) || 60, 10), 200);
+        const stran = Math.max(parseInt(req.query.stran, 10) || 0, 0);
+
+        const drzave = drzava ? drzaveZaSpakirane() : null;
+        let vrstice = packedMod.vsiSpakirani();
+
+        if (q || od || doD || drzava) {
+            vrstice = vrstice.filter(v => {
+                if (q && !(String(v.customer).toLowerCase().includes(q) || String(v.id).toLowerCase().includes(q))) return false;
+                const dan = String(v.packedAt || '').slice(0, 10);
+                if (od && dan < od) return false;
+                if (doD && dan > doD) return false;
+                if (drzava && drzave.get(v.id) !== drzava) return false;
+                return true;
+            });
+        }
+
+        const skupaj = vrstice.length;
+        if (sort !== 'novo') {
+            vrstice = vrstice.slice();
+            const st = (x) => parseInt(String(x.id).split('/')[0]) || 0;
+            if (sort === 'staro')        vrstice.sort((a, b) => String(a.packedAt).localeCompare(String(b.packedAt)));
+            else if (sort === 'ime')     vrstice.sort((a, b) => String(a.customer).localeCompare(String(b.customer), 'sl'));
+            else if (sort === 'ime-obr') vrstice.sort((a, b) => String(b.customer).localeCompare(String(a.customer), 'sl'));
+            else if (sort === 'st')      vrstice.sort((a, b) => st(a) - st(b));
+            else if (sort === 'st-obr')  vrstice.sort((a, b) => st(b) - st(a));
+        }
+
+        const kos = vrstice.slice(stran * naStran, stran * naStran + naStran);
+        let podrobnosti = {};
+        try { podrobnosti = tsdb.getByIds(kos.map(v => v.id)); } catch (e) { console.error('[Spakirani] getByIds:', e.message); }
+
+        res.json({
+            skupaj, stran, naStran,
+            jihJeSe: (stran + 1) * naStran < skupaj,
+            vsehSpakiranih: packedMod.vsiSpakirani().length,
+            vrstice: kos.map(v => Object.assign({}, v, { podrobno: podrobnosti[v.id] || null }))
+        });
+    } catch (e) {
+        console.error('[Spakirani] napaka:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Drzave, ki jih poznamo (za pilule filtra).
+app.get('/api/packing/spakirani-drzave', (req, res) => {
+    const m = drzaveZaSpakirane();
+    const st = {};
+    for (const d of m.values()) st[d] = (st[d] || 0) + 1;
+    res.json(Object.entries(st).sort((a, b) => b[1] - a[1]).map(([drzava, n]) => ({ drzava, n })));
+});
+
 app.get('/predpakiranje', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'predpakiranje.html'));
 });

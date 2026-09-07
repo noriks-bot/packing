@@ -296,6 +296,27 @@ function wcStats() {
     try { return db().prepare('SELECT COUNT(*) c FROM wc_enrich').get().c; } catch (_) { return 0; }
 }
 
-module.exports = { upsertMany, getOrders, coverage, prune, setMeta, getMeta, importFromJson, dayStr, pendingByDay,
+// [2026-09-07 Dejan] Podrobnosti za konkretna naročila (stran Spakirani paketi).
+// Bere se SAMO za prikazano stran (~60 ID-jev), zato je poizvedba majhna.
+function getByIds(ids) {
+    if (!Array.isArray(ids) || !ids.length) return {};
+    const out = {};
+    const KOS = 400;                       // SQLite ima mejo st. parametrov
+    for (let i = 0; i < ids.length; i += KOS) {
+        const del = ids.slice(i, i + KOS);
+        const q = del.map(() => '?').join(',');
+        for (const r of db().prepare('SELECT * FROM orders WHERE id IN (' + q + ')').all(...del)) {
+            out[r.id] = {
+                id: r.id, customer: r.customer, country: r.country, status: r.status,
+                date: r.order_date, time: r.order_time, total: r.total, currency: r.currency,
+                wcId: r.wc_id || '', mkId: r.mk_id || '', eshop: r.eshop || '',
+                products: (() => { try { return JSON.parse(r.products || '[]'); } catch (_) { return []; } })()
+            };
+        }
+    }
+    return out;
+}
+
+module.exports = { upsertMany, getOrders, getByIds, coverage, prune, setMeta, getMeta, importFromJson, dayStr, pendingByDay,
                    cacheGet, cacheGetAll, cacheSet, cacheImportFromJson, KEEP_DAYS, DB_FILE,
                    wcGet, wcSet, wcPrune, wcStats, cacheAge };

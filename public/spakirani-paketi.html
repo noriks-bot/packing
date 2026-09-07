@@ -7,31 +7,226 @@
 <style>
     :root { --topnav-h: 46px; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-           background: #f3f4f6; color: #111827; }
-    .topnav { position: fixed; top: 0; left: 0; right: 0; height: var(--topnav-h);
-              background: #111827; display: flex; align-items: center; gap: 18px;
-              padding: 0 14px; z-index: 100; }
-    .topnav .brand { color: #fff; font-weight: 700; font-size: 14px; white-space: nowrap; }
-    .topnav a { color: rgba(255,255,255,.62); text-decoration: none; font-size: 13px; font-weight: 600;
-                padding: 0 2px; line-height: var(--topnav-h); border-bottom: 2px solid transparent; }
-    .topnav a:hover { color: #fff; }
-    .topnav a.active { color: #fff; border-bottom-color: #10b981; }
-    .vsebina { padding: calc(var(--topnav-h) + 28px) 20px 40px; max-width: 1100px; margin: 0 auto; }
-    h1 { font-size: 20px; margin: 0 0 8px; }
-    p { color: #6b7280; font-size: 14px; margin: 0; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+           background:#f3f4f6; color:#111827; }
+    .topnav { position:fixed; top:0; left:0; right:0; height:var(--topnav-h); background:#111827;
+              display:flex; align-items:center; gap:16px; padding:0 14px; z-index:100; }
+    .topnav .brand { color:#fff; font-weight:700; font-size:14px; white-space:nowrap; }
+    .topnav a { color:rgba(255,255,255,.62); text-decoration:none; font-size:13px; font-weight:600;
+                line-height:var(--topnav-h); border-bottom:2px solid transparent; }
+    .topnav a:hover { color:#fff; }
+    .topnav a.active { color:#fff; border-bottom-color:#10b981; }
+
+    .ovoj { max-width:1100px; margin:0 auto; padding:calc(var(--topnav-h) + 14px) 12px 60px; }
+    h1 { font-size:18px; margin:0 0 10px; }
+
+    .orodja { background:#fff; border-radius:10px; padding:10px 12px; margin-bottom:12px;
+              box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; flex-direction:column; gap:8px; }
+    .vrsta { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    .vrsta label { font-size:12px; color:#6b7280; font-weight:600; }
+    input[type=text], input[type=date] { padding:6px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; }
+    #isci { flex:1; min-width:180px; }
+    .gumb { padding:5px 10px; border:1px solid #e5e7eb; background:#fff; border-radius:999px;
+            font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+    .gumb:hover { background:#f9fafb; }
+    .gumb.aktiven { background:#10b981; border-color:#10b981; color:#fff; }
+    .stevec { font-size:12px; color:#6b7280; }
+    .stevec b { color:#111827; }
+
+    #mreza { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .kartica { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px;
+               box-shadow:0 1px 2px rgba(0,0,0,.04); }
+    .kglava { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+    .kupec { font-weight:700; font-size:14px; word-break:break-word; }
+    .desno { text-align:right; font-size:12px; color:#6b7280; white-space:nowrap; }
+    .stev { color:#059669; font-weight:700; font-size:13px; }
+    .cas { color:#374151; font-weight:600; }
+    .izdelki { margin-top:8px; padding-top:8px; border-top:1px solid #f3f4f6; font-size:12px; color:#374151; }
+    .izdelki .naslov { color:#6b7280; font-size:11px; }
+    .kos { margin-left:2px; }
+    .povezave { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+    .povezava { font-size:11px; font-weight:600; text-decoration:none; padding:3px 8px; border-radius:6px; }
+    .p-wc { background:#f3e8ff; color:#7c3aed; }
+    .p-mk { background:#dbeafe; color:#1d4ed8; }
+    .znacka { font-size:10px; font-weight:700; padding:2px 6px; border-radius:999px;
+              background:#f3f4f6; color:#6b7280; }
+    .ni { color:#9ca3af; font-size:12px; font-style:italic; margin-top:8px; padding-top:8px;
+         border-top:1px solid #f3f4f6; }
+    #vec { display:block; margin:16px auto; padding:10px 22px; border:0; border-radius:8px;
+           background:#111827; color:#fff; font-size:13px; font-weight:600; cursor:pointer; }
+    #vec[disabled] { opacity:.5; cursor:default; }
+    .prazno { text-align:center; color:#6b7280; padding:40px 0; }
+    @media (max-width: 768px) {
+        #mreza { grid-template-columns:1fr; }
+        .topnav { flex-wrap:wrap; height:auto; padding:4px 10px; }
+        .topnav a { line-height:30px; }
+    }
 </style>
 </head>
 <body>
-    <nav class="topnav">
-        <div class="brand">📦 NORIKS</div>
-        <a href="/packing/">Pakiranje</a>
-        <a href="/predpakiranje" >Predpakiranje</a>
-        <a href="/spakirani-paketi" class="active">Spakirani paketi</a>
-    </nav>
-    <div class="vsebina">
-        <h1>Spakirani paketi</h1>
-        <p>Stran je pripravljena, vsebine še ni.</p>
+<nav class="topnav">
+    <div class="brand">📦 NORIKS</div>
+    <a href="/packing/">Pakiranje</a>
+    <a href="/predpakiranje">Predpakiranje</a>
+    <a href="/spakirani-paketi" class="active">Spakirani paketi</a>
+</nav>
+
+<div class="ovoj">
+    <h1>📦 Spakirani paketi</h1>
+
+    <div class="orodja">
+        <div class="vrsta">
+            <input type="text" id="isci" placeholder="Iskanje: ime kupca ali št. naročila…">
+            <label>od</label><input type="date" id="od">
+            <label>do</label><input type="date" id="doD">
+            <button class="gumb" id="pocisti">✕ Počisti</button>
+        </div>
+        <div class="vrsta" id="drzave"></div>
+        <div class="vrsta" id="sortiranje">
+            <button class="gumb aktiven" data-sort="novo">🕐 Najnovejši</button>
+            <button class="gumb" data-sort="staro">🕐 Najstarejši</button>
+            <button class="gumb" data-sort="ime">🔤 A→Ž</button>
+            <button class="gumb" data-sort="ime-obr">🔤 Ž→A</button>
+            <button class="gumb" data-sort="st">#↑</button>
+            <button class="gumb" data-sort="st-obr">#↓</button>
+        </div>
+        <div class="stevec" id="stevec">Nalagam…</div>
     </div>
+
+    <div id="mreza"></div>
+    <button id="vec" style="display:none;">Naloži več</button>
+    <div id="konec"></div>
+</div>
+
+<script>
+const zastave = { 'Croatia':'🇭🇷','Czech Republic':'🇨🇿','Poland':'🇵🇱','Slovakia':'🇸🇰','Hungary':'🇭🇺',
+                  'Greece':'🇬🇷','Italy':'🇮🇹','Slovenia':'🇸🇮','Romania':'🇷🇴','Germany':'🇩🇪','English':'🇬🇧' };
+const MK = (id) => 'https://main.metakocka.si/apps/ordermanagement/orders/all/' + encodeURIComponent(id);
+const ubezi = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+let stran = 0, sort = 'novo', drzava = '', jihJeSe = false, nalagam = false;
+
+function parametri(zaStran) {
+    const p = new URLSearchParams();
+    const q = document.getElementById('isci').value.trim();
+    const od = document.getElementById('od').value;
+    const doD = document.getElementById('doD').value;
+    if (q) p.set('q', q);
+    if (od) p.set('od', od);
+    if (doD) p.set('do', doD);
+    if (drzava) p.set('drzava', drzava);
+    p.set('sort', sort);
+    p.set('stran', zaStran);
+    return p.toString();
+}
+
+function kartica(v) {
+    const p = v.podrobno;
+    const cas = v.packedAt ? new Date(v.packedAt) : null;
+    const casNiz = cas ? cas.toLocaleString('sl-SI', { day:'2-digit', month:'2-digit', year:'numeric',
+                                                      hour:'2-digit', minute:'2-digit' }) : '—';
+    let izdelki = '';
+    if (p && p.products && p.products.length) {
+        izdelki = '<div class="izdelki"><div class="naslov">' + ubezi(p.products[0].label || '') + '</div>' +
+            p.products.map(pr => (pr.items || []).map(it =>
+                '<div class="kos">• ' + ubezi([it.oznaka, it.color, it.type, it.size].filter(Boolean).join(' ')) + '</div>'
+            ).join('')).join('') + '</div>';
+    } else if (!p) {
+        izdelki = '<div class="ni">Podrobnosti ni — naročilo je starejše od 30 dni in ga v bazi ni več.</div>';
+    }
+    let povezave = '';
+    if (p) {
+        const h = [];
+        if (p.eshop && p.wcId) h.push('<a class="povezava p-wc" target="_blank" rel="noopener" href="https://' +
+            ubezi(p.eshop) + '/wp-admin/admin.php?page=wc-orders&action=edit&id=' + encodeURIComponent(p.wcId) + '">🛒 WooCommerce</a>');
+        if (p.mkId) h.push('<a class="povezava p-mk" target="_blank" rel="noopener" href="' + MK(p.mkId) + '">📘 Metakocka</a>');
+        if (h.length) povezave = '<div class="povezave">' + h.join('') + '</div>';
+    }
+    const drz = p && p.country ? (zastave[p.country] || '') + ' ' + ubezi(p.country) : '';
+    return '<div class="kartica">' +
+        '<div class="kglava"><div><div class="kupec">' + (ubezi(v.customer) || '—') + '</div>' +
+        (drz ? '<div class="desno" style="text-align:left">' + drz + '</div>' : '') + '</div>' +
+        '<div class="desno"><div class="stev">#' + ubezi(v.id) + '</div>' +
+        '<div class="cas">📦 ' + casNiz + '</div>' +
+        (v.arhiv ? '<div><span class="znacka">arhiv</span></div>' : '') + '</div></div>' +
+        izdelki + povezave + '</div>';
+}
+
+async function naloziStran(znova) {
+    if (nalagam) return;
+    nalagam = true;
+    const gumbVec = document.getElementById('vec');
+    gumbVec.disabled = true;
+    if (znova) { stran = 0; document.getElementById('mreza').innerHTML = ''; }
+    try {
+        const r = await fetch('/api/packing/spakirani?' + parametri(stran));
+        if (r.status === 401 || r.redirected) { location.href = '/login.html'; return; }
+        const d = await r.json();
+        document.getElementById('mreza').insertAdjacentHTML('beforeend', d.vrstice.map(kartica).join(''));
+        jihJeSe = d.jihJeSe;
+        const prikazanih = document.querySelectorAll('#mreza .kartica').length;
+        document.getElementById('stevec').innerHTML =
+            'Prikazanih <b>' + prikazanih + '</b> od <b>' + d.skupaj.toLocaleString('sl-SI') + '</b>' +
+            (d.skupaj !== d.vsehSpakiranih ? ' (vseh spakiranih ' + d.vsehSpakiranih.toLocaleString('sl-SI') + ')' : '');
+        gumbVec.style.display = jihJeSe ? 'block' : 'none';
+        if (!prikazanih) document.getElementById('mreza').innerHTML =
+            '<div class="prazno" style="grid-column:1/-1">Ni zadetkov.</div>';
+        stran++;
+    } catch (e) {
+        document.getElementById('stevec').textContent = 'Napaka pri nalaganju: ' + e.message;
+    } finally {
+        nalagam = false;
+        gumbVec.disabled = false;
+    }
+}
+
+let cakalec = null;
+function odlozeno() { clearTimeout(cakalec); cakalec = setTimeout(() => naloziStran(true), 250); }
+
+document.getElementById('isci').addEventListener('input', odlozeno);
+document.getElementById('od').addEventListener('change', () => naloziStran(true));
+document.getElementById('doD').addEventListener('change', () => naloziStran(true));
+document.getElementById('pocisti').addEventListener('click', () => {
+    document.getElementById('isci').value = '';
+    document.getElementById('od').value = '';
+    document.getElementById('doD').value = '';
+    drzava = '';
+    document.querySelectorAll('#drzave .gumb').forEach(b => b.classList.toggle('aktiven', !b.dataset.drzava));
+    naloziStran(true);
+});
+document.getElementById('sortiranje').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-sort]'); if (!b) return;
+    sort = b.dataset.sort;
+    document.querySelectorAll('#sortiranje .gumb').forEach(x => x.classList.remove('aktiven'));
+    b.classList.add('aktiven');
+    naloziStran(true);
+});
+document.getElementById('vec').addEventListener('click', () => naloziStran(false));
+
+// Samodejno nalaganje ob drsenju do dna — gumb ostane za tiste, ki ga raje pritisnejo.
+new IntersectionObserver((v) => {
+    if (v[0].isIntersecting && jihJeSe && !nalagam) naloziStran(false);
+}, { rootMargin: '400px' }).observe(document.getElementById('konec'));
+
+(async () => {
+    try {
+        const r = await fetch('/api/packing/spakirani-drzave');
+        const d = await r.json();
+        document.getElementById('drzave').innerHTML =
+            '<button class="gumb aktiven">Vse države</button>' +
+            d.map(x => '<button class="gumb" data-drzava="' + ubezi(x.drzava) + '">' +
+                       (zastave[x.drzava] || '') + ' ' + ubezi(x.drzava) + '</button>').join('');
+        document.getElementById('drzave').addEventListener('click', (e) => {
+            const b = e.target.closest('.gumb'); if (!b) return;
+            drzava = b.dataset.drzava || '';
+            document.querySelectorAll('#drzave .gumb').forEach(x => x.classList.remove('aktiven'));
+            b.classList.add('aktiven');
+            naloziStran(true);
+        });
+    } catch (e) {}
+    naloziStran(true);
+})();
+</script>
 </body>
 </html>
