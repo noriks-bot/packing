@@ -45,6 +45,9 @@
         .topnav a:hover { color: #fff; }
         .topnav a.active { color: #fff; border-bottom-color: #10b981; }
         .topnav a .sub { color: rgba(255,255,255,.4); font-weight: 500; font-size: 11px; margin-left: 6px; }
+        /* [2026-09-07] Povezavi na podstrani — desno, loceni od zavihkov izdelkov. */
+        .topnav .navstrani { display: flex; gap: 14px; margin-left: auto; padding-left: 14px;
+                             border-left: 1px solid rgba(255,255,255,.15); white-space: nowrap; }
         .header { top: var(--topnav-h); }
         @media print { .topnav { display: none; } }
 
@@ -477,6 +480,10 @@
     <nav class="topnav no-print">
         <div class="brand">📦 NORIKS</div>
         <div id="prodTabs" class="ptabs"></div>
+        <div class="navstrani">
+            <a href="/predpakiranje">Predpakiranje</a>
+            <a href="/spakirani-paketi">Spakirani paketi</a>
+        </div>
     </nav>
     <div class="header">
         <h1>📦 <span>Pakiranje</span> | NORIKS</h1>
@@ -1161,7 +1168,7 @@
             
             // Select all button
             if (unpacked.length > 0) {
-                html += `<div style="grid-column: 1/-1; display:flex; gap:10px; align-items:center;" class="no-print">
+                html += `<div style="grid-column: 1/-1; display:flex; gap:10px; align-items:center; justify-content:flex-end;" class="no-print">
                     <button class="btn btn-secondary" onclick="toggleSelectAll()" id="select-all-btn" style="font-size:12px;">${selectedOrderIds.size > 0 && selectedOrderIds.size >= unpacked.filter(o => !isOrderPacked(o.id)).length ? '☑ Odznači vse' : '☐ Izberi vse ('+unpacked.length+')'}</button>
                     ${selectedOrderIds.size > 0 ? `<button class="btn btn-secondary" onclick="clearSelection()" style="font-size:12px;">✕ Počisti izbor</button>` : ''}
                 </div>`;

@@ -3097,6 +3097,15 @@ app.get('/api/packing/health', (req, res) => {
 // ============ END PACKING API ============
 
 // Serve index.html for root
+// [2026-09-07 Dejan] Novi podstrani. Sta za requireAuth (auth.install je zgoraj),
+// zato zahtevata prijavo kot vse ostalo. Zaenkrat prazni.
+app.get('/predpakiranje', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'predpakiranje.html'));
+});
+app.get('/spakirani-paketi', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'spakirani-paketi.html'));
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
