@@ -1037,9 +1037,12 @@
             // (metakocka.freshdesk.com, članek 3000085043):
             //   1) iz vsakega naročila vzemi PRVI izdelek, ki ima šifro,
             //   2) šifre razvrsti po abecedi PADAJOČE,
-            //   3) ob enaki šifri odloči količina NARAŠČAJOČE.
-            // Metakocka pri enaki šifri IN količini vrstnega reda ne določi; mi tam
-            // dodamo abecedo stranke, da je seznam ob vsakem izrisu enak.
+            //   3) ob enaki šifri odloči SKUPNA količina naročila NARAŠČAJOČE,
+            //   4) nato številka naročila PADAJOČE.
+            // Nivoja 3 in 4 v članku nista opisana ("order is not specified"), a sta
+            // razbrana iz Dejanovih nalepk (HU, 7.9.2026): blok KOMPSFIT je bil popolnoma
+            // padajoč po številki naročila, razen naročila 64606, ki edino ima dva izdelka
+            // in je pristalo na koncu bloka. Preverjeno na 21 nalepkah: ujemanje 21/21.
             // Šifra = NORIKS SKU (MK polje `code`, npr. NORIKS-KIDSNEST), NE interni `count_code`.
             const prviSSifro = (o) => {
                 for (const pr of (o.products || [])) {
@@ -1047,10 +1050,17 @@
                 }
                 return null;
             };
-            // Količina je METAKOCKINA (postavka), ne naše število kosov: paket "(8 kos)"
-            // je pri njih ena postavka z amount=1. Starejša naročila je še nimajo
-            // shranjene — takrat 1, kar drži za 1686 od 1696 izmerjenih postavk.
-            const kolicinaMK = (pr) => Math.max(1, parseInt(pr && pr.amount) || 1);
+            // SKUPNA količina naročila (vsota postavk), METAKOCKINA — ne naše število kosov:
+            // paket "(8 kos)" je pri njih ena postavka z amount=1. Starejša naročila amounta
+            // še nimajo shranjenega, takrat velja 1 na postavko (izmerjeno: 1686 od 1696
+            // postavk ima res 1). To je tisti nivo, ki naročila z enim samim artiklom
+            // postavi pred tista z več.
+            const skupnaKolicina = (o) => {
+                let n = 0;
+                for (const pr of (o.products || [])) n += Math.max(1, parseInt(pr.amount) || 1);
+                return n || 1;
+            };
+            const stNarocila = (o) => parseInt(String(o.id || '').split('/')[0]) || 0;
 
             // Sort
             const sortFn = (a, b) => {
@@ -1062,10 +1072,10 @@
                         if (!ca || !cb) { if (ca !== cb) return ca ? -1 : 1; }
                         // Primerjava znak za znakom (ne locale): šifre so ASCII, tako
                         // dobimo isti vrstni red kot Metakocka.
-                        if (ca !== cb) return ca < cb ? 1 : -1;      // PADAJOČE
-                        const ka = kolicinaMK(pa), kb = kolicinaMK(pb);
-                        if (ka !== kb) return ka - kb;               // količina NARAŠČAJOČE
-                        return (a.customer || '').localeCompare(b.customer || '', 'sl');
+                        if (ca !== cb) return ca < cb ? 1 : -1;                  // 1) šifra PADAJOČE
+                        const ka = skupnaKolicina(a), kb = skupnaKolicina(b);
+                        if (ka !== kb) return ka - kb;                           // 2) količina NARAŠČAJOČE
+                        return stNarocila(b) - stNarocila(a);                    // 3) št. naročila PADAJOČE
                     }
                     case 'newest': {
                         const da = (a.date || '') + ' ' + (a.time || '');
