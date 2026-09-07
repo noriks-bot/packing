@@ -48,6 +48,16 @@
         /* [2026-09-07] Povezavi na podstrani — desno, loceni od zavihkov izdelkov. */
         .topnav .navstrani { display: flex; gap: 14px; margin-left: auto; padding-left: 14px;
                              border-left: 1px solid rgba(255,255,255,.15); white-space: nowrap; }
+        /* [2026-09-07 Dejan] Na telefonu sta povezavi zasedli cel pas zase. Tam ju
+           skrijemo in ju pokazemo znotraj zlozenega menija izdelkov (.ptab.strannav),
+           kjer sta z enim dotikom dosegljivi in ne jemljeta prostora. */
+        /* line-height in border-bottom pobereta iz pravila `.topnav a` (46px visoka
+           vrstica) — brez tega bi bila pilula dvakrat previsoka od ostalih. */
+        .topnav .ptab.strannav { display: none; text-decoration: none; line-height: 1; border-bottom-width: 1px; }
+        @media (max-width: 768px) {
+            .topnav .navstrani { display: none; }
+            .topnav .ptab.strannav { display: inline-flex; }
+        }
         .header { top: var(--topnav-h); }
         @media print { .topnav { display: none; } }
 
@@ -1291,7 +1301,11 @@
             const aktiven = vsiZav.find(x => x.key === IZBRAN) || vsiZav[0];
             const preklop = '<button class="ptab preklop" id="meniPreklop" title="Pokazi vse izdelke">' +
                             (MENI_ODPRT ? '&#9650; zapri' : '&#9660; izdelki (' + vsiZav.length + ')') + '</button>';
-            c.innerHTML = (MENI_ODPRT ? vsiZav.map(gumb).join('') : gumb(aktiven)) + preklop;
+            // Povezavi na podstrani sta del razprtega menija; na namizju ju CSS skrije,
+            // ker sta tam ze v desnem kotu vrstice.
+            const straniVMeniju = '<a class="ptab strannav" href="/predpakiranje">&#128229; Predpakiranje</a>' +
+                                  '<a class="ptab strannav" href="/spakirani-paketi">&#128230; Spakirani paketi</a>';
+            c.innerHTML = (MENI_ODPRT ? vsiZav.map(gumb).join('') + straniVMeniju : gumb(aktiven)) + preklop;
             c.classList.toggle('zlozen', !MENI_ODPRT);
 
             const pk = document.getElementById('meniPreklop');
