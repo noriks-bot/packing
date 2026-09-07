@@ -3179,12 +3179,15 @@ app.get('/api/packing/spakirani-drzave', (req, res) => {
     res.json(Object.entries(st).sort((a, b) => b[1] - a[1]).map(([drzava, n]) => ({ drzava, n })));
 });
 
-app.get('/predpakiranje', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'predpakiranje.html'));
-});
-app.get('/spakirani-paketi', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'spakirani-paketi.html'));
-});
+// POZOR: nginx preslika packing.noriks.com/<pot> -> aplikacija /packing/<pot>
+// (proxy_pass ... :3006/packing/). Zato MORA obstajati razlicica pod /packing/;
+// razlicica na korenu ostane za lokalno testiranje in neposreden dostop na vrata.
+for (const [pot, dat] of [['predpakiranje', 'predpakiranje.html'],
+                          ['spakirani-paketi', 'spakirani-paketi.html']]) {
+    const posreduj = (req, res) => res.sendFile(path.join(__dirname, 'public', dat));
+    app.get('/' + pot, posreduj);
+    app.get('/packing/' + pot, posreduj);
+}
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
