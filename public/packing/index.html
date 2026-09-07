@@ -4,18 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pakiranje | NORIKS</title>
+    <link rel="stylesheet" href="kartica.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f5f5f5;
             min-height: 100vh;
         }
+
         
 
         /* ── TOP MENI (Majice&Bokserice / Topsellers) ── */
         :root { --topnav-h: 46px; }
+
         .topnav {
             background: #0f0f0f;
             border-bottom: 1px solid #262626;
@@ -28,11 +32,13 @@
             top: 0;
             z-index: 200;
         }
+
         .topnav .brand {
             display: flex; align-items: center; gap: 8px;
             color: #fff; font-weight: 700; font-size: 14px; letter-spacing: .3px;
             padding-right: 18px; margin-right: 6px;
         }
+
         .topnav a {
             display: flex; align-items: center;
             padding: 0 18px;
@@ -42,24 +48,33 @@
             border-bottom: 2px solid transparent;
             transition: color .15s ease, border-color .15s ease;
         }
+
         .topnav a:hover { color: #fff; }
+
         .topnav a.active { color: #fff; border-bottom-color: #10b981; }
+
         .topnav a .sub { color: rgba(255,255,255,.4); font-weight: 500; font-size: 11px; margin-left: 6px; }
+
         /* [2026-09-07] Povezavi na podstrani — desno, loceni od zavihkov izdelkov. */
         .topnav .navstrani { display: flex; gap: 14px; margin-left: auto; padding-left: 14px;
                              border-left: 1px solid rgba(255,255,255,.15); white-space: nowrap; }
+
         /* [2026-09-07 Dejan] Na telefonu sta povezavi zasedli cel pas zase. Tam ju
            skrijemo in ju pokazemo znotraj zlozenega menija izdelkov (.ptab.strannav),
            kjer sta z enim dotikom dosegljivi in ne jemljeta prostora. */
         /* line-height in border-bottom pobereta iz pravila `.topnav a` (46px visoka
            vrstica) — brez tega bi bila pilula dvakrat previsoka od ostalih. */
         .topnav .ptab.strannav { display: none; text-decoration: none; line-height: 1; border-bottom-width: 1px; }
+
         @media (max-width: 768px) {
             .topnav .navstrani { display: none; }
             .topnav .ptab.strannav { display: inline-flex; }
         }
+
         .header { top: var(--topnav-h); }
+
         @media print { .topnav { display: none; } }
+
 
         .header {
             background: #1a1a1a;
@@ -72,11 +87,15 @@
             top: 0;
             z-index: 100;
         }
+
         
         .header h1 { font-size: 20px; font-weight: 600; }
+
         .header h1 span { color: #10b981; }
+
         
         .header-actions { display: flex; gap: 10px; align-items: center; }
+
         
         .btn {
             padding: 8px 16px;
@@ -87,20 +106,32 @@
             font-weight: 500;
             transition: all 0.2s;
         }
+
         
         .btn-primary { background: #10b981; color: #fff; }
+
         .btn-primary:hover { background: #059669; }
+
         .btn-secondary { background: #333; color: #fff; }
+
         .btn-secondary:hover { background: #444; }
+
         .btn-danger { background: #ef4444; color: #fff; }
+
         .btn-danger:hover { background: #dc2626; }
+
         .btn-warning { background: #f59e0b; color: #fff; }
+
         .btn-warning:hover { background: #d97706; }
+
         
         .stats { display: flex; gap: 20px; color: #888; font-size: 14px; }
+
         .stats span { color: #10b981; font-weight: 600; }
+
         
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; padding-bottom: 80px; }
+
         
         .filters {
             background: #fff;
@@ -113,10 +144,13 @@
             flex-wrap: wrap;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+
         
         .filters label { font-size: 13px; color: #666; }
+
         
         .country-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+
         
         .country-btn {
             padding: 6px 14px;
@@ -127,112 +161,35 @@
             font-size: 14px;
             transition: all 0.2s;
         }
+
         
         .country-btn:hover { border-color: #10b981; }
+
         .country-btn.active { background: #10b981; color: #fff; border-color: #10b981; }
-        
-        .order-price { font-size: 12px; font-weight: 700; color: #10b981; }
-        .order-price-eur { font-size: 10px; color: #888; font-weight: 400; }
-        
-        .order-card.new-order { border-left: 4px solid #f59e0b; background: #fffbeb; }
-        
-        .new-badge {
-            display: inline-block; background: #f59e0b; color: #fff;
-            font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 3px; margin-left: 6px;
-        }
+
         
         .filters select, .filters input[type="date"] {
             padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
         }
-        
-        .order-card {
-            background: #fff;
-            border-radius: 8px;
-            padding: 10px 14px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            page-break-inside: avoid;
-            position: relative;
-            transition: all 0.2s;
-        }
-        
-        .order-card.selected {
-            outline: 3px solid #3b82f6;
-            background: #eff6ff;
-        }
-        
-        .order-card.packed {
-            opacity: 0.5;
-            background: #f0fdf4;
-            border-left: 4px solid #10b981;
-        }
-        
-        .order-select {
-            position: absolute;
-            top: 10px;
-            left: -2px;
-            width: 22px;
-            height: 22px;
-            cursor: pointer;
-            z-index: 10;
-            accent-color: #3b82f6;
-        }
-        
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 6px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid #f0f0f0;
-            margin-left: 24px;
-        }
-        
-        .customer-name { font-size: 15px; font-weight: 700; color: #1a1a1a; }
-        .order-meta { text-align: right; font-size: 11px; color: #888; }
-        .order-id { font-weight: 600; color: #10b981; }
-        
-        .items-list { list-style: none; margin-left: 24px; }
-        
-        .item {
-            display: flex; align-items: center;
-            padding: 3px 0; border-bottom: 1px solid #f8f8f8; font-size: 13px;
-        }
-        .item:last-child { border-bottom: none; }
-        
-        .product-label {
-            font-size: 11px; color: #888; font-weight: 600;
-            padding: 5px 0 2px; border-top: 1px dashed #e0e0e0;
-            margin-top: 2px; list-style: none;
-        }
-        .product-label:first-child { border-top: none; margin-top: 0; }
-        
-        .item-warning { background: #fef2f2 !important; border-left: 3px solid #ef4444; }
-        .item-warning-badge { font-size: 14px; margin-left: 4px; cursor: help; }
-        .order-card.has-warnings { border: 2px solid #ef4444; background: #fef2f2; }
-        /* [2026-09-07 Dejan] Naročilo z opombo mora biti vidno na daleč. */
-        .order-card.ima-opombo { border: 3px solid #dc2626; background: #fefce8; }
-        .order-warning-banner { background: #ef4444; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; margin-bottom: 6px; margin-left: 24px; }
+
         .warning-count-header { background: #ef4444; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 700; }
-        .item-checkbox { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; }
-        .item-color { width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 2px solid #ddd; }
-        .item-name { flex: 1; font-weight: 500; }
-        .item-size { background: #f0f0f0; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; }
-        
-        .packed-badge {
-            display: inline-block; background: #10b981; color: #fff;
-            font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 3px; margin-left: 6px;
-        }
+
         
         .loading { text-align: center; padding: 60px 20px; color: #888; }
+
         .loading-spinner {
             width: 40px; height: 40px; border: 3px solid #f0f0f0;
             border-top-color: #10b981; border-radius: 50%;
             animation: spin 1s linear infinite; margin: 0 auto 15px;
         }
+
         @keyframes spin { to { transform: rotate(360deg); } }
+
         
         .empty-state { text-align: center; padding: 60px 20px; color: #888; }
+
         .empty-state h3 { color: #333; margin-bottom: 10px; }
+
         
         /* Floating action bar */
         .action-bar {
@@ -252,15 +209,20 @@
             transform: translateY(100%);
             transition: transform 0.3s ease;
         }
+
         
         .action-bar.visible { transform: translateY(0); }
+
         
         body.has-action-bar { padding-bottom: 70px; }
+
         
         .action-bar .count { font-size: 16px; font-weight: 700; }
+
         
         /* Print styles */
         /* Mobile: 1 column */        @media (max-width: 600px) {            #orders-container { grid-template-columns: 1fr !important; }        }
+
         @media print {
             .header, .filters, .btn, .item-checkbox, .no-print, .action-bar, .order-select { display: none !important; }
             body { background: #fff; font-size: 10px; }
@@ -280,37 +242,57 @@
             .item-size { font-size: 10px; padding: 1px 6px; }
             .item-color { width: 10px; height: 10px; margin-right: 5px; }
         }
+
     
         .src-links { display:flex; gap:6px; margin-top:6px; flex-wrap: nowrap; }
+
         .src-link { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size:11px; padding:3px 9px; border-radius:5px; text-decoration:none; font-weight:600; border:1px solid transparent; }
+
         .src-wc { background:#f3e8ff; color:#6b21a8; border-color:#e9d5ff; }
+
         .src-mk { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
+
         .src-link:hover { filter:brightness(0.95); }
-        .exchange-badge { background:#fef3c7; color:#92400e; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; margin-left:6px; }
-            .oznaka { color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:4px; padding:0 4px; font-size:11px; font-weight:800; letter-spacing:.02em; }
+
             .topseller-note { margin: 0 0 8px; font-size: 12px; }
+
         .topseller-note a { color:#6b21a8; background:#f3e8ff; border:1px solid #e9d5ff; border-radius:6px; padding:4px 10px; text-decoration:none; display:inline-block; font-weight:600; }
+
             .ptabs { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
+
         .ptab { display:inline-flex; align-items:center; gap:6px; border:1px solid #e5e7eb; background:#fff; color:#374151;
                 font:inherit; font-size:12px; font-weight:600; padding:6px 11px; border-radius:999px; cursor:pointer; }
+
         .ptab:hover { background:#f9fafb; }
+
         .ptab.aktiven { background:#111827; border-color:#111827; color:#fff; }
+
         .ptab .pn { font-size:11px; font-weight:700; background:rgba(17,24,39,.08); padding:1px 6px; border-radius:999px; }
+
         .ptab.aktiven .pn { background:rgba(255,255,255,.2); }
+
     
         /* [2026-08-26 Dejan] EN GLAVNI MENI: zavihki izdelkov SO meni. */
         .topnav { flex-wrap: wrap; height: auto; min-height: var(--topnav-h); padding-top: 4px; padding-bottom: 4px; }
+
         .header { top: auto; position: static; }
+
         .topnav .ptabs { display: flex; flex-wrap: wrap; gap: 5px; margin: 0; flex: 1; }
+
         .topnav .ptab {
             border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); color: rgba(255,255,255,.72);
             font: inherit; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 999px;
             cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
         }
+
         .topnav .ptab:hover { background: rgba(255,255,255,.12); color: #fff; }
+
         .topnav .ptab.aktiven { background: #10b981; border-color: #10b981; color: #062e22; }
+
         .topnav .ptab .pn { font-size: 11px; font-weight: 800; background: rgba(0,0,0,.18); padding: 1px 6px; border-radius: 999px; }
+
         .topnav .ptab.aktiven .pn { background: rgba(0,0,0,.14); }
+
     
         /* [2026-08-26 Dejan] MOBILNI MENI: logo stran, dva zavihka v vrsto CEZ CELO SIRINO.
            Kljucno: minmax(0,1fr) + min-width:0, sicer dolga imena razsirijo stolpec
@@ -336,14 +318,19 @@
             .header h1 { font-size: 15px; }
             .header .stats { font-size: 12px; gap: 8px; }
         }
+
     
         /* zlozen meni: samo izbrani izdelek + gumb za razpiranje */
         .topnav .ptab.preklop { background: rgba(255,255,255,.10); color: #fff; border-color: rgba(255,255,255,.2); }
+
         .topnav .ptabs.zlozen { display: flex; flex-wrap: nowrap; gap: 6px; }
+
         .topnav .ptabs.zlozen .ptab { width: auto; }
+
         @media (max-width: 768px) {
             .topnav .ptabs.zlozen { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
+
     
         /* [2026-08-26 Dejan] MOBILNA GLAVA: naslov ne pove nic, kar uporabnik ze ne ve,
            zato ga skrijemo; statistika in gumbi gredo v eno nizko vrstico. Prej je
@@ -367,6 +354,7 @@
             .header .btn { font-size: 11px; padding: 5px 9px; }
             .header .btn svg, .header .btn .ico { display: none; }
         }
+
     
         /* [2026-08-26 Dejan] MOBILNI POGLED — nizji in tesnejsi.
            Opozorilna pasica in vrstica osvezitev sta imeli inline slog, zato !important. */
@@ -390,6 +378,7 @@
             #search-name { width: 100%; box-sizing: border-box; padding: 6px 9px; font-size: 12px; }
             .container { padding-left: 11px; padding-right: 11px; }
         }
+
     
         /* [2026-08-26 Dejan] Na telefonu sta gumba do izvora v ENI vrstici:
            WooCommerce levo, Metakocka desno — sicer se zlagata drug pod drugega
@@ -406,6 +395,7 @@
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
             }
         }
+
     
         /* [2026-08-26 Dejan] MOBILNI FILTRI — vse poravnano LEVO, brez odmika okrog panela.
            Osnovni .filters ima align-items:center, kar je v stolpcu vse potisnilo na sredino;
@@ -435,6 +425,7 @@
             #search-name { width: 100% !important; box-sizing: border-box; padding: 7px 10px; font-size: 12px; margin: 0 !important; }
             .container { padding-left: 11px !important; padding-right: 11px !important; }
         }
+
     
         /* [2026-08-26 Dejan] TABLICA: enotni odmiki v filtrih. Osnovni panel je imel
            15px/20px (razlicno navpicno in vodoravno), skupine pa 15px razmika ob 6px
@@ -451,31 +442,38 @@
             #search-name { padding: 7px 10px; font-size: 13px; }
             .filters label { font-size: 13px; }
         }
+
     
         /* [2026-08-26 Dejan] BREZ VODORAVNEGA PRELIVANJA — velja za vse velikosti zaslona.
            Glavni krivec: mreza kartic "1fr 1fr" se NE skrci pod vsebino (privzeti min-width
            je auto), zato dolgo ime izdelka razsiri stolpec cez zaslon in stran zdrsne v desno.
            Resitev je minmax(0,1fr) + min-width:0 na otrocih, plus zapora na korenu. */
         html, body { max-width: 100%; overflow-x: hidden; }
+
         .topnav, .header, .container, .filters,
         #refresh-bar, #global-warning-banner, #orders-container {
             max-width: 100%; box-sizing: border-box;
         }
+
         #orders-container { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
         #orders-container > * { min-width: 0; }
-        .order-card, .order-header, .order-meta, .items-list, .item { min-width: 0; }
-        .item-name { overflow-wrap: anywhere; }
+
         #refresh-bar { flex-wrap: wrap; overflow: hidden; }
+
         @media (max-width: 768px) {
             #orders-container { grid-template-columns: minmax(0, 1fr) !important; }
         }
+
     
         /* [2026-08-26 Dejan] Vsebina je siroka najvec 1100px in centrirana. */
         .container { max-width: 1100px; margin-left: auto; margin-right: auto; }
+
     
         /* [2026-08-26 Dejan] Vrstica z urami osvezitev je skrita POVSOD — Dejan: nima smisla.
            Sama logika (logRefresh/updateRefreshBar) ostaja, samo prikaza ni. */
         #refresh-bar { display: none !important; }
+
     
         /* [2026-08-26 Dejan] Na telefonu enak razmik NAD in POD filtri. Zgoraj je bil vecji,
            ker je vsebnik imel svoj zgornji odmik, spodaj pa je bilo samo 8px. */
@@ -484,7 +482,72 @@
             #global-warning-banner { margin-bottom: 0 !important; }
             .filters { margin: 0 0 8px !important; }
         }
-    </style>
+
+        
+        .order-price { font-size: 12px; font-weight: 700; color: #10b981; }
+
+        
+        .order-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 10px 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            page-break-inside: avoid;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        
+        .order-card.packed {
+            opacity: 0.5;
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+        }
+
+        
+        .order-select {
+            position: absolute;
+            top: 10px;
+            left: -2px;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            z-index: 10;
+            accent-color: #3b82f6;
+        }
+
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #f0f0f0;
+            margin-left: 24px;
+        }
+
+        
+        .customer-name { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+
+        .order-meta { text-align: right; font-size: 11px; color: #888; }
+
+        
+        .items-list { list-style: none; margin-left: 24px; }
+
+        
+        .item {
+            display: flex; align-items: center;
+            padding: 3px 0; border-bottom: 1px solid #f8f8f8; font-size: 13px;
+        }
+
+        .item-checkbox { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; }
+
+        .item-color { width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 2px solid #ddd; }
+
+        .item-size { background: #f0f0f0; padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; }
+
+        .order-card, .order-header, .order-meta, .items-list, .item { min-width: 0; }</style>
 </head>
 <body>
     <nav class="topnav no-print">
@@ -565,6 +628,7 @@
         <button class="btn btn-secondary" onclick="clearSelection()">✕ Prekliči</button>
     </div>
 
+    <script src="kartica.js"></script>
     <script>
         // ========== PACKED ORDERS (server API) ==========
         let packedOrders = {};
@@ -709,13 +773,9 @@
         }
         
         // ========== EXCHANGE RATES & CONSTANTS ==========
-        const toEurRates = { 'EUR': 1, 'CZK': 0.04, 'PLN': 0.23, 'HUF': 0.0025, 'RON': 0.20 };
-        const currencySymbols = { 'EUR': '€', 'CZK': 'Kč', 'PLN': 'zł', 'HUF': 'Ft', 'RON': 'lei' };
-        const countryFlags = {
-            'Croatia': '🇭🇷', 'Czech Republic': '🇨🇿', 'Poland': '🇵🇱',
-            'Slovakia': '🇸🇰', 'Hungary': '🇭🇺', 'Greece': '🇬🇷', 'Italy': '🇮🇹', 'Slovenia': '🇸🇮', 'Romania': '🇷🇴', 'Germany': '🇩🇪',
-            'English': '🇬🇧'
-        };
+
+
+
         
         let selectedCountry = '';
         let currentSort = 'newest'; // newest, oldest, name-asc, name-desc, id-asc, id-desc, artikli, artikli-nazaj
@@ -733,6 +793,13 @@
         
         let knownOrderIds = JSON.parse(localStorage.getItem('packing-known-ids') || '[]');
         let newOrderIds = new Set();
+        // Skupni izris (kartica.js) bere stanje od tod. Funkcije, ne vrednosti:
+        // packedOrders in newOrderIds se med delovanjem prepiseta.
+        window.KARTICA = {
+            izbrani:   () => selectedOrderIds,
+            spakirani: () => packedOrders,
+            novi:      () => newOrderIds
+        };
         // Baseline timestamp: orderji starejsi od te oznake niso "NOV" — fix za primer
         // ko cache vrne starejsi snapshot (npr. circuit breaker stale) ali ko se localStorage
         // resetira (browser cache flush, inkognito). Default: ob prvem ogledu = zdaj.
@@ -849,14 +916,7 @@
             'bokserice': 'Boksarice', 'majica': 'Majica', 'majice': 'Majica'
         };
         
-        const colorHex = {
-            'Črna': '#1a1a1a', 'Modra': '#3b82f6', 'Bela': '#ffffff', 'Siva': '#6b7280',
-            'Rdeča': '#ef4444', 'Zelena': '#22c55e', 'Rjava': '#92400e', 'Bež': '#d4c5a9',
-            'Roza': '#ec4899', 'Oranžna': '#f97316', 'Vijolična': '#8b5cf6', 'Rumena': '#eab308',
-            'Turkizna': '#06b6d4', 'Temno modra': '#1e3a8a', 'Svetlo modra': '#93c5fd',
-            'Tamnoplava': '#1e3a8a', 'Temnomodra': '#1e3a8a', 'Svetlomodra': '#93c5fd', 'Smeđa': '#92400e', 'Rjava': '#92400e', 'Bež': '#d4c5a9',
-            'Črna & Bela': '#1a1a1a'
-        };
+
         
         function translateColor(color) {
             return colorTranslations[color.toLowerCase().trim()] || color;
@@ -875,12 +935,7 @@
         // ========== DATA FETCHING ==========
         
         // === ORDER NOTES (server-side) ===
-        function getNote(orderId) {
-            const entry = (window._packingNotes || {})[orderId];
-            if (!entry) return "";
-            // backend stores { note, updatedAt }, but old localStorage migration may put plain string
-            return (typeof entry === "string") ? entry : (entry.note || "");
-        }
+
         async function saveNote(orderId) {
             const input = document.querySelector('.order-note-input[data-order-id="' + orderId + '"]');
             if (!input) return;
@@ -1202,25 +1257,8 @@
         // [2026-08-25 Dejan] Gumba do izvornega narocila. Prikazemo ju SAMO pri NOVIH narocilih
         // (status "Novo..."), ker se takrat najveckrat rabi pogledati original. WooCommerce naslov
         // sestavimo iz eshop_name ("noriks.com/hr") in stevilke WC narocila (buyer_order).
-        function orderLinks(o) {
-            // [2026-08-26 Dejan] Povezavi kazemo pri VSEH narocilih, ne le pri novih.
-            const shop = (o.eshopUrl || o._eshop || o.eshop || '').trim();
-            const wc = (o.wcId || '').trim();
-            const mk = (o.mkId || '').trim();
-            let h = '';
-            if (shop && wc) {
-                h += '<a class="src-link src-wc" target="_blank" rel="noopener" href="https://' + shop +
-                     '/wp-admin/admin.php?page=wc-orders&action=edit&id=' + encodeURIComponent(wc) +
-                     '" title="Odpri narocilo v WooCommerce">🛒 WooCommerce</a>';
-            }
-            if (mk) {
-                h += '<a class="src-link src-mk" target="_blank" rel="noopener" href="' + MK_ORDER_URL(mk) +
-                     '" title="Odpri narocilo v Metakocki">📘 Metakocka</a>';
-            }
-            return h ? '<div class="src-links no-print">' + h + '</div>' : '';
-        }
+
         // Naslov narocila v Metakocki. Ce se oblika kdaj spremeni, popravi SAMO to vrstico.
-        const MK_ORDER_URL = (mkId) => 'https://main.metakocka.si/apps/ordermanagement/orders/all/' + encodeURIComponent(mkId);
 
 
         // ── ENOTNI ZAVIHKI PO IZDELKU ──────────────────────────────────────────
@@ -1317,82 +1355,6 @@
             }));
         }
 
-        function renderOrderCard(order, isPacked) {
-            const isSelected = selectedOrderIds.has(order.id);
-            const packedInfo = packedOrders[order.id];
-            
-            // Check for warnings in any item
-            const allWarnings = [];
-            (order.products || order.items).forEach(product => {
-                const items = product.items || (Array.isArray(product) ? product : [product]);
-                items.forEach(item => {
-                    if (item.warnings) allWarnings.push(...item.warnings);
-                });
-            });
-            const hasWarnings = allWarnings.length > 0;
-            
-            return `
-                <div class="order-card ${newOrderIds.has(order.id) ? 'new-order' : ''} ${isPacked ? 'packed' : ''} ${isSelected ? 'selected' : ''} ${hasWarnings ? 'has-warnings' : ''} ${getNote(order.id) ? 'ima-opombo' : ''}" data-country="${order.country}" data-order-id="${order.id}">
-                    ${hasWarnings ? `<div class="order-warning-banner">⚠️ OPOZORILO: ${allWarnings.length} težav — preverite ročno!</div>` : ''}
-                    ${!isPacked ? `<input type="checkbox" class="order-select no-print" data-order-id="${order.id}" ${isSelected ? 'checked' : ''} onclick="toggleOrderSelect('${order.id}')">` : ''}
-                    <div class="order-header">
-                        <div>
-                            <div class="customer-name">
-                                ${order.customer}
-                                ${newOrderIds.has(order.id) ? '<span class="new-badge">NOV</span>' : ''}
-                                ${isPacked ? '<span class="packed-badge">✅ SPAKIRANO</span>' : ''}
-                                ${order.isExchange ? '<span class="exchange-badge">🔁 MENJAVA</span>' : ''}
-                            </div>
-                            <div class="order-price">
-                                ${parseFloat(order.total || 0).toFixed(2)} ${currencySymbols[order.currency] || order.currency}
-                                ${order.currency !== 'EUR' ? `<span class="order-price-eur">≈ ${(parseFloat(order.total || 0) * (toEurRates[order.currency] || 1)).toFixed(2)} €</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="order-meta">
-                            <div class="order-id">#${order.id}</div>
-                            <div>📥 ${order.orderDate} ${order.orderTime ? `<strong>${order.orderTime}</strong>` : ''}</div>
-                            ${order.shippedDate ? `<div>📦 ${order.shippedDate}</div>` : ''}
-                            <div>${countryFlags[order.country] || ''} ${order.country || ''}</div>
-                            ${isPacked && packedInfo ? `<div style="color:#10b981; margin-top:3px;">Spakirano: ${new Date(packedInfo.packedAt).toLocaleTimeString('sl-SI', {hour:'2-digit',minute:'2-digit'})}</div>` : ''}
-                            ${isPacked ? `<button class="btn btn-secondary no-print" onclick="unpackOrder('${order.id}')" style="font-size:10px; padding:2px 8px; margin-top:3px;">↩ Vrni</button>` : ''}
-                            ${orderLinks(order)}
-                        </div>
-                    </div>
-                    <ul class="items-list">
-                        ${(order.products || order.items).map(product => {
-                        // [2026-08-26 Dejan] Oznako (FIT/ZIP) izracunamo TUDI tukaj, ne samo
-                        // ob razclembi na strezniku — starejsa narocila v predpomnilniku so
-                        // bila razclenjena pred to spremembo in oznake nimajo shranjene.
-                        const _sifra = String(product.code || product.label || '');
-                        const oznakaZa = /KOMPSFIT|FIT.?KOMPRES/i.test(_sifra) ? 'FIT'
-                                       : /KOMZIPS/i.test(_sifra) ? 'ZIP' : '';
-                            const rawItems = (product.items || (Array.isArray(product) ? product : [product])).slice().sort((a, b) => (a.type || '').localeCompare(b.type || '') || (a.color || '').localeCompare(b.color || ''));
-                            const grouped = [];
-                            rawItems.forEach(item => {
-                                const key = `${item.type}|${item.color}|${item.size}`;
-                                const existing = grouped.find(g => g.key === key);
-                                if (existing) { existing.count++; }
-                                else { grouped.push({ ...item, key, count: 1 }); }
-                            });
-                            const label = product.label || '';
-                            return (label ? `<li class="product-label">${label}</li>` : '') +
-                                grouped.map(item => {
-                                    const hasWarning = item.warnings && item.warnings.length > 0;
-                                    return `
-                                <li class="item ${hasWarning ? 'item-warning' : ''}">
-                                    <input type="checkbox" class="item-checkbox">
-                                    ${item.color ? `<div class="item-color" style="background: ${colorHex[item.color] || item.colorHex || '#ccc'}; ${item.color === 'Bela' ? 'border-color: #ccc;' : ''}"></div>` : ''}
-                                    <span class="item-name">${(item.oznaka || oznakaZa) ? '<b class="oznaka">' + (item.oznaka || oznakaZa) + '</b> ' : ''}${(item.count || 1) + 'x '}${item.color ? item.color + ' ' : ''}${item.type}</span>
-                                    <span class="item-size">${item.size}</span>
-                                    ${hasWarning ? `<span class="item-warning-badge" title="${item.warnings.join('; ')}">⚠️</span>` : ''}
-                                </li>
-                            `}).join('');
-                        }).join('')}
-                    </ul>
-                    <div class="no-print" style="margin-top:6px; display:flex; gap:4px;"><input type="text" class="order-note-input" data-order-id="${order.id}" placeholder="Opomba..." value="${getNote(order.id)}" style="flex:1; padding:4px 8px; border:1px solid #ddd; border-radius:4px; font-size:12px;" onkeydown="if(event.key==='Enter')saveNote('${order.id}')"><button onclick="saveNote('${order.id}')" style="padding:4px 10px; background:#10b981; color:#fff; border:none; border-radius:4px; font-size:11px; cursor:pointer;">&#x1F4BE;</button></div>
-                </div>
-            `;
-        }
         
         // ========== CROSS-STATUS WARNING CHECK ==========
         async function checkAllStatusWarnings() {

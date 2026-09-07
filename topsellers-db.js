@@ -309,6 +309,12 @@ function getByIds(ids) {
             out[r.id] = {
                 id: r.id, customer: r.customer, country: r.country, status: r.status,
                 date: r.order_date, time: r.order_time, total: r.total, currency: r.currency,
+                // Skupni izris (kartica.js) bere ta imena — brez njih bi kartica
+                // na strani Spakirani paketi ostala brez datuma in menjave.
+                orderDate: r.order_date, orderTime: r.order_time,
+                shippedDate: r.shipped_date || '', buyerOrder: r.buyer_ord || '',
+                isExchange: /menjav|zamjen|zamen|csere|wymian|schimb|\u03b1\u03bd\u03c4\u03b1\u03bb\u03bb\u03b1\u03b3|cambio|umtausch|exchange/i.test(String(r.buyer_ord || '')),
+                eshopUrl: r.eshop || '',
                 wcId: r.wc_id || '', mkId: r.mk_id || '', eshop: r.eshop || '',
                 products: (() => { try { return JSON.parse(r.products || '[]'); } catch (_) { return []; } })()
             };
