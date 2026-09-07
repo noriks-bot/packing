@@ -1033,35 +1033,38 @@
             const unpacked = orders.filter(o => !isOrderPacked(o.id));
             const packed = orders.filter(o => isOrderPacked(o.id));
             
-            // [2026-09-01 Dejan] Sortiranje po ARTIKLIH. Trije nivoji, po vrsti:
-            //   1) naročila z ENIM samim artiklom pridejo prva,
-            //   2) nato po abecedi artikla (glavni = PRVI izdelek naročila, isto kot zavihki),
-            //   3) na koncu po abecedi stranke.
-            // Ime artikla beremo iz istega vira kot kartica, da se seznam ujema s tem,
-            // kar skladiščnik vidi na zaslonu.
-            const glavniArtikel = (o) => {
-                const p = (o.products || [])[0] || {};
-                const it = (p.items || [])[0] || {};
-                return String(it.type || p.label || p.code || '').trim();
-            };
-            // Kosi, ne vrstice: kartica izpiše "3x", zato item.count šteje.
-            const steviloKosov = (o) => {
-                let n = 0;
+            // [2026-09-01 Dejan] Sortiranje ARTIKLI = Metakockino pravilo "First product code"
+            // (metakocka.freshdesk.com, članek 3000085043):
+            //   1) iz vsakega naročila vzemi PRVI izdelek, ki ima šifro,
+            //   2) šifre razvrsti po abecedi PADAJOČE,
+            //   3) ob enaki šifri odloči količina NARAŠČAJOČE.
+            // Metakocka pri enaki šifri IN količini vrstnega reda ne določi; mi tam
+            // dodamo abecedo stranke, da je seznam ob vsakem izrisu enak.
+            // Šifra = NORIKS SKU (MK polje `code`, npr. NORIKS-KIDSNEST), NE interni `count_code`.
+            const prviSSifro = (o) => {
                 for (const pr of (o.products || [])) {
-                    for (const it of (pr.items || [])) n += (it.count || 1);
+                    if (String(pr.code || '').trim()) return pr;
                 }
-                return n;
+                return null;
             };
+            // Količina je METAKOCKINA (postavka), ne naše število kosov: paket "(8 kos)"
+            // je pri njih ena postavka z amount=1. Starejša naročila je še nimajo
+            // shranjene — takrat 1, kar drži za 1686 od 1696 izmerjenih postavk.
+            const kolicinaMK = (pr) => Math.max(1, parseInt(pr && pr.amount) || 1);
 
             // Sort
             const sortFn = (a, b) => {
                 switch (currentSort) {
                     case 'artikli': {
-                        const ea = steviloKosov(a) === 1 ? 0 : 1;
-                        const eb = steviloKosov(b) === 1 ? 0 : 1;
-                        if (ea !== eb) return ea - eb;
-                        const raz = glavniArtikel(a).localeCompare(glavniArtikel(b), 'sl');
-                        if (raz !== 0) return raz;
+                        const pa = prviSSifro(a), pb = prviSSifro(b);
+                        const ca = pa ? String(pa.code).trim() : '';
+                        const cb = pb ? String(pb.code).trim() : '';
+                        if (!ca || !cb) { if (ca !== cb) return ca ? -1 : 1; }
+                        // Primerjava znak za znakom (ne locale): šifre so ASCII, tako
+                        // dobimo isti vrstni red kot Metakocka.
+                        if (ca !== cb) return ca < cb ? 1 : -1;      // PADAJOČE
+                        const ka = kolicinaMK(pa), kb = kolicinaMK(pb);
+                        if (ka !== kb) return ka - kb;               // količina NARAŠČAJOČE
                         return (a.customer || '').localeCompare(b.customer || '', 'sl');
                     }
                     case 'newest': {

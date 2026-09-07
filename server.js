@@ -1744,7 +1744,7 @@ app.get('/api/packing/orders', async (req, res) => {
                             }
                             if (warnings.length > 0) item.warnings = warnings;
                         }
-                        return { label: productLabel, items: allItems, code };
+                        return { label: productLabel, items: allItems, code, amount };
                     }
                     
                     // [2026-08-12] Izdelki BREZ variacij (BUNION, ORTOPAS, FISIOREST, KIDSNEST, KNEEFIX,
@@ -1770,7 +1770,7 @@ const NOVAR_CODES = /BUNION|FISIOREST|KNEEHEAT|SNORE|CLOUD|CONTROLPRO|NORIKSHERS
                         for (let a = 0; a < amount * per; a++) {
                             novarItems.push({ type: cleanName, color: '', size: '', noWarning: true });
                         }
-                        return { label: productLabel, items: novarItems, code };
+                        return { label: productLabel, items: novarItems, code, amount };
                     }
 
                     // Fallback — flag as warning (no parsed data!)
@@ -1784,7 +1784,7 @@ const NOVAR_CODES = /BUNION|FISIOREST|KNEEHEAT|SNORE|CLOUD|CONTROLPRO|NORIKSHERS
                             ? { type: name, color: '', size: '', colorHex: '#ccc', noWarning: true }
                             : { type: name, color: '', size: '', colorHex: '#ccc', warnings: ['Ni bilo mogoče parsati izdelkov — preverite ročno!'] });
                     }
-                    return { label: productLabel, items: fallbackItems, code };
+                    return { label: productLabel, items: fallbackItems, code, amount };
                 });
             
             // Parse date and time
@@ -3189,6 +3189,11 @@ function slimForRolling(o) {
         products: (o.products || []).map(p => ({
             label: p.label || '',
             code: p.code || '',
+            // [2026-09-01] Metakockina kolicina postavke. Rabi jo sortiranje "Artikli"
+            // (pravilo First product code: ob enaki sifri odloca kolicina narascajoce).
+            // NASE stetje kosov tu NE pride v postev: paket "(8 kos)" je pri Metakocki
+            // ena postavka z amount=1, sicer bi se vrstni red razlikoval od njihovega.
+            amount: parseInt(p.amount) || 1,
             items: (p.items || []).slice(0, ROLL_MAX_ITEMS).map(it => ({ type: it.type || '', color: it.color || '', size: it.size || '', oznaka: it.oznaka || '' }))
         }))
         // opomba: polje `items` (podvojen ravni seznam) NE gre v skladisce — kartice ga ne rabijo
