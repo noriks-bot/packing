@@ -525,6 +525,7 @@
                 <button class="country-btn" data-sort="id-asc" onclick="setSort('id-asc', this)">#↑</button>
                 <button class="country-btn" data-sort="id-desc" onclick="setSort('id-desc', this)">#↓</button>
                 <button class="country-btn" data-sort="artikli" onclick="setSort('artikli', this)">📦 Artikli</button>
+                <button class="country-btn" data-sort="artikli-nazaj" onclick="setSort('artikli-nazaj', this)">📦 Artikli nazaj</button>
             </div>
             <input type="text" id="search-name" placeholder="Iskanje: ime ali št. naročila…" oninput="filterByCountry()" style="padding:6px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:180px; margin-left:10px;">
         </div>
@@ -698,7 +699,7 @@
         };
         
         let selectedCountry = '';
-        let currentSort = 'newest'; // newest, oldest, name-asc, name-desc, id-asc, id-desc, artikli
+        let currentSort = 'newest'; // newest, oldest, name-asc, name-desc, id-asc, id-desc, artikli, artikli-nazaj
         
         function setSort(mode, btn) {
             currentSort = mode;
@@ -1061,22 +1062,28 @@
                 return n || 1;
             };
             const stNarocila = (o) => parseInt(String(o.id || '').split('/')[0]) || 0;
+            const primerjajArtikle = (a, b) => {
+                const pa = prviSSifro(a), pb = prviSSifro(b);
+                const ca = pa ? String(pa.code).trim() : '';
+                const cb = pb ? String(pb.code).trim() : '';
+                if (!ca || !cb) { if (ca !== cb) return ca ? -1 : 1; }
+                // Primerjava znak za znakom (ne locale): šifre so ASCII, tako dobimo
+                // isti vrstni red kot Metakocka.
+                if (ca !== cb) return ca < cb ? 1 : -1;                  // 1) šifra PADAJOČE
+                const ka = skupnaKolicina(a), kb = skupnaKolicina(b);
+                if (ka !== kb) return ka - kb;                           // 2) količina NARAŠČAJOČE
+                return stNarocila(b) - stNarocila(a);                    // 3) št. naročila PADAJOČE
+            };
 
             // Sort
             const sortFn = (a, b) => {
                 switch (currentSort) {
-                    case 'artikli': {
-                        const pa = prviSSifro(a), pb = prviSSifro(b);
-                        const ca = pa ? String(pa.code).trim() : '';
-                        const cb = pb ? String(pb.code).trim() : '';
-                        if (!ca || !cb) { if (ca !== cb) return ca ? -1 : 1; }
-                        // Primerjava znak za znakom (ne locale): šifre so ASCII, tako
-                        // dobimo isti vrstni red kot Metakocka.
-                        if (ca !== cb) return ca < cb ? 1 : -1;                  // 1) šifra PADAJOČE
-                        const ka = skupnaKolicina(a), kb = skupnaKolicina(b);
-                        if (ka !== kb) return ka - kb;                           // 2) količina NARAŠČAJOČE
-                        return stNarocila(b) - stNarocila(a);                    // 3) št. naročila PADAJOČE
-                    }
+                    // "Artikli nazaj" je natanko obrnjen seznam — isti primerjalnik z
+                    // nasprotnim predznakom, da smeri ne moreta razkoraciti.
+                    case 'artikli':
+                        return primerjajArtikle(a, b);
+                    case 'artikli-nazaj':
+                        return -primerjajArtikle(a, b);
                     case 'newest': {
                         const da = (a.date || '') + ' ' + (a.time || '');
                         const db = (b.date || '') + ' ' + (b.time || '');
