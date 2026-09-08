@@ -131,7 +131,24 @@
         .modal-zapri { border: 0; background: transparent; font-size: 22px; line-height: 1;
                        cursor: pointer; color: #6b7280; padding: 0 4px; }
         .modal-zapri:hover { color: #111827; }
-        .modal-telo { padding: 18px; overflow: auto; min-height: 140px; }
+        .modal-telo { padding: 14px 18px 18px; overflow: auto; min-height: 140px; }
+        .dp-vrh { font-size: 12px; color: #6b7280; margin-bottom: 10px; }
+        .dp-mreza { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+        .dp-skupina { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; }
+        .dp-glava { display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+                    border-bottom: 2px solid #2563eb; padding-bottom: 4px; margin-bottom: 5px; }
+        .dp-ime { font-weight: 800; font-size: 11.5px; text-transform: uppercase; line-height: 1.25; }
+        .dp-skupaj { font-weight: 800; font-size: 11.5px; color: #2563eb; white-space: nowrap; }
+        .dp-barva { display: flex; justify-content: space-between; align-items: baseline;
+                    margin: 6px 0 1px; padding-bottom: 2px; border-bottom: 1px solid #e5e7eb;
+                    font-weight: 700; font-size: 11px; color: #374151; }
+        .dp-bn { font-weight: 600; font-size: 10.5px; color: #9ca3af; }
+        .dp-tab { width: 100%; border-collapse: collapse; }
+        .dp-tab td { padding: 1px 0; font-size: 12px; border-bottom: 1px solid #f7f7f8; }
+        .dp-kos { width: 42px; text-align: right; padding-right: 8px; font-weight: 800;
+                  font-variant-numeric: tabular-nums; }
+        .dp-prazno { color: #6b7280; font-size: 13px; text-align: center; padding: 30px 0; }
+        @media (max-width: 560px) { .dp-mreza { grid-template-columns: 1fr; } }
 
         .btn-secondary:hover { background: #444; }
 
@@ -1130,6 +1147,8 @@
             
             // Split into unpacked and packed
             const unpacked = orders.filter(o => !isOrderPacked(o.id));
+            // Modal "Dodatni produkti" sesteva TOCNO to, kar je zdaj na zaslonu.
+            window._prikazanaNespakirana = unpacked;
             const packed = orders.filter(o => isOrderPacked(o.id));
             
             // [2026-09-01 Dejan] Sortiranje ARTIKLI = Metakockino pravilo "First product code"
@@ -1309,7 +1328,11 @@
         let IZBRAN = 'VSE';
         let MENI_ODPRT = false;   // privzeto zlozen
         function glavniZavihek(o) {
-            const p = (o.products || [])[0];
+            return zavihekIzdelka((o.products || [])[0]);
+        }
+        // [2026-09-08 Dejan] Isto pravilo, a za POSAMEZEN izdelek — modal "Dodatni
+        // produkti" mora znati razvrstiti vsak izdelek v naročilu, ne le prvega.
+        function zavihekIzdelka(p) {
             if (!p) return 'OSTALO';
             const code = String(p.code || '');
             const poSifri = IZDELKI.find(x => x.sku && x.sku.test(code));
@@ -1331,6 +1354,67 @@
         }
         // [2026-09-08 Dejan] DODATNI PRODUKTI — zaenkrat prazen modal; vsebina pride kasneje.
         // Gumb se pokaze SAMO, ko je izbran posamezen izdelek (ne na zavihku VSE).
+        // Velikosti od najvecje do najmanjse — enako pravilo kot na strezniku
+        // (glej primerjajVelikosti v server.js). Ce popravljas eno, popravi obe.
+        const RANG_VELIKOSTI = { '5XL':1, '4XL':2, '3XL':3, '2XL':4, 'XXL':4, 'XL':5, 'L':6, 'M':7, 'S':8, 'XS':9 };
+        function kljucVelikosti(v) {
+            const t = String(v || '').trim().toUpperCase();
+            if (RANG_VELIKOSTI[t] !== undefined) return [0, RANG_VELIKOSTI[t], t];
+            const beseda = t.split(/\s+/)[0];
+            if (RANG_VELIKOSTI[beseda] !== undefined) return [0, RANG_VELIKOSTI[beseda], t];
+            const delOd = beseda.split('/')[0];
+            if (RANG_VELIKOSTI[delOd] !== undefined) return [0, RANG_VELIKOSTI[delOd], t];
+            const st = t.match(/(\d+)/);
+            if (st) return [1, -parseInt(st[1], 10), t];
+            return [2, 0, t];
+        }
+        function primerjajVelikosti(a, b) {
+            const ka = kljucVelikosti(a), kb = kljucVelikosti(b);
+            if (ka[0] !== kb[0]) return ka[0] - kb[0];
+            if (ka[1] !== kb[1]) return ka[1] - kb[1];
+            return String(ka[2]).localeCompare(String(kb[2]), 'sl');
+        }
+
+        // Sesteje kose VSEH izdelkov v prikazanih naročilih, RAZEN tistih, ki
+        // pripadajo izbranemu zavihku. Nic novega ne racuna — samo sesteva to,
+        // kar je ze na karticah.
+        function povzetekDodatnih(narocila, izpusti) {
+            const skupine = new Map();
+            let kosov = 0, narocilSTem = 0;
+            for (const o of (narocila || [])) {
+                let imel = false;
+                for (const pr of (o.products || [])) {
+                    if (zavihekIzdelka(pr) === izpusti) continue;
+                    const sifra = String(pr.code || pr.label || '');
+                    const oznakaZa = /KOMPSFIT|FIT.?KOMPRES/i.test(sifra) ? 'FIT'
+                                   : /KOMZIPS/i.test(sifra) ? 'ZIP' : '';
+                    for (const it of (pr.items || [])) {
+                        const oznaka = it.oznaka || oznakaZa;
+                        const vrsta = String(it.type || '').trim() || '(brez imena)';
+                        const kljuc = (oznaka ? oznaka + ' ' : '') + vrsta;
+                        if (!skupine.has(kljuc)) skupine.set(kljuc, { skupina: kljuc, skupaj: 0, barve: new Map() });
+                        const g = skupine.get(kljuc);
+                        const barva = String(it.color || '').trim();
+                        const velikost = String(it.size || '').trim() || 'kos';
+                        if (!g.barve.has(barva)) g.barve.set(barva, { barva, skupaj: 0, velikosti: new Map() });
+                        const bg = g.barve.get(barva);
+                        bg.velikosti.set(velikost, (bg.velikosti.get(velikost) || 0) + 1);
+                        bg.skupaj++; g.skupaj++; kosov++; imel = true;
+                    }
+                }
+                if (imel) narocilSTem++;
+            }
+            const seznam = [...skupine.values()].map(g => ({
+                skupina: g.skupina, skupaj: g.skupaj,
+                barve: [...g.barve.values()].map(bg => ({
+                    barva: bg.barva, skupaj: bg.skupaj,
+                    velikosti: [...bg.velikosti.entries()].map(([velikost, k]) => ({ velikost, kosov: k }))
+                        .sort((a, b) => primerjajVelikosti(a.velikost, b.velikost))
+                })).sort((a, b) => b.skupaj - a.skupaj || a.barva.localeCompare(b.barva, 'sl'))
+            })).sort((a, b) => b.skupaj - a.skupaj || a.skupina.localeCompare(b.skupina, 'sl'));
+            return { kosov, narocilSTem, skupine: seznam };
+        }
+
         function odpriDodatneProdukte() {
             if (document.getElementById('modal-dodatni')) return;
             const ozadje = document.createElement('div');
@@ -1342,7 +1426,7 @@
                         '<div class="modal-naslov">Dodatni produkti — ' + IZBRAN + '</div>' +
                         '<button class="modal-zapri" title="Zapri">&times;</button>' +
                     '</div>' +
-                    '<div class="modal-telo"></div>' +
+                    '<div class="modal-telo">' + izrisDodatnih() + '</div>' +
                 '</div>';
             document.body.appendChild(ozadje);
             const zapri = () => zapriDodatneProdukte();
@@ -1350,6 +1434,28 @@
             ozadje.addEventListener('click', (e) => { if (e.target === ozadje) zapri(); });
             document.addEventListener('keydown', escZapri);
         }
+        function izrisDodatnih() {
+            const d = povzetekDodatnih(window._prikazanaNespakirana || [], IZBRAN);
+            if (!d.skupine.length)
+                return '<div class="dp-prazno">V prikazanih naročilih ni drugih izdelkov.</div>';
+            const u = (x) => String(x == null ? '' : x).replace(/[&<>"']/g, c =>
+                ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+            return '<div class="dp-vrh">Skupaj <b>' + d.kosov + '</b> kosov v <b>' + d.narocilSTem +
+                   '</b> naročilih (poleg ' + u(IZBRAN) + ')</div>' +
+                   '<div class="dp-mreza">' + d.skupine.map(g =>
+                        '<div class="dp-skupina">' +
+                            '<div class="dp-glava"><span class="dp-ime">' + u(g.skupina) + '</span>' +
+                            '<span class="dp-skupaj">' + g.skupaj + ' kos</span></div>' +
+                            g.barve.map(bg =>
+                                (bg.barva ? '<div class="dp-barva"><span>' + u(bg.barva) + '</span>' +
+                                            '<span class="dp-bn">' + bg.skupaj + '</span></div>' : '') +
+                                '<table class="dp-tab">' + bg.velikosti.map(v =>
+                                    '<tr><td class="dp-kos">' + v.kosov + 'x</td><td>' + u(v.velikost) + '</td></tr>'
+                                ).join('') + '</table>'
+                            ).join('') +
+                        '</div>').join('') + '</div>';
+        }
+
         function escZapri(e) { if (e.key === 'Escape') zapriDodatneProdukte(); }
         function zapriDodatneProdukte() {
             const m = document.getElementById('modal-dodatni');
