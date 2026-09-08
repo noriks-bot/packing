@@ -3265,6 +3265,33 @@ app.get('/api/packing/predpakiranje', (req, res) => {
     }
 });
 
+// [2026-09-08 Dejan] Velikosti od NAJVECJE do najmanjse (Dejan). Zaporedje ni
+// abecedno in ne po stevilu kosov, zato ga moramo poznati:
+//   5XL > 4XL > 3XL > 2XL > XL > L > M > S > XS
+// Nogavice imajo sestavljene velikosti ("2XL 44-48", "L/XL 40-44", "S/M 36-40") —
+// tam odloca prva stevilka, padajoce. Kar ne spada nikamor (npr. "3-9 let",
+// "kos"), gre na konec po abecedi.
+const RANG_VELIKOSTI = { '5XL': 1, '4XL': 2, '3XL': 3, '2XL': 4, 'XXL': 4, 'XL': 5, 'L': 6, 'M': 7, 'S': 8, 'XS': 9 };
+function kljucVelikosti(v) {
+    const s = String(v || '').trim().toUpperCase();
+    if (RANG_VELIKOSTI[s] !== undefined) return [0, RANG_VELIKOSTI[s], s];
+    // Najprej PRVA BESEDA, sele nato stevilke. Sicer bi iz "2XL 44-48" pobrali
+    // stevilko 2 (iz oznake 2XL) namesto 44 in nogavice bi se razvrstile narobe.
+    const beseda = s.split(/\s+/)[0];
+    if (RANG_VELIKOSTI[beseda] !== undefined) return [0, RANG_VELIKOSTI[beseda], s];
+    const delOd = beseda.split('/')[0];
+    if (RANG_VELIKOSTI[delOd] !== undefined) return [0, RANG_VELIKOSTI[delOd], s];
+    const st = s.match(/(\d+)/);
+    if (st) return [1, -parseInt(st[1], 10), s];
+    return [2, 0, s];
+}
+function primerjajVelikosti(a, b) {
+    const ka = kljucVelikosti(a), kb = kljucVelikosti(b);
+    if (ka[0] !== kb[0]) return ka[0] - kb[0];
+    if (ka[1] !== kb[1]) return ka[1] - kb[1];
+    return String(ka[2]).localeCompare(String(kb[2]), 'sl');
+}
+
 // [2026-09-08 Dejan] POVZETEK ZA PREDPAKIRANJE — sestevek KOSOV po artiklih.
 // Skladisce ne rabi seznama narocil, ampak koliko cesa naj pripravi:
 //   FIT Majica -> 50x Bela L, 30x Crna M ...
@@ -3300,10 +3327,14 @@ app.get('/api/packing/predpakiranje-povzetek', (req, res) => {
                     const oznaka = it.oznaka || oznakaZa;
                     const vrsta = String(it.type || '').trim() || '(brez imena)';
                     const kljuc = (oznaka ? oznaka + ' ' : '') + vrsta;
-                    if (!skupine.has(kljuc)) skupine.set(kljuc, { skupina: kljuc, skupaj: 0, vrstice: new Map() });
+                    if (!skupine.has(kljuc)) skupine.set(kljuc, { skupina: kljuc, skupaj: 0, barve: new Map() });
                     const g = skupine.get(kljuc);
-                    const opis = [it.color, it.size].map(x => String(x || '').trim()).filter(Boolean).join(' ') || 'kos';
-                    g.vrstice.set(opis, (g.vrstice.get(opis) || 0) + 1);
+                    const barva = String(it.color || '').trim();
+                    const velikost = String(it.size || '').trim() || 'kos';
+                    if (!g.barve.has(barva)) g.barve.set(barva, { barva, skupaj: 0, velikosti: new Map() });
+                    const bg = g.barve.get(barva);
+                    bg.velikosti.set(velikost, (bg.velikosti.get(velikost) || 0) + 1);
+                    bg.skupaj++;
                     g.skupaj++;
                     kosovSkupaj++;
                 }
@@ -3314,9 +3345,15 @@ app.get('/api/packing/predpakiranje-povzetek', (req, res) => {
             .map(g => ({
                 skupina: g.skupina,
                 skupaj: g.skupaj,
-                vrstice: [...g.vrstice.entries()]
-                    .map(([opis, kosov]) => ({ opis, kosov }))
-                    .sort((a, b) => b.kosov - a.kosov || a.opis.localeCompare(b.opis, 'sl'))
+                barve: [...g.barve.values()]
+                    .map(bg => ({
+                        barva: bg.barva,
+                        skupaj: bg.skupaj,
+                        velikosti: [...bg.velikosti.entries()]
+                            .map(([velikost, kosov]) => ({ velikost, kosov }))
+                            .sort((a, b) => primerjajVelikosti(a.velikost, b.velikost))
+                    }))
+                    .sort((a, b) => b.skupaj - a.skupaj || a.barva.localeCompare(b.barva, 'sl'))
             }))
             .sort((a, b) => b.skupaj - a.skupaj || a.skupina.localeCompare(b.skupina, 'sl'));
 

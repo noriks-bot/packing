@@ -36,6 +36,11 @@
     tr:last-child td { border-bottom:0; }
     .kos { width:70px; text-align:right; padding-right:12px; font-weight:800; color:#111827;
            font-variant-numeric:tabular-nums; }
+    .barva { display:flex; justify-content:space-between; align-items:baseline;
+             margin:10px 0 2px; padding-bottom:3px; border-bottom:1px solid #e5e7eb;
+             font-weight:700; font-size:13px; color:#374151; }
+    .barva:first-child { margin-top:0; }
+    .bskupaj { font-weight:600; font-size:12px; color:#9ca3af; }
     .opis { color:#374151; }
     .prazno { text-align:center; color:#6b7280; padding:40px 0; grid-column:1/-1; }
     @media (max-width:900px) { #povzetek { grid-template-columns:1fr; } }
@@ -121,9 +126,15 @@
             '<div class="skupina">' +
                 '<div class="sglava"><span class="sime">' + ubezi(g.skupina) + '</span>' +
                 '<span class="sskupaj">' + g.skupaj + ' kos</span></div>' +
-                '<table>' + g.vrstice.map(v =>
-                    '<tr><td class="kos">' + v.kosov + 'x</td><td class="opis">' + ubezi(v.opis) + '</td></tr>'
-                ).join('') + '</table>' +
+                g.barve.map(bg =>
+                    // Ce izdelek nima barve (npr. Fisiorest), naslova barve ne pisemo.
+                    (bg.barva ? '<div class="barva"><span>' + ubezi(bg.barva) + '</span>' +
+                                '<span class="bskupaj">' + bg.skupaj + '</span></div>' : '') +
+                    '<table>' + bg.velikosti.map(v =>
+                        '<tr><td class="kos">' + v.kosov + 'x</td>' +
+                        '<td class="opis">' + ubezi(v.velikost) + '</td></tr>'
+                    ).join('') + '</table>'
+                ).join('') +
             '</div>').join('');
     }
 
