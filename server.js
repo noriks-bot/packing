@@ -3171,6 +3171,85 @@ app.get('/api/packing/spakirani', (req, res) => {
     }
 });
 
+// Lahek seznam nespakiranih, osvezen najvec vsakih 20 s. Brez tega bi vsak
+// pritisk tipke v iskalniku dvakrat prebral 29.000 vrstic iz baze (izmerjeno 2,5 s).
+let _lahkaCache = { ts: 0, vrstice: null };
+function nespakiranaLahka() {
+    if (_lahkaCache.vrstice && Date.now() - _lahkaCache.ts < 20 * 1000) return _lahkaCache.vrstice;
+    const spakirani = packedMod.spakiraniSet();
+    const v = tsdb.getLight({ days: PACKING_DAYS_MAX }).filter(o => !spakirani.has(o.id));
+    _lahkaCache = { ts: Date.now(), vrstice: v };
+    return v;
+}
+
+// [2026-09-07 Dejan] PREDPAKIRANJE — sveza, se NE spakirana narocila.
+// Isti vzorec kot Spakirani paketi: filtriramo in razvrscamo nad lahkim seznamom
+// (brez stolpca products), podrobnosti iz baze pa poberemo samo za prikazano stran.
+app.get('/api/packing/predpakiranje', (req, res) => {
+    try {
+        const q = String(req.query.q || '').trim().toLowerCase();
+        const od = String(req.query.od || '').trim();
+        const doD = String(req.query.do || '').trim();
+        const drzava = String(req.query.drzava || '').trim();
+        const sort = String(req.query.sort || 'novo');
+        const statusi = String(req.query.statusi || '').split(',').map(x => x.trim()).filter(Boolean);
+        const naStran = Math.min(Math.max(parseInt(req.query.naStran, 10) || 60, 10), 200);
+        const stran = Math.max(parseInt(req.query.stran, 10) || 0, 0);
+
+        const spakirani = packedMod.spakiraniSet();
+        let vrstice = nespakiranaLahka().slice();
+
+        // Stevci po statusih racunamo PRED filtrom statusa, da pilule kazejo,
+        // koliko bi jih posamezen status prinesel.
+        const poStatusih = {};
+        for (const o of vrstice) poStatusih[o.status] = (poStatusih[o.status] || 0) + 1;
+
+        vrstice = vrstice.filter(o => {
+            if (statusi.length && !statusi.some(st => String(o.status || '').startsWith(st))) return false;
+            if (q && !(String(o.customer || '').toLowerCase().includes(q) ||
+                       String(o.id || '').toLowerCase().includes(q))) return false;
+            if (drzava && o.country !== drzava) return false;
+            const dan = String(o.order_date || '');
+            if (od && dan < od) return false;
+            if (doD && dan > doD) return false;
+            return true;
+        });
+
+        const skupaj = vrstice.length;
+        const st = (x) => parseInt(String(x.id).split('/')[0]) || 0;
+        const casNiz = (x) => String(x.order_date || '') + ' ' + String(x.order_time || '');
+        if (sort === 'staro')        vrstice.sort((a, b) => casNiz(a).localeCompare(casNiz(b)));
+        else if (sort === 'ime')     vrstice.sort((a, b) => String(a.customer).localeCompare(String(b.customer), 'sl'));
+        else if (sort === 'ime-obr') vrstice.sort((a, b) => String(b.customer).localeCompare(String(a.customer), 'sl'));
+        else if (sort === 'st')      vrstice.sort((a, b) => st(a) - st(b));
+        else if (sort === 'st-obr')  vrstice.sort((a, b) => st(b) - st(a));
+        else                         vrstice.sort((a, b) => casNiz(b).localeCompare(casNiz(a)));  // novo
+
+        const kos = vrstice.slice(stran * naStran, stran * naStran + naStran);
+        let podrobnosti = {};
+        try { podrobnosti = tsdb.getByIds(kos.map(v => v.id)); } catch (e) { console.error('[Predpakiranje] getByIds:', e.message); }
+
+        // Drzave za pilule — iz istega nabora, brez novega branja baze.
+        const drzave = {};
+        for (const o of nespakiranaLahka()) if (o.country) drzave[o.country] = (drzave[o.country] || 0) + 1;
+
+        res.json({
+            skupaj, stran, naStran,
+            jihJeSe: (stran + 1) * naStran < skupaj,
+            poStatusih,
+            drzave: Object.entries(drzave).sort((a, b) => b[1] - a[1]).map(([drzava, n]) => ({ drzava, n })),
+            vrstice: kos.map(v => podrobnosti[v.id] || {
+                id: v.id, customer: v.customer, country: v.country, status: v.status,
+                orderDate: v.order_date, orderTime: v.order_time, total: v.total,
+                currency: v.currency, products: []
+            })
+        });
+    } catch (e) {
+        console.error('[Predpakiranje] napaka:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Drzave, ki jih poznamo (za pilule filtra).
 app.get('/api/packing/spakirani-drzave', (req, res) => {
     const m = drzaveZaSpakirane();

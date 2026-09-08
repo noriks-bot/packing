@@ -296,6 +296,17 @@ function wcStats() {
     try { return db().prepare('SELECT COUNT(*) c FROM wc_enrich').get().c; } catch (_) { return 0; }
 }
 
+// [2026-09-07 Dejan] LAHEK seznam za stran Predpakiranje: brez stolpca products,
+// ki je daleč največji. Filtriranje in razvrščanje 29.000 naročil tako stane nekaj
+// milisekund, podrobnosti pa se poberejo samo za prikazano stran (getByIds).
+function getLight({ days = KEEP_DAYS, limit = 100000 } = {}) {
+    const cutoff = dayStr(-(days - 1));
+    return db().prepare(
+        'SELECT id, customer, country, status, order_date, order_time, total, currency ' +
+        'FROM orders WHERE order_date >= ? ORDER BY order_date DESC, order_time DESC LIMIT ?'
+    ).all(cutoff, limit);
+}
+
 // [2026-09-07 Dejan] Podrobnosti za konkretna naročila (stran Spakirani paketi).
 // Bere se SAMO za prikazano stran (~60 ID-jev), zato je poizvedba majhna.
 function getByIds(ids) {
@@ -323,6 +334,6 @@ function getByIds(ids) {
     return out;
 }
 
-module.exports = { upsertMany, getOrders, getByIds, coverage, prune, setMeta, getMeta, importFromJson, dayStr, pendingByDay,
+module.exports = { upsertMany, getOrders, getByIds, getLight, coverage, prune, setMeta, getMeta, importFromJson, dayStr, pendingByDay,
                    cacheGet, cacheGetAll, cacheSet, cacheImportFromJson, KEEP_DAYS, DB_FILE,
                    wcGet, wcSet, wcPrune, wcStats, cacheAge };
