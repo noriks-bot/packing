@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Predpakiranje | NORIKS</title>
-<!-- Slogi kartice so SKUPNI z /packing/ in /spakirani-paketi. Popravljaj v kartica.css. -->
-<link rel="stylesheet" href="kartica.css">
+<!-- Filtri so v istem slogu kot glavna stran /packing/. -->
 <link rel="stylesheet" href="filtri.css">
 <style>
     :root { --topnav-h: 46px; }
@@ -20,34 +19,31 @@
     .topnav a:hover { color:#fff; }
     .topnav a.active { color:#fff; border-bottom-color:#10b981; }
 
-    /* Ta pravila so v index.html vgrajena (izbirniki se pojavljajo tudi drugje),
-       zato jih tu ponovimo — kartica jih rabi. */
-    .btn { padding:8px 16px; border:none; border-radius:6px; cursor:pointer;
-           font-size:14px; font-weight:500; transition:all .2s; }
-    .btn-secondary { background:#333; color:#fff; }
-    .src-links { display:flex; gap:6px; margin-top:6px; flex-wrap:nowrap; }
-    .src-link { flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-                font-size:11px; padding:3px 9px; border-radius:5px; text-decoration:none;
-                font-weight:600; border:1px solid transparent; }
-    .src-wc { background:#f3e8ff; color:#6b21a8; border-color:#e9d5ff; }
-    .src-mk { background:#e0f2fe; color:#075985; border-color:#bae6fd; }
-    .src-link:hover { filter:brightness(.95); }
-    /* Na tej strani se naročil ne izbira — potrditveno polje kartice bi bilo mrtev gumb. */
-    .order-select { display:none !important; }
-
     .ovoj { max-width:1400px; margin:0 auto; padding:calc(var(--topnav-h) + 12px) 12px 60px; }
     h1 { font-size:18px; margin:0 0 10px; }
-    .stevec { font-size:12px; color:#6b7280; margin:-12px 0 12px 4px; }
+    .stevec { font-size:13px; color:#6b7280; margin:-12px 0 14px 4px; }
     .stevec b { color:#111827; }
-    #mreza { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    #vec { display:block; margin:16px auto; padding:10px 22px; border:0; border-radius:8px;
-           background:#111827; color:#fff; font-size:13px; font-weight:600; cursor:pointer; }
-    #vec[disabled] { opacity:.5; cursor:default; }
+
+    #povzetek { display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
+    .skupina { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px;
+               box-shadow:0 1px 2px rgba(0,0,0,.04); break-inside:avoid; }
+    .sglava { display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+              border-bottom:2px solid #10b981; padding-bottom:6px; margin-bottom:8px; }
+    .sime { font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:.3px; }
+    .sskupaj { font-weight:800; font-size:14px; color:#10b981; white-space:nowrap; }
+    table { width:100%; border-collapse:collapse; }
+    td { padding:4px 0; font-size:14px; border-bottom:1px solid #f3f4f6; }
+    tr:last-child td { border-bottom:0; }
+    .kos { width:70px; text-align:right; padding-right:12px; font-weight:800; color:#111827;
+           font-variant-numeric:tabular-nums; }
+    .opis { color:#374151; }
     .prazno { text-align:center; color:#6b7280; padding:40px 0; grid-column:1/-1; }
-    @media (max-width:768px) {
-        #mreza { grid-template-columns:1fr; }
-        .topnav { flex-wrap:wrap; height:auto; padding:4px 10px; }
-        .topnav a { line-height:30px; }
+    @media (max-width:900px) { #povzetek { grid-template-columns:1fr; } }
+    @media print {
+        .topnav, .filters { display:none !important; }
+        .ovoj { padding-top:0; max-width:none; }
+        #povzetek { grid-template-columns:1fr 1fr; }
+        .skupina { box-shadow:none; }
     }
 </style>
 </head>
@@ -60,7 +56,7 @@
 </nav>
 
 <div class="ovoj">
-    <h1>🧾 Predpakiranje <span style="font-size:12px; color:#6b7280; font-weight:400;">— še nespakirana naročila</span></h1>
+    <h1>🧾 Predpakiranje <span style="font-size:12px; color:#6b7280; font-weight:400;">— koliko česa pripraviti</span></h1>
     <div class="filters">
         <label>Status:</label>
         <div class="country-buttons" id="statusi"></div>
@@ -68,124 +64,95 @@
         <div class="country-buttons" id="drzave"></div>
     </div>
     <div class="stevec" id="stevec">Nalagam…</div>
-    <div id="mreza"></div>
-    <button id="vec" style="display:none;">Naloži več</button>
-    <div id="konec"></div>
+    <div id="povzetek"></div>
 </div>
 
-<!-- ISTI izris kot na /packing/ — ena koda, da se strani ne razidejo. -->
+<!-- countryFlags pride iz skupne datoteke, da so zastavice povsod iste. -->
 <script src="kartica.js"></script>
 <script>
-    // Ta naročila NISO spakirana, izbiranja in "novih" ni.
-    window._packingNotes = {};
-    window.KARTICA = { izbrani: () => new Set(), spakirani: () => ({}), novi: () => new Set() };
-
-    // Trije glavni statusi so privzeto vklopljeni; ostali (Brisan, TEST, Zaključeno…)
-    // so na voljo, a jih skladišče ne pakira, zato niso izbrani.
     const GLAVNI = ['Novo', 'Pripravljen za odpremo', 'Odpremljen'];
     let izbraniStatusi = new Set(GLAVNI);
-    // [2026-09-08 Dejan] Razvrscanja na tej strani ni — vedno najnovejsa najprej.
-    let stran = 0, sort = 'novo', drzava = '', jihJeSe = false, nalagam = false, pilulePostavljene = false;
+    let drzava = '', nalagam = false, pilulePostavljene = false;
 
-    function parametri(zaStran) {
+    const ubezi = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+    function parametri() {
         const p = new URLSearchParams();
         if (drzava) p.set('drzava', drzava);
         if (izbraniStatusi.size) p.set('statusi', [...izbraniStatusi].join(','));
-        p.set('sort', sort);
-        p.set('stran', zaStran);
         return p.toString();
     }
 
     function izrisiPilule(d) {
-        // Pilule postavimo enkrat; števci se osvežujejo ob vsakem odgovoru.
         const st = document.getElementById('statusi');
-        // [2026-09-08 Dejan] SAMO trije statusi. Ostalih (Brisan, TEST, Zakljuceno...)
-        // skladisce ne pakira, zato jih tu sploh ne ponujamo.
         const stevec = (ime) => Object.entries(d.poStatusih || {})
             .filter(([k]) => k.startsWith(ime)).reduce((a, [, v]) => a + v, 0);
         st.innerHTML = GLAVNI.map(g =>
-                '<button class="country-btn' + (izbraniStatusi.has(g) ? ' active' : '') + '" data-status="' + g + '">' +
-                g + '<span class="n">' + stevec(g) + '</span></button>').join('');
-        if (!pilulePostavljene) {
-            st.addEventListener('click', (e) => {
-                const b = e.target.closest('[data-status]'); if (!b) return;
-                const s = b.dataset.status;
-                if (izbraniStatusi.has(s)) izbraniStatusi.delete(s); else izbraniStatusi.add(s);
-                b.classList.toggle('active');
-                naloziStran(true);
-            });
-            const dz = document.getElementById('drzave');
-            // Zastavice brez imen — enako kot na glavni strani.
-            dz.innerHTML = '<button class="country-btn active">Vse</button>' +
-                (d.drzave || []).map(x => '<button class="country-btn" data-drzava="' + x.drzava + '" title="' +
-                    x.drzava + ' (' + x.n + ')">' + (countryFlags[x.drzava] || x.drzava) + '</button>').join('');
-            dz.addEventListener('click', (e) => {
-                const b = e.target.closest('.country-btn'); if (!b) return;
-                drzava = b.dataset.drzava || '';
-                dz.querySelectorAll('.country-btn').forEach(x => x.classList.remove('active'));
-                b.classList.add('active');
-                naloziStran(true);
-            });
-            pilulePostavljene = true;
-        }
+            '<button class="country-btn' + (izbraniStatusi.has(g) ? ' active' : '') + '" data-status="' + g + '">' +
+            g + '<span class="n">' + stevec(g) + '</span></button>').join('');
+        if (pilulePostavljene) return;
+        st.addEventListener('click', (e) => {
+            const b = e.target.closest('[data-status]'); if (!b) return;
+            const s = b.dataset.status;
+            if (izbraniStatusi.has(s)) izbraniStatusi.delete(s); else izbraniStatusi.add(s);
+            b.classList.toggle('active');
+            nalozi();
+        });
+        const dz = document.getElementById('drzave');
+        dz.innerHTML = '<button class="country-btn active">Vse</button>' +
+            (d.drzave || []).map(x => '<button class="country-btn" data-drzava="' + ubezi(x.drzava) +
+                '" title="' + ubezi(x.drzava) + ' (' + x.n + ')">' +
+                (countryFlags[x.drzava] || ubezi(x.drzava)) + '</button>').join('');
+        dz.addEventListener('click', (e) => {
+            const b = e.target.closest('.country-btn'); if (!b) return;
+            drzava = b.dataset.drzava || '';
+            dz.querySelectorAll('.country-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            nalozi();
+        });
+        pilulePostavljene = true;
     }
 
-    async function naloziStran(znova) {
+    function izrisiPovzetek(d) {
+        const c = document.getElementById('povzetek');
+        if (!d.skupine.length) { c.innerHTML = '<div class="prazno">Ni kosov za pripravo.</div>'; return; }
+        c.innerHTML = d.skupine.map(g =>
+            '<div class="skupina">' +
+                '<div class="sglava"><span class="sime">' + ubezi(g.skupina) + '</span>' +
+                '<span class="sskupaj">' + g.skupaj + ' kos</span></div>' +
+                '<table>' + g.vrstice.map(v =>
+                    '<tr><td class="kos">' + v.kosov + 'x</td><td class="opis">' + ubezi(v.opis) + '</td></tr>'
+                ).join('') + '</table>' +
+            '</div>').join('');
+    }
+
+    async function nalozi() {
         if (nalagam) return;
         nalagam = true;
-        const gumbVec = document.getElementById('vec');
-        gumbVec.disabled = true;
-        if (znova) { stran = 0; document.getElementById('mreza').innerHTML = ''; }
         try {
-            const r = await fetch('/api/packing/predpakiranje?' + parametri(stran));
-            if (r.status === 401) { location.href = '/login.html'; return; }
-            const d = await r.json();
-            if (znova || !pilulePostavljene) izrisiPilule(d);
-            document.getElementById('mreza').insertAdjacentHTML('beforeend',
-                d.vrstice.map(o => renderOrderCard(o, false)).join(''));
-            jihJeSe = d.jihJeSe;
-            const prikazanih = document.querySelectorAll('#mreza .order-card').length;
+            // Pilule potrebujejo stevce po statusih, ki jih vraca seznamska koncna tocka;
+            // povzetek pa sestevek kosov. Zato dva klica, oba poceni.
+            const [rs, rp] = await Promise.all([
+                fetch('/api/packing/predpakiranje?' + parametri() + '&naStran=10'),
+                fetch('/api/packing/predpakiranje-povzetek?' + parametri())
+            ]);
+            if (rs.status === 401 || rp.status === 401) { location.href = '/login.html'; return; }
+            const ds = await rs.json(), dp = await rp.json();
+            izrisiPilule(ds);
+            izrisiPovzetek(dp);
             document.getElementById('stevec').innerHTML =
-                'Prikazanih <b>' + prikazanih + '</b> od <b>' + d.skupaj.toLocaleString('sl-SI') + '</b> nespakiranih' +
-                (izbraniStatusi.size ? ' (filter: ' + [...izbraniStatusi].join(', ') + ')' : '');
-            gumbVec.style.display = jihJeSe ? 'block' : 'none';
-            if (!prikazanih) document.getElementById('mreza').innerHTML = '<div class="prazno">Ni zadetkov.</div>';
-            stran++;
+                'Za pripravo: <b>' + dp.kosov.toLocaleString('sl-SI') + '</b> kosov iz <b>' +
+                dp.narocil.toLocaleString('sl-SI') + '</b> nespakiranih naročil' +
+                (izbraniStatusi.size ? ' (' + [...izbraniStatusi].join(', ') + ')' : '') +
+                (drzava ? ' — ' + drzava : '') +
+                (dp.narocilBrezPostavk ? ' · ' + dp.narocilBrezPostavk + ' brez razbitih postavk' : '');
         } catch (e) {
             document.getElementById('stevec').textContent = 'Napaka pri nalaganju: ' + e.message;
-        } finally { nalagam = false; gumbVec.disabled = false; }
+        } finally { nalagam = false; }
     }
 
-    // Gumbi na kartici kličejo te funkcije po imenu — enako kot na /packing/.
-    function toggleOrderSelect() { /* na tej strani se ne izbira */ }
-    function unpackOrder() { /* ta naročila niso spakirana */ }
-    async function saveNote(orderId) {
-        const input = document.querySelector('.order-note-input[data-order-id="' + orderId + '"]');
-        if (!input) return;
-        const note = input.value.trim();
-        try {
-            const r = await fetch('/api/packing/notes', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId, note })
-            });
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            if (note) window._packingNotes[orderId] = { note, updatedAt: new Date().toISOString() };
-            else delete window._packingNotes[orderId];
-            const k = input.closest('.order-card');
-            if (k) k.classList.toggle('ima-opombo', !!note);
-            input.style.borderColor = '#10b981';
-            setTimeout(() => { input.style.borderColor = '#ddd'; }, 1000);
-        } catch (e) { input.style.borderColor = '#ef4444'; }
-    }
-
-    document.getElementById('vec').addEventListener('click', () => naloziStran(false));
-    new IntersectionObserver(v => { if (v[0].isIntersecting && jihJeSe && !nalagam) naloziStran(false); },
-                             { rootMargin: '400px' }).observe(document.getElementById('konec'));
-
-    (async () => {
-        try { window._packingNotes = await (await fetch('/api/packing/notes')).json(); } catch (e) {}
-        naloziStran(true);
-    })();
+    nalozi();
 </script>
 </body>
 </html>

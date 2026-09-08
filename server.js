@@ -3265,6 +3265,68 @@ app.get('/api/packing/predpakiranje', (req, res) => {
     }
 });
 
+// [2026-09-08 Dejan] POVZETEK ZA PREDPAKIRANJE — sestevek KOSOV po artiklih.
+// Skladisce ne rabi seznama narocil, ampak koliko cesa naj pripravi:
+//   FIT Majica -> 50x Bela L, 30x Crna M ...
+// Skupina je (oznaka + vrsta kosa), ker prav to loci navadno majico od FIT
+// (KOMPSFIT) in ZIP (KOMZIPS) — na karticah je videti enako.
+// Kosi so v bazi shranjeni razsirjeno (en zapis = en kos), zato samo stejemo.
+app.get('/api/packing/predpakiranje-povzetek', (req, res) => {
+    try {
+        const drzava = String(req.query.drzava || '').trim();
+        const statusi = String(req.query.statusi || '').split(',').map(x => x.trim()).filter(Boolean);
+        const spakirani = packedMod.spakiraniSet();
+
+        const izbor = nespakiranaLahka().filter(o => {
+            if (statusi.length && !statusi.some(st => String(o.status || '').startsWith(st))) return false;
+            if (drzava && o.country !== drzava) return false;
+            return true;
+        });
+
+        const podrobno = tsdb.getByIds(izbor.map(o => o.id));
+        const skupine = new Map();
+        let kosovSkupaj = 0, narocilBrezPostavk = 0;
+
+        for (const o of izbor) {
+            const d = podrobno[o.id];
+            const izdelki = (d && d.products) || [];
+            if (!izdelki.length) { narocilBrezPostavk++; continue; }
+            for (const pr of izdelki) {
+                // Oznako izracunamo enako kot kartica, da se skupini ujemata.
+                const sifra = String(pr.code || pr.label || '');
+                const oznakaZa = /KOMPSFIT|FIT.?KOMPRES/i.test(sifra) ? 'FIT'
+                               : /KOMZIPS/i.test(sifra) ? 'ZIP' : '';
+                for (const it of (pr.items || [])) {
+                    const oznaka = it.oznaka || oznakaZa;
+                    const vrsta = String(it.type || '').trim() || '(brez imena)';
+                    const kljuc = (oznaka ? oznaka + ' ' : '') + vrsta;
+                    if (!skupine.has(kljuc)) skupine.set(kljuc, { skupina: kljuc, skupaj: 0, vrstice: new Map() });
+                    const g = skupine.get(kljuc);
+                    const opis = [it.color, it.size].map(x => String(x || '').trim()).filter(Boolean).join(' ') || 'kos';
+                    g.vrstice.set(opis, (g.vrstice.get(opis) || 0) + 1);
+                    g.skupaj++;
+                    kosovSkupaj++;
+                }
+            }
+        }
+
+        const out = [...skupine.values()]
+            .map(g => ({
+                skupina: g.skupina,
+                skupaj: g.skupaj,
+                vrstice: [...g.vrstice.entries()]
+                    .map(([opis, kosov]) => ({ opis, kosov }))
+                    .sort((a, b) => b.kosov - a.kosov || a.opis.localeCompare(b.opis, 'sl'))
+            }))
+            .sort((a, b) => b.skupaj - a.skupaj || a.skupina.localeCompare(b.skupina, 'sl'));
+
+        res.json({ narocil: izbor.length, kosov: kosovSkupaj, narocilBrezPostavk, skupine: out });
+    } catch (e) {
+        console.error('[Povzetek] napaka:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Drzave, ki jih poznamo (za pilule filtra).
 app.get('/api/packing/spakirani-drzave', (req, res) => {
     const m = drzaveZaSpakirane();
