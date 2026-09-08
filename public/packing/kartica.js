@@ -139,3 +139,17 @@ const _novi      = () => (window.KARTICA.novi      ? window.KARTICA.novi()      
             `;
         }
 
+// [2026-09-08 Dejan] Razvrscanje imen po abecedi mora upostevati PISAVO.
+// Slovenska razvrstitev (locale 'sl') grskih crk ne pozna, zato so bila grska
+// imena med sabo v napacnem vrstnem redu. Preklop vseh na 'el' ni resitev:
+// takrat se pokvarijo slovenska in hrvaska imena (izmerjeno: 'el' postavi
+// Cacic pred Cvetko in Zagar pred Zupan, kar je narobe).
+// Zato: latinica in grscina sta dva bloka, vsak razvrscen s svojo razvrstitvijo.
+// Tako je primerjava prehodna (transitive) in razvrscanje stabilno.
+function jeGrsko(s) { return /[\u0370-\u03FF\u1F00-\u1FFF]/.test(String(s || '')); }
+function primerjajImena(a, b) {
+    a = String(a || ''); b = String(b || '');
+    const ga = jeGrsko(a), gb = jeGrsko(b);
+    if (ga !== gb) return ga ? 1 : -1;                 // latinica najprej, grscina za njo
+    return a.localeCompare(b, ga ? 'el' : 'sl');
+}

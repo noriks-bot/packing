@@ -1173,9 +1173,9 @@
                         return da.localeCompare(db);
                     }
                     case 'name-asc':
-                        return (a.customer || '').localeCompare(b.customer || '', 'sl');
+                        return primerjajImena(a.customer, b.customer);
                     case 'name-desc':
-                        return (b.customer || '').localeCompare(a.customer || '', 'sl');
+                        return primerjajImena(b.customer, a.customer);
                     case 'id-asc': {
                         const na = parseInt((a.id || '').split('/')[0]) || 0;
                         const nb = parseInt((b.id || '').split('/')[0]) || 0;

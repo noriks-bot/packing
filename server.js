@@ -3104,6 +3104,21 @@ app.get('/api/packing/health', (req, res) => {
 // Podrobnosti (drzava, izdelki, povezave) so v bazi, a le za zadnjih 30 dni.
 // Zato: filtriramo in razvrscamo nad lahkim seznamom, iz baze pa poberemo
 // podrobnosti SAMO za prikazano stran (~60 narocil) — ena poizvedba.
+// [2026-09-08 Dejan] Razvrscanje imen po abecedi mora upostevati PISAVO.
+// Slovenska razvrstitev (locale 'sl') grskih crk ne pozna, zato so bila grska
+// imena med sabo v napacnem vrstnem redu. Preklop vseh na 'el' ni resitev:
+// takrat se pokvarijo slovenska in hrvaska imena (izmerjeno: 'el' postavi
+// Cacic pred Cvetko in Zagar pred Zupan, kar je narobe).
+// Zato: latinica in grscina sta dva bloka, vsak razvrscen s svojo razvrstitvijo.
+// Tako je primerjava prehodna (transitive) in razvrscanje stabilno.
+function jeGrsko(s) { return /[\u0370-\u03FF\u1F00-\u1FFF]/.test(String(s || '')); }
+function primerjajImena(a, b) {
+    a = String(a || ''); b = String(b || '');
+    const ga = jeGrsko(a), gb = jeGrsko(b);
+    if (ga !== gb) return ga ? 1 : -1;                 // latinica najprej, grscina za njo
+    return a.localeCompare(b, ga ? 'el' : 'sl');
+}
+
 let _drzaveCache = { ts: 0, map: null };
 function drzaveZaSpakirane() {
     // Drzava je v bazi; index zgradimo enkrat na minuto, da filter po drzavi
@@ -3149,8 +3164,8 @@ app.get('/api/packing/spakirani', (req, res) => {
             vrstice = vrstice.slice();
             const st = (x) => parseInt(String(x.id).split('/')[0]) || 0;
             if (sort === 'staro')        vrstice.sort((a, b) => String(a.packedAt).localeCompare(String(b.packedAt)));
-            else if (sort === 'ime')     vrstice.sort((a, b) => String(a.customer).localeCompare(String(b.customer), 'sl'));
-            else if (sort === 'ime-obr') vrstice.sort((a, b) => String(b.customer).localeCompare(String(a.customer), 'sl'));
+            else if (sort === 'ime')     vrstice.sort((a, b) => primerjajImena(a.customer, b.customer));
+            else if (sort === 'ime-obr') vrstice.sort((a, b) => primerjajImena(b.customer, a.customer));
             else if (sort === 'st')      vrstice.sort((a, b) => st(a) - st(b));
             else if (sort === 'st-obr')  vrstice.sort((a, b) => st(b) - st(a));
         }
@@ -3219,8 +3234,8 @@ app.get('/api/packing/predpakiranje', (req, res) => {
         const st = (x) => parseInt(String(x.id).split('/')[0]) || 0;
         const casNiz = (x) => String(x.order_date || '') + ' ' + String(x.order_time || '');
         if (sort === 'staro')        vrstice.sort((a, b) => casNiz(a).localeCompare(casNiz(b)));
-        else if (sort === 'ime')     vrstice.sort((a, b) => String(a.customer).localeCompare(String(b.customer), 'sl'));
-        else if (sort === 'ime-obr') vrstice.sort((a, b) => String(b.customer).localeCompare(String(a.customer), 'sl'));
+        else if (sort === 'ime')     vrstice.sort((a, b) => primerjajImena(a.customer, b.customer));
+        else if (sort === 'ime-obr') vrstice.sort((a, b) => primerjajImena(b.customer, a.customer));
         else if (sort === 'st')      vrstice.sort((a, b) => st(a) - st(b));
         else if (sort === 'st-obr')  vrstice.sort((a, b) => st(b) - st(a));
         else                         vrstice.sort((a, b) => casNiz(b).localeCompare(casNiz(a)));  // novo
