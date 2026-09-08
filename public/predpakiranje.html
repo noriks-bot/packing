@@ -39,18 +39,13 @@
     .orodja { background:#fff; border-radius:10px; padding:10px 12px; margin-bottom:12px;
               box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; flex-direction:column; gap:8px; }
     .vrsta { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-    .vrsta label { font-size:12px; color:#6b7280; font-weight:600; }
     .naslovek { font-size:11px; color:#9ca3af; font-weight:700; text-transform:uppercase;
                 letter-spacing:.4px; margin-right:2px; }
-    input[type=text], input[type=date] { padding:6px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; }
-    #isci { flex:1; min-width:180px; }
     .gumb { padding:5px 10px; border:1px solid #e5e7eb; background:#fff; border-radius:999px;
             font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
     .gumb:hover { background:#f9fafb; }
     .gumb.aktiven { background:#10b981; border-color:#10b981; color:#fff; }
     .gumb .n { font-size:10px; opacity:.75; margin-left:4px; }
-    .gumb.drugi { background:#fafafa; color:#6b7280; }
-    .gumb.drugi.aktiven { background:#6b7280; border-color:#6b7280; color:#fff; }
     .stevec { font-size:12px; color:#6b7280; }
     .stevec b { color:#111827; }
     #mreza { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -76,25 +71,8 @@
 <div class="ovoj">
     <h1>🧾 Predpakiranje <span style="font-size:12px; color:#6b7280; font-weight:400;">— še nespakirana naročila</span></h1>
     <div class="orodja">
-        <div class="vrsta">
-            <input type="text" id="isci" placeholder="Iskanje: ime kupca ali št. naročila…">
-            <label>od</label><input type="date" id="od">
-            <label>do</label><input type="date" id="doD">
-            <button class="gumb" id="pocisti">✕ Počisti</button>
-        </div>
         <div class="vrsta"><span class="naslovek">Status</span><span id="statusi"></span></div>
         <div class="vrsta"><span class="naslovek">Država</span><span id="drzave"></span></div>
-        <div class="vrsta">
-            <span class="naslovek">Razvrsti</span>
-            <span id="sortiranje">
-                <button class="gumb aktiven" data-sort="novo">🕐 Najnovejši</button>
-                <button class="gumb" data-sort="staro">🕐 Najstarejši</button>
-                <button class="gumb" data-sort="ime">🔤 A→Ž</button>
-                <button class="gumb" data-sort="ime-obr">🔤 Ž→A</button>
-                <button class="gumb" data-sort="st">#↑</button>
-                <button class="gumb" data-sort="st-obr">#↓</button>
-            </span>
-        </div>
         <div class="stevec" id="stevec">Nalagam…</div>
     </div>
     <div id="mreza"></div>
@@ -113,16 +91,11 @@
     // so na voljo, a jih skladišče ne pakira, zato niso izbrani.
     const GLAVNI = ['Novo', 'Pripravljen za odpremo', 'Odpremljen'];
     let izbraniStatusi = new Set(GLAVNI);
+    // [2026-09-08 Dejan] Razvrscanja na tej strani ni — vedno najnovejsa najprej.
     let stran = 0, sort = 'novo', drzava = '', jihJeSe = false, nalagam = false, pilulePostavljene = false;
 
     function parametri(zaStran) {
         const p = new URLSearchParams();
-        const q = document.getElementById('isci').value.trim();
-        const od = document.getElementById('od').value;
-        const doD = document.getElementById('doD').value;
-        if (q) p.set('q', q);
-        if (od) p.set('od', od);
-        if (doD) p.set('do', doD);
         if (drzava) p.set('drzava', drzava);
         if (izbraniStatusi.size) p.set('statusi', [...izbraniStatusi].join(','));
         p.set('sort', sort);
@@ -133,16 +106,13 @@
     function izrisiPilule(d) {
         // Pilule postavimo enkrat; števci se osvežujejo ob vsakem odgovoru.
         const st = document.getElementById('statusi');
-        const vsi = Object.keys(d.poStatusih || {});
-        const drugi = vsi.filter(x => !GLAVNI.some(g => x.startsWith(g))).sort();
+        // [2026-09-08 Dejan] SAMO trije statusi. Ostalih (Brisan, TEST, Zakljuceno...)
+        // skladisce ne pakira, zato jih tu sploh ne ponujamo.
         const stevec = (ime) => Object.entries(d.poStatusih || {})
             .filter(([k]) => k.startsWith(ime)).reduce((a, [, v]) => a + v, 0);
         st.innerHTML = GLAVNI.map(g =>
                 '<button class="gumb' + (izbraniStatusi.has(g) ? ' aktiven' : '') + '" data-status="' + g + '">' +
-                g + '<span class="n">' + stevec(g) + '</span></button>').join('') +
-            drugi.map(x =>
-                '<button class="gumb drugi' + (izbraniStatusi.has(x) ? ' aktiven' : '') + '" data-status="' + x + '">' +
-                x + '<span class="n">' + (d.poStatusih[x] || 0) + '</span></button>').join('');
+                g + '<span class="n">' + stevec(g) + '</span></button>').join('');
         if (!pilulePostavljene) {
             st.addEventListener('click', (e) => {
                 const b = e.target.closest('[data-status]'); if (!b) return;
@@ -214,28 +184,6 @@
         } catch (e) { input.style.borderColor = '#ef4444'; }
     }
 
-    let cakalec = null;
-    const odlozeno = () => { clearTimeout(cakalec); cakalec = setTimeout(() => naloziStran(true), 250); };
-    document.getElementById('isci').addEventListener('input', odlozeno);
-    document.getElementById('od').addEventListener('change', () => naloziStran(true));
-    document.getElementById('doD').addEventListener('change', () => naloziStran(true));
-    document.getElementById('pocisti').addEventListener('click', () => {
-        document.getElementById('isci').value = '';
-        document.getElementById('od').value = '';
-        document.getElementById('doD').value = '';
-        drzava = '';
-        izbraniStatusi = new Set(GLAVNI);
-        pilulePostavljene = false;
-        document.getElementById('drzave').innerHTML = '';
-        naloziStran(true);
-    });
-    document.getElementById('sortiranje').addEventListener('click', (e) => {
-        const b = e.target.closest('[data-sort]'); if (!b) return;
-        sort = b.dataset.sort;
-        document.querySelectorAll('#sortiranje .gumb').forEach(x => x.classList.remove('aktiven'));
-        b.classList.add('aktiven');
-        naloziStran(true);
-    });
     document.getElementById('vec').addEventListener('click', () => naloziStran(false));
     new IntersectionObserver(v => { if (v[0].isIntersecting && jihJeSe && !nalagam) naloziStran(false); },
                              { rootMargin: '400px' }).observe(document.getElementById('konec'));
