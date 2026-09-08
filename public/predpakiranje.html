@@ -77,7 +77,8 @@
 <!-- countryFlags pride iz skupne datoteke, da so zastavice povsod iste. -->
 <script src="kartica.js"></script>
 <script>
-    const GLAVNI = ['Novo', 'Pripravljen za odpremo', 'Odpremljen'];
+    // "Novo" in "Novo - nepotrjeno" sta locena statusa v Metakocki.
+    const GLAVNI = ['Novo', 'Novo - nepotrjeno', 'Pripravljen za odpremo', 'Odpremljen'];
     let izbraniStatusi = new Set(GLAVNI);
     let drzava = '', nalagam = false, pilulePostavljene = false;
 
@@ -93,8 +94,7 @@
 
     function izrisiPilule(d) {
         const st = document.getElementById('statusi');
-        const stevec = (ime) => Object.entries(d.poStatusih || {})
-            .filter(([k]) => k.startsWith(ime)).reduce((a, [, v]) => a + v, 0);
+        const stevec = (ime) => (d.poStatusih || {})[ime] || 0;
         st.innerHTML = GLAVNI.map(g =>
             '<button class="country-btn' + (izbraniStatusi.has(g) ? ' active' : '') + '" data-status="' + g + '">' +
             g + '<span class="n">' + stevec(g) + '</span></button>').join('');

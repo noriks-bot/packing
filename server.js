@@ -3220,7 +3220,10 @@ app.get('/api/packing/predpakiranje', (req, res) => {
         for (const o of vrstice) poStatusih[o.status] = (poStatusih[o.status] || 0) + 1;
 
         vrstice = vrstice.filter(o => {
-            if (statusi.length && !statusi.some(st => String(o.status || '').startsWith(st))) return false;
+            // [2026-09-08 Dejan] NATANCNO ujemanje, ne startsWith: "Novo" in
+            // "Novo - nepotrjeno" sta LOCENA statusa in pri startsWith bi prvi
+            // pobral tudi drugega, stevilki na pilulah pa bi se prekrivali.
+            if (statusi.length && !statusi.includes(String(o.status || ''))) return false;
             if (q && !(String(o.customer || '').toLowerCase().includes(q) ||
                        String(o.id || '').toLowerCase().includes(q))) return false;
             if (drzava && o.country !== drzava) return false;
@@ -3305,7 +3308,10 @@ app.get('/api/packing/predpakiranje-povzetek', (req, res) => {
         const spakirani = packedMod.spakiraniSet();
 
         const izbor = nespakiranaLahka().filter(o => {
-            if (statusi.length && !statusi.some(st => String(o.status || '').startsWith(st))) return false;
+            // [2026-09-08 Dejan] NATANCNO ujemanje, ne startsWith: "Novo" in
+            // "Novo - nepotrjeno" sta LOCENA statusa in pri startsWith bi prvi
+            // pobral tudi drugega, stevilki na pilulah pa bi se prekrivali.
+            if (statusi.length && !statusi.includes(String(o.status || ''))) return false;
             if (drzava && o.country !== drzava) return false;
             return true;
         });
