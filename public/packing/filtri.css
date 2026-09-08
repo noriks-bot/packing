@@ -1,0 +1,35 @@
+/* [2026-09-08 Dejan] SLOGI FILTROV — prepisani 1:1 z glavne strani /packing/,
+ * da so vse tri strani videti enako. Izvirnik ostaja vgrajen v index.html
+ * (njegovi izbirniki .filters in .btn se pojavljajo tudi v @media print, zato
+ * jih od tam nisem izrezal). Ce spreminjas videz filtrov, popravi OBOJE.
+ */
+.filters {
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.filters label { font-size: 13px; color: #666; }
+.country-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+.country-btn {
+    padding: 6px 14px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+.country-btn:hover { border-color: #10b981; }
+.country-btn.active { background: #10b981; color: #fff; border-color: #10b981; }
+.filters select, .filters input[type="date"], .filters input[type="text"] {
+    padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;
+}
+/* Stevilo ob napisu na pilули — enak jezik kot zavihki izdelkov na glavni strani. */
+.country-btn .n { font-size: 11px; font-weight: 700; opacity: .7; margin-left: 5px; }
+.country-btn.active .n { opacity: .85; }

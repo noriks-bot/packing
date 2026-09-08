@@ -6,6 +6,7 @@
 <title>Predpakiranje | NORIKS</title>
 <!-- Slogi kartice so SKUPNI z /packing/ in /spakirani-paketi. Popravljaj v kartica.css. -->
 <link rel="stylesheet" href="kartica.css">
+<link rel="stylesheet" href="filtri.css">
 <style>
     :root { --topnav-h: 46px; }
     * { box-sizing: border-box; }
@@ -36,17 +37,7 @@
 
     .ovoj { max-width:1400px; margin:0 auto; padding:calc(var(--topnav-h) + 12px) 12px 60px; }
     h1 { font-size:18px; margin:0 0 10px; }
-    .orodja { background:#fff; border-radius:10px; padding:10px 12px; margin-bottom:12px;
-              box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; flex-direction:column; gap:8px; }
-    .vrsta { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-    .naslovek { font-size:11px; color:#9ca3af; font-weight:700; text-transform:uppercase;
-                letter-spacing:.4px; margin-right:2px; }
-    .gumb { padding:5px 10px; border:1px solid #e5e7eb; background:#fff; border-radius:999px;
-            font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
-    .gumb:hover { background:#f9fafb; }
-    .gumb.aktiven { background:#10b981; border-color:#10b981; color:#fff; }
-    .gumb .n { font-size:10px; opacity:.75; margin-left:4px; }
-    .stevec { font-size:12px; color:#6b7280; }
+    .stevec { font-size:12px; color:#6b7280; margin:-12px 0 12px 4px; }
     .stevec b { color:#111827; }
     #mreza { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     #vec { display:block; margin:16px auto; padding:10px 22px; border:0; border-radius:8px;
@@ -70,11 +61,13 @@
 
 <div class="ovoj">
     <h1>🧾 Predpakiranje <span style="font-size:12px; color:#6b7280; font-weight:400;">— še nespakirana naročila</span></h1>
-    <div class="orodja">
-        <div class="vrsta"><span class="naslovek">Status</span><span id="statusi"></span></div>
-        <div class="vrsta"><span class="naslovek">Država</span><span id="drzave"></span></div>
-        <div class="stevec" id="stevec">Nalagam…</div>
+    <div class="filters">
+        <label>Status:</label>
+        <div class="country-buttons" id="statusi"></div>
+        <label>Država:</label>
+        <div class="country-buttons" id="drzave"></div>
     </div>
+    <div class="stevec" id="stevec">Nalagam…</div>
     <div id="mreza"></div>
     <button id="vec" style="display:none;">Naloži več</button>
     <div id="konec"></div>
@@ -111,25 +104,26 @@
         const stevec = (ime) => Object.entries(d.poStatusih || {})
             .filter(([k]) => k.startsWith(ime)).reduce((a, [, v]) => a + v, 0);
         st.innerHTML = GLAVNI.map(g =>
-                '<button class="gumb' + (izbraniStatusi.has(g) ? ' aktiven' : '') + '" data-status="' + g + '">' +
+                '<button class="country-btn' + (izbraniStatusi.has(g) ? ' active' : '') + '" data-status="' + g + '">' +
                 g + '<span class="n">' + stevec(g) + '</span></button>').join('');
         if (!pilulePostavljene) {
             st.addEventListener('click', (e) => {
                 const b = e.target.closest('[data-status]'); if (!b) return;
                 const s = b.dataset.status;
                 if (izbraniStatusi.has(s)) izbraniStatusi.delete(s); else izbraniStatusi.add(s);
-                b.classList.toggle('aktiven');
+                b.classList.toggle('active');
                 naloziStran(true);
             });
             const dz = document.getElementById('drzave');
-            dz.innerHTML = '<button class="gumb aktiven">Vse države</button>' +
-                (d.drzave || []).map(x => '<button class="gumb" data-drzava="' + x.drzava + '">' +
-                    (countryFlags[x.drzava] || '') + ' ' + x.drzava + '<span class="n">' + x.n + '</span></button>').join('');
+            // Zastavice brez imen — enako kot na glavni strani.
+            dz.innerHTML = '<button class="country-btn active">Vse</button>' +
+                (d.drzave || []).map(x => '<button class="country-btn" data-drzava="' + x.drzava + '" title="' +
+                    x.drzava + ' (' + x.n + ')">' + (countryFlags[x.drzava] || x.drzava) + '</button>').join('');
             dz.addEventListener('click', (e) => {
-                const b = e.target.closest('.gumb'); if (!b) return;
+                const b = e.target.closest('.country-btn'); if (!b) return;
                 drzava = b.dataset.drzava || '';
-                dz.querySelectorAll('.gumb').forEach(x => x.classList.remove('aktiven'));
-                b.classList.add('aktiven');
+                dz.querySelectorAll('.country-btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
                 naloziStran(true);
             });
             pilulePostavljene = true;

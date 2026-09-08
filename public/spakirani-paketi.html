@@ -6,6 +6,7 @@
 <title>Spakirani paketi | NORIKS</title>
 <!-- Slogi kartice so SKUPNI z /packing/. Popravljaj jih v kartica.css, ne tukaj. -->
 <link rel="stylesheet" href="kartica.css">
+<link rel="stylesheet" href="filtri.css">
 <style>
     :root { --topnav-h: 46px; }
     * { box-sizing: border-box; }
@@ -35,17 +36,7 @@
 
     .ovoj { max-width:1400px; margin:0 auto; padding:calc(var(--topnav-h) + 12px) 12px 60px; }
     h1 { font-size:18px; margin:0 0 10px; }
-    .orodja { background:#fff; border-radius:10px; padding:10px 12px; margin-bottom:12px;
-              box-shadow:0 1px 3px rgba(0,0,0,.06); display:flex; flex-direction:column; gap:8px; }
-    .vrsta { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-    .vrsta label { font-size:12px; color:#6b7280; font-weight:600; }
-    input[type=text], input[type=date] { padding:6px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; }
-    #isci { flex:1; min-width:180px; }
-    .gumb { padding:5px 10px; border:1px solid #e5e7eb; background:#fff; border-radius:999px;
-            font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
-    .gumb:hover { background:#f9fafb; }
-    .gumb.aktiven { background:#10b981; border-color:#10b981; color:#fff; }
-    .stevec { font-size:12px; color:#6b7280; }
+    .stevec { font-size:12px; color:#6b7280; margin:-12px 0 12px 4px; }
     .stevec b { color:#111827; }
     #mreza { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     #vec { display:block; margin:16px auto; padding:10px 22px; border:0; border-radius:8px;
@@ -69,24 +60,28 @@
 
 <div class="ovoj">
     <h1>📦 Spakirani paketi</h1>
-    <div class="orodja">
-        <div class="vrsta">
-            <input type="text" id="isci" placeholder="Iskanje: ime kupca ali št. naročila…">
-            <label>od</label><input type="date" id="od">
-            <label>do</label><input type="date" id="doD">
-            <button class="gumb" id="pocisti">✕ Počisti</button>
-        </div>
-        <div class="vrsta" id="drzave"></div>
-        <div class="vrsta" id="sortiranje">
-            <button class="gumb aktiven" data-sort="novo">🕐 Najnovejši</button>
-            <button class="gumb" data-sort="staro">🕐 Najstarejši</button>
-            <button class="gumb" data-sort="ime">🔤 A→Ž</button>
-            <button class="gumb" data-sort="ime-obr">🔤 Ž→A</button>
-            <button class="gumb" data-sort="st">#↑</button>
-            <button class="gumb" data-sort="st-obr">#↓</button>
-        </div>
-        <div class="stevec" id="stevec">Nalagam…</div>
+    <div class="filters">
+        <input type="text" id="isci" placeholder="Iskanje: ime kupca ali št. naročila…" style="flex:1; min-width:200px;">
+        <label>od <input type="date" id="od"></label>
+        <label>do <input type="date" id="doD"></label>
+        <button class="country-btn" id="pocisti">✕ Počisti</button>
     </div>
+    <div class="filters">
+        <label>Država:</label>
+        <div class="country-buttons" id="drzave"></div>
+    </div>
+    <div class="filters">
+        <label>Razvrsti:</label>
+        <div class="country-buttons" id="sortiranje">
+            <button class="country-btn active" data-sort="novo">🕐 Najnovejši</button>
+            <button class="country-btn" data-sort="staro">🕐 Najstarejši</button>
+            <button class="country-btn" data-sort="ime">🔤 A→Ž</button>
+            <button class="country-btn" data-sort="ime-obr">🔤 Ž→A</button>
+            <button class="country-btn" data-sort="st">#↑</button>
+            <button class="country-btn" data-sort="st-obr">#↓</button>
+        </div>
+    </div>
+    <div class="stevec" id="stevec">Nalagam…</div>
     <div id="mreza"></div>
     <button id="vec" style="display:none;">Naloži več</button>
     <div id="konec"></div>
@@ -203,14 +198,14 @@
         document.getElementById('od').value = '';
         document.getElementById('doD').value = '';
         drzava = '';
-        document.querySelectorAll('#drzave .gumb').forEach(b => b.classList.toggle('aktiven', !b.dataset.drzava));
+        document.querySelectorAll('#drzave .country-btn').forEach(b => b.classList.toggle('active', !b.dataset.drzava));
         naloziStran(true);
     });
     document.getElementById('sortiranje').addEventListener('click', (e) => {
         const b = e.target.closest('[data-sort]'); if (!b) return;
         sort = b.dataset.sort;
-        document.querySelectorAll('#sortiranje .gumb').forEach(x => x.classList.remove('aktiven'));
-        b.classList.add('aktiven');
+        document.querySelectorAll('#sortiranje .country-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
         naloziStran(true);
     });
     document.getElementById('vec').addEventListener('click', () => naloziStran(false));
@@ -221,15 +216,16 @@
         try { window._packingNotes = await (await fetch('/api/packing/notes')).json(); } catch (e) {}
         try {
             const d = await (await fetch('/api/packing/spakirani-drzave')).json();
+            // Zastavice brez imen — enako kot na glavni strani.
             document.getElementById('drzave').innerHTML =
-                '<button class="gumb aktiven">Vse države</button>' +
-                d.map(x => '<button class="gumb" data-drzava="' + x.drzava + '">' +
-                           (countryFlags[x.drzava] || '') + ' ' + x.drzava + '</button>').join('');
+                '<button class="country-btn active">Vse</button>' +
+                d.map(x => '<button class="country-btn" data-drzava="' + x.drzava + '" title="' +
+                           x.drzava + ' (' + x.n + ')">' + (countryFlags[x.drzava] || x.drzava) + '</button>').join('');
             document.getElementById('drzave').addEventListener('click', (e) => {
-                const b = e.target.closest('.gumb'); if (!b) return;
+                const b = e.target.closest('.country-btn'); if (!b) return;
                 drzava = b.dataset.drzava || '';
-                document.querySelectorAll('#drzave .gumb').forEach(x => x.classList.remove('aktiven'));
-                b.classList.add('aktiven');
+                document.querySelectorAll('#drzave .country-btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
                 naloziStran(true);
             });
         } catch (e) {}
