@@ -114,6 +114,25 @@
 
         .btn-secondary { background: #333; color: #fff; }
 
+        /* [2026-09-08 Dejan] Moder gumb ob "Izberi vse" — isti slog, druga barva. */
+        .btn-modri { background: #2563eb; color: #fff; }
+        .btn-modri:hover { background: #1d4ed8; }
+
+        /* Modal za dodatne produkte. */
+        .modal-ozadje { position: fixed; inset: 0; background: rgba(17,24,39,.55);
+                        display: flex; align-items: center; justify-content: center;
+                        z-index: 500; padding: 20px; }
+        .modal-okno { background: #fff; border-radius: 12px; width: 100%; max-width: 620px;
+                      max-height: 80vh; display: flex; flex-direction: column;
+                      box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+        .modal-glava { display: flex; align-items: center; justify-content: space-between;
+                       gap: 12px; padding: 14px 18px; border-bottom: 1px solid #e5e7eb; }
+        .modal-naslov { font-size: 15px; font-weight: 800; }
+        .modal-zapri { border: 0; background: transparent; font-size: 22px; line-height: 1;
+                       cursor: pointer; color: #6b7280; padding: 0 4px; }
+        .modal-zapri:hover { color: #111827; }
+        .modal-telo { padding: 18px; overflow: auto; min-height: 140px; }
+
         .btn-secondary:hover { background: #444; }
 
         .btn-danger { background: #ef4444; color: #fff; }
@@ -1236,6 +1255,7 @@
             if (unpacked.length > 0) {
                 html += `<div style="grid-column: 1/-1; display:flex; gap:10px; align-items:center; justify-content:flex-end;" class="no-print">
                     <button class="btn btn-secondary" onclick="toggleSelectAll()" id="select-all-btn" style="font-size:12px;">${selectedOrderIds.size > 0 && selectedOrderIds.size >= unpacked.filter(o => !isOrderPacked(o.id)).length ? '☑ Odznači vse' : '☐ Izberi vse ('+unpacked.length+')'}</button>
+                    ${IZBRAN && IZBRAN !== 'VSE' ? `<button class="btn btn-modri" onclick="odpriDodatneProdukte()" style="font-size:12px;">DODATNI PRODUKTI</button>` : ''}
                     ${selectedOrderIds.size > 0 ? `<button class="btn btn-secondary" onclick="clearSelection()" style="font-size:12px;">✕ Počisti izbor</button>` : ''}
                 </div>`;
             }
@@ -1309,6 +1329,34 @@
             }
             return 'BREZ ŠIFRE';
         }
+        // [2026-09-08 Dejan] DODATNI PRODUKTI — zaenkrat prazen modal; vsebina pride kasneje.
+        // Gumb se pokaze SAMO, ko je izbran posamezen izdelek (ne na zavihku VSE).
+        function odpriDodatneProdukte() {
+            if (document.getElementById('modal-dodatni')) return;
+            const ozadje = document.createElement('div');
+            ozadje.className = 'modal-ozadje no-print';
+            ozadje.id = 'modal-dodatni';
+            ozadje.innerHTML =
+                '<div class="modal-okno" role="dialog" aria-modal="true">' +
+                    '<div class="modal-glava">' +
+                        '<div class="modal-naslov">Dodatni produkti — ' + IZBRAN + '</div>' +
+                        '<button class="modal-zapri" title="Zapri">&times;</button>' +
+                    '</div>' +
+                    '<div class="modal-telo"></div>' +
+                '</div>';
+            document.body.appendChild(ozadje);
+            const zapri = () => zapriDodatneProdukte();
+            ozadje.querySelector('.modal-zapri').addEventListener('click', zapri);
+            ozadje.addEventListener('click', (e) => { if (e.target === ozadje) zapri(); });
+            document.addEventListener('keydown', escZapri);
+        }
+        function escZapri(e) { if (e.key === 'Escape') zapriDodatneProdukte(); }
+        function zapriDodatneProdukte() {
+            const m = document.getElementById('modal-dodatni');
+            if (m) m.remove();
+            document.removeEventListener('keydown', escZapri);
+        }
+
         function izrisiZavihke() {
             const c = document.getElementById('prodTabs');
             if (!c) return;
