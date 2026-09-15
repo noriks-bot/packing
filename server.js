@@ -1761,7 +1761,11 @@ app.get('/api/packing/orders', async (req, res) => {
 //   BREZ variacij: BUNION, FISIOREST, CLOUD, KNEEHEAT, SNORE
 //   IMAJO variacijo -> odstranjeni: KNEEFIX (stran+velikost), ORTOPAS (velikost),
 //                      HUG in LIFT (barva), KIDSNEST (starostni razpon)
-const NOVAR_CODES = /BUNION|FISIOREST|KNEEHEAT|SNORE|CLOUD|CONTROLPRO|NORIKSHERS/;
+// [2026-09-15 Dejan] CLOATH dodan: preverjeno na vseh trgih, da pozicije nosijo SAMO
+// ime izdelka (nobene barve ne velikosti). Prej ga tu ni bilo, zato je padel v zasilno
+// pot, ki naredi `amount` kosov = 1 — skladisce bi spakiralo 1 krpo namesto 3, 6 ali 12.
+// Metakocka: amount=1, stevilo kosov je v _bundle_pairs (3 = 29,99 EUR, 6 = 54,99, 12 = 79,99).
+const NOVAR_CODES = /BUNION|FISIOREST|KNEEHEAT|SNORE|CLOUD|CONTROLPRO|NORIKSHERS|CLOATH/;
                     if (NOVAR_CODES.test(code)) {
                         const bp = (docDesc || '').match(/_bundle_pairs\s*:\s*(\d+)/i);
                         const per = bp ? (parseInt(bp[1], 10) || 1) : 1;
@@ -2698,6 +2702,14 @@ function parseDocDesc(docDesc, productCode, productName) {
             const plainSize = /^[\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?(?:\s+\d{2,3}-\d{2,3})?$/i;
             const ageRange = /\d+\s*[\u2013-]\s*\d+/.test(rawVal) &&
                 /godin|godina|let|year|jahr|\u00e9v|lat|rok|χρον|χρόν|ετών|ετων|ani|anni|cm/i.test(rawVal);
+            // [2026-09-15 Dejan] Pozicija, ki vsebuje ime blagovne znamke, je IME IZDELKA,
+            // ne variacija. Metakocka pri izdelkih brez variacij v vsako pozicijo zapise
+            // kar ime ("1 : Polar NORIKS Cloth XXL | Lavetă pentru curățare ...").
+            // Brez tega je romunska "Lavetă" sprozila prepoznavo leve strani (vzorec
+            // vsebuje `lav*` zaradi slovaskega "ľavý") in krpe so dobile barvo "Leva".
+            // Preverjeno na 2.695 zivih pozicijah: vseh 229, ki vsebujejo NORIKS, je ime
+            // izdelka (CLOATH, FISIOREST, BUNION, CLOUD) — nobena ni prava variacija.
+            if (/NORIKS/i.test(rawVal)) { allSized = false; break; }
             const _side = detectSide(rawVal);
             if (_side) color = _side;
             if (sizeParen) {
