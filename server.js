@@ -1766,7 +1766,30 @@ app.get('/api/packing/orders', async (req, res) => {
 // pot, ki naredi `amount` kosov = 1 — skladisce bi spakiralo 1 krpo namesto 3, 6 ali 12.
 // Metakocka: amount=1, stevilo kosov je v _bundle_pairs (3 = 29,99 EUR, 6 = 54,99, 12 = 79,99).
 const NOVAR_CODES = /BUNION|FISIOREST|KNEEHEAT|SNORE|CLOUD|CONTROLPRO|NORIKSHERS|CLOATH/;
-                    if (NOVAR_CODES.test(code)) {
+                    // [2026-09-22 Dejan] SPLOSNO PRAVILO namesto rocnega seznama.
+                    // Metakocka pri izdelku BREZ variacij v vsako pozicijo zapise kar ime
+                    // izdelka ("1 : NORIKS HYD | Boca za vodikovu vodu ... _bundle_pairs : 2").
+                    // Ce to velja za VSE pozicije, potem variacij ni in kolicina je
+                    // amount x _bundle_pairs — ne amount. Prej je tak izdelek padel v zasilno
+                    // pot in dobil 1 kos: HYD 17762 je imel narocena 2, aplikacija je kazala 1.
+                    // Enako je bilo pri CLOATH (1 namesto 3, 6 ali 12).
+                    // Varno je, ker se ime blagovne znamke pojavi SAMO v takih pozicijah —
+                    // preverjeno na 2.695 zivih pozicijah: vseh 229 z besedo NORIKS je ime
+                    // izdelka, nobena ni prava variacija. Prava neuspela razclemba (razmetan
+                    // doc_desc) imena znamke NE vsebuje, zato se opozorilo ohrani.
+                    let pozicijeSoIme = false;
+                    if (docDesc) {
+                        const POZ_RE = /(\d+)\s*:\s*((?:(?!\s+\d+\s*:)(?!\s+_[a-zA-Z])[^:_])+)/g;
+                        let pm2, vseh = 0, zImenom = 0;
+                        while ((pm2 = POZ_RE.exec(docDesc)) !== null) {
+                            const v = pm2[2].trim();
+                            if (!v) continue;
+                            vseh++;
+                            if (/NORIKS/i.test(v)) zImenom++;
+                        }
+                        pozicijeSoIme = vseh > 0 && zImenom === vseh;
+                    }
+                    if (NOVAR_CODES.test(code) || pozicijeSoIme) {
                         const bp = (docDesc || '').match(/_bundle_pairs\s*:\s*(\d+)/i);
                         const per = bp ? (parseInt(bp[1], 10) || 1) : 1;
                         const cleanName = getSlovenianName(code, nameOriginal) || productType || nameOriginal;
