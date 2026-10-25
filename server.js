@@ -3768,8 +3768,25 @@ async function backfillPoDnevih(dni, od = 0) {
 // spremembe zadnjih 10 min = ~2 strani = ~12 s.
 let CHANGE_SYNC_RUNNING = false;
 function mkCasZaMetakocko(ms) {
-    // Metakocka zahteva '2026-08-31T14:00:00+02:00'; ISO brez odmika ali z 'Z' zavrne.
-    return new Date(ms + 2 * 3600 * 1000).toISOString().replace(/\.\d+Z$/, '') + '+02:00';
+    // [2026-10-25 Dejan] Metakocka ZAHTEVA pripono '+02:00' — '+01:00' zavrne z
+    // opr_code 6 ("Cannot find value") — vrednost pa primerja s svojo LOKALNO uro.
+    // Pripona je torej samo oblika, ne dejanski odmik.
+    //
+    // Prej smo posiljali UTC+2h. Poleti je to naklucno ustrezalo lokalnemu casu, ob
+    // prehodu na zimski cas (25.10.2026 ob 03:00) pa je nasa ura postala ENO URO V
+    // PRIHODNOSTI: vsak ChangeSync je vrnil 0 sprememb in aplikacija je ~20 ur stala
+    // na podatkih od 00:55 — skladisce ni videlo 1.304 danasnjih narocil.
+    //
+    // Izmerjeno 25.10. ob 21:56 po lokalnem casu, zadnjih 60 minut:
+    //   UTC+2h (stara koda) -> 0 narocil | slovenski lokalni cas -> 300+
+    //
+    // Zato: slovenski lokalni cas (Europe/Ljubljana, sam uposteva CET/CEST) s
+    // pripono '+02:00'. Poleti je izid enak kot prej, pozimi pravilen.
+    const lokalno = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Europe/Ljubljana', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).format(new Date(ms)).replace(' ', 'T');
+    return lokalno + '+02:00';
 }
 async function osveziSpremenjena() {
     if (CHANGE_SYNC_RUNNING || LONG_WARMUP_RUNNING) return;
