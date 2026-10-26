@@ -2473,6 +2473,32 @@ const colorTranslationsServer = {
     'temnomodra': 'Temno modra', 'smedja': 'Rjava', 'verzi': 'Zelena', 'hnedá': 'Rjava', 'sötét kék': 'Temno modra',
 };
 
+// [2026-10-26 Dejan] Vratar za "pozicija je SAMO barva" se zgradi IZ SLOVARJA BARV.
+// Prej je bil to locen, rocno vzdrzevan seznam 55 besed. Slovar je poznal roza,
+// vijolicno in temno modro v vseh jezikih, vratar pa ne — zato je SNUG (144 kosov)
+// ostal brez barve, cetudi je Metakocka barvo poslala ('1 : Ljubicasta', '1 : Ruzova',
+// '1 : Tmave modra'). Z gradnjo iz slovarja se seznama ne moreta vec razhajati in
+// vsaka barva, ki jo znamo prevesti, je tudi sprejeta.
+// Ujemanje ostane STROGO (cel niz = ena barva), da ne pobere zapisov z velikostjo.
+const COLOR_ONLY_RE = (() => {
+    // Kljucem dodamo se razlicice BREZ streSic: slovar ima 'ruzova', Metakocka pa
+    // poslje 'Ruzova' s streSicami. Prevajalnik streSice ze odstranjuje, vratar pa
+    // jih prej ni — zato je slovaSka roza padla skozi.
+    const brezStresic = (x) => String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const kljuci = new Set();
+    for (const k of Object.keys(colorTranslationsServer)) {
+        const t = String(k).trim();
+        if (t.length >= 3) { kljuci.add(t); kljuci.add(brezStresic(t)); }
+    }
+    const vzorec = [...kljuci]
+        .sort((a, b) => b.length - a.length)
+        .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('|');
+    const re = new RegExp('^(' + vzorec + ')$', 'i');
+    // Primerjamo tudi obliko brez streSic, da ujamemo Ruzova/RuZova/Ruzova.
+    return { test: (v) => re.test(String(v || '').trim()) || re.test(brezStresic(String(v || '').trim())) };
+})();
+
 function translateColorServer(color) {
     if (!color) return '';
     const trimmed = color.trim();
@@ -2720,7 +2746,6 @@ function parseDocDesc(docDesc, productCode, productName) {
             let color = '';
             // [2026-08-10] Orto izdelki imajo lahko pozicijo SAMO z barvo (npr. KOMZIPS "1 : Crna").
             // Prej je tak zapis padel v bail-out -> "Ni bilo mogoce parsati" cetudi je podatek OBSTAJAL.
-            const COLOR_ONLY_RE = /^(crna|črna|black|nero|schwarz|fekete|czarny|černá|čierna|negru|μαύρο|bijela|bela|biela|white|weiss|weiß|fehér|biały|bílá|alb|λευκό|siva|sivá|szürke|szary|šedá|gri|grigio|grau|γκρι|bež|bez|beige|bézs|beżowy|béžová|bej|μπεζ|zelena|green|zöld|zielony|zelená|verde|πράσιν|plava|modra|blue|kék|niebieski|modrá|albastru|blu|μπλε)$/i;
             const sizeParen = rawVal.match(/(?:^|\s)([\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?)\s*\(/i);
             const plainSize = /^[\dX]*[SMLX]{1,3}L?(?:\/[SMLX]{1,3}L?)?(?:\s+\d{2,3}-\d{2,3})?$/i;
             const ageRange = /\d+\s*[\u2013-]\s*\d+/.test(rawVal) &&
@@ -2752,6 +2777,24 @@ function parseDocDesc(docDesc, productCode, productName) {
                     : c.charAt(0).toUpperCase() + c.slice(1).toLowerCase();
             } else if (_side) {
                 // pozicija vsebuje samo stran (npr. "1 : Lijeva") — to je veljaven podatek
+            } else if ((() => {
+                // [2026-10-26 Dejan] Oblika "<barva> - <velikost>", npr. SLABPROOF
+                // "Crna - 43 – 45" (barva + stevilka obutve). Doslej je tak zapis padel
+                // v opozorilo, ceprav sta OBA podatka tu. Preverja se SELE na tem mestu,
+                // torej samo za zapise, ki jih prejsnje veje niso prepoznale — vse
+                // obstojece razclembe ostanejo nespremenjene.
+                const mbv = rawVal.match(/^(.+?)\s+[-\u2013\u2014]\s+(.+)$/);
+                if (!mbv) return false;
+                const levo = mbv[1].trim(), desno = mbv[2].replace(/\s+/g, ' ').trim();
+                if (!COLOR_ONLY_RE.test(levo) || !desno) return false;
+                const prev = translateColorServer(levo);
+                color = (prev && prev !== levo)
+                    ? prev
+                    : levo.charAt(0).toUpperCase() + levo.slice(1).toLowerCase();
+                size = desno.toUpperCase();
+                return true;
+            })()) {
+                // barva in velikost sta prevzeti zgoraj
             } else {
                 allSized = false; // messy/ime-only pozicija -> ne prevzemi, pusti fallback opozorilo
                 break;
